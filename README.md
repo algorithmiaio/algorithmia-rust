@@ -15,18 +15,17 @@ let client = Client::new("111112222233333444445555566");
 // Specify the algorithm you want to execute
 let factor = Algorithm::new("kenny", "Factor");
 
-// Run the algorithm with input data
-//   using a type safe decoding of the output
-// The "kenny/Factor" algorithm outputs
-//   results as a JSON array of integers
-//   which decodes into Vec<int>
-let output: Output<Vec<int>> = try!(client.query(factor, "19635"));
+// Run the algorithm using a type safe decoding of the output to Vec<int>
+//   since this algorithm outputs results as a JSON array of integers
+let output: Output<Vec<int>> = try!(client.query(factor, "19635".to_string()));
 println!("Completed in {} seconds with result: {}", output.duration, output.result);
 
 // Alternatively, query_raw will return the raw JSON string
 let raw_output = try!(client.query_raw(algorithm, "19635"));
 println!("Raw JSON output:\n{}", raw_output);
 ```
+
+See [dijkstra.rs](examples/dijkstra.rs) for a more complete example using custom types for input and output.
 
 ## Build & Test
 
@@ -37,10 +36,22 @@ This project is built and tested with cargo:
 
 ## Examples
 
-The examples directory (built with tests) also contains a sample CLI tool that uses this library to execute algorithms:
+The examples directory (built with tests) contains additional samples.
+
+### [algo](examples/algo.rs)
+
+A sample CLI tool that uses `query_raw` to execute algorithms:
 
     $ export ALGORITHMIA_API_KEY=111112222233333444445555566
     $ target/examples/algo kenny/Factor 19635
     {"duration":0.47086329,"result":[3,5,7,11,17]}
 
+### [dijkstra](examples/dijkstra.rs)
+
+A more complete type-safe example of using `query` to execute [kenny/Dijkstra](http://algorithmia.com/algorithms/kenny/Dijkstra).
+
+    $ target/examples/dijkstra
+    Input: [{"b":[2,2],"c":[3,3],"a":[1,1]},{"a":["b"],"b":["c"]},"a","c"]
+    Shortest route: [a, b, c]
+    Completed in 0.010614 seconds.
 

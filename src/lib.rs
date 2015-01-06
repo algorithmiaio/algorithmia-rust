@@ -6,7 +6,8 @@ use hyper::{HttpError, Url};
 use hyper::header::common::authorization::Authorization;
 use hyper::header::common::content_type::ContentType;
 use mime::{Mime, TopLevel, SubLevel};
-use rustc_serialize::{json, Decoder, Decodable};
+use rustc_serialize::{json, Decoder, Decodable, Encoder, Encodable};
+use std::io::IoError;
 
 pub struct Algorithm {
     user: String,
@@ -19,8 +20,8 @@ pub struct Client {
 
 #[deriving(RustcDecodable, Show)]
 pub struct Output<T> {
-    duration: f32,
-    result: T,
+    pub duration: f32,
+    pub result: T,
 }
 
 pub type AlgorithmResult<T> = Result<Output<T>, HttpError>;
@@ -44,9 +45,11 @@ impl Client {
         }
     }
 
-    pub fn query<T: Decodable<json::Decoder, json::DecoderError>>(
-                 self, algorithm: Algorithm, input_data: &str) -> AlgorithmResult<T> {
-        let raw = try!(self.query_raw(algorithm, input_data));
+    pub fn query<'a, D, E>(self, algorithm: Algorithm, input_data: &E) -> AlgorithmResult<D>
+            where D: Decodable<json::Decoder, json::DecoderError>,
+                  E: Encodable<json::Encoder<'a>, IoError> {
+        let raw_input = json::encode(input_data);
+        let raw = try!(self.query_raw(algorithm, raw_input.as_slice()));
         Ok(json::decode(raw.as_slice()).unwrap())
     }
 
