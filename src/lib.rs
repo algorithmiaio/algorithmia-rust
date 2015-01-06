@@ -5,6 +5,7 @@ extern crate "rustc-serialize" as rustc_serialize;
 use hyper::{HttpError, Url};
 use hyper::header::common::authorization::Authorization;
 use hyper::header::common::content_type::ContentType;
+use hyper::net::HttpConnector;
 use mime::{Mime, TopLevel, SubLevel};
 use rustc_serialize::{json, Decoder, Decodable, Encoder, Encodable};
 use std::io::IoError;
@@ -16,6 +17,7 @@ pub struct Algorithm {
 
 pub struct Client {
     api_key: String,
+    hyper_client: hyper::Client<HttpConnector>,
 }
 
 #[deriving(RustcDecodable, Show)]
@@ -41,7 +43,8 @@ impl Algorithm {
 impl Client {
     pub fn new(api_key: &str) -> Client {
         Client {
-            api_key: api_key.to_string()
+            api_key: api_key.to_string(),
+            hyper_client: hyper::Client::new(),
         }
     }
 
@@ -54,8 +57,7 @@ impl Client {
     }
 
     pub fn query_raw(self, algorithm: Algorithm, input_data: &str) -> AlgorithmRawResult {
-        // TODO: move client into the Client struct, and initialize during Client::new()
-        let mut client = hyper::Client::new();
+        let mut client = self.hyper_client;
         let req = client.post(algorithm.to_url())
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .header(Authorization(self.api_key))
