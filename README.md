@@ -43,7 +43,7 @@ The examples directory (built with tests) contains additional samples.
 A sample CLI tool that uses `query_raw` to execute algorithms:
 
     $ export ALGORITHMIA_API_KEY=111112222233333444445555566
-    $ target/examples/algo kenny/Factor 19635
+    $ target/examples/algo -d 19635 kenny/Factor
     {"duration":0.47086329,"result":[3,5,7,11,17]}
 
 ### [dijkstra](examples/dijkstra.rs)
