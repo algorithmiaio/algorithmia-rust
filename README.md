@@ -7,7 +7,7 @@ A rust client library to query the Algorithmia API.
 
 ```rust
 extern crate algorithmia;
-use algorithmia::{ Algorithm, Client, Output };
+use algorithmia::{ Algorithm, Client, AlgorithmOutput };
 
 // Initialize a Client with the API key
 let client = Client::new("111112222233333444445555566");
@@ -17,7 +17,7 @@ let factor = Algorithm::new("kenny", "Factor");
 
 // Run the algorithm using a type safe decoding of the output to Vec<int>
 //   since this algorithm outputs results as a JSON array of integers
-let output: Output<Vec<int>> = try!(client.query(factor, "19635".to_string()));
+let output: AlgorithmOutput<Vec<int>> = try!(client.query(factor, "19635".to_string()));
 println!("Completed in {} seconds with result: {}", output.duration, output.result);
 
 // Alternatively, query_raw will return the raw JSON string

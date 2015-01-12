@@ -1,7 +1,7 @@
 extern crate algorithmia;
 extern crate "rustc-serialize" as rustc_serialize;
 
-use algorithmia::{Algorithm, Client, Output};
+use algorithmia::{Algorithm, Client, AlgorithmOutput};
 use std::collections::HashMap;
 use rustc_serialize::{json};
 
@@ -20,7 +20,7 @@ struct RouteMap<'a> {
 }
 
 impl<'a> RouteMap<'a> {
-    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> Output<Route> {
+    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgorithmOutput<Route> {
         let client = Client::new(env!("ALGORITHMIA_API_KEY"));
         let dijkstra = Algorithm::new("kenny", "Dijkstra");
 
@@ -28,7 +28,7 @@ impl<'a> RouteMap<'a> {
         let input_data: DijkstraInput = (self.vertices, self.edges, start, end);
         println!("Input: {}", json::encode(&input_data));
 
-        let output: Output<Route> = match client.query(dijkstra, &input_data) {
+        let output: AlgorithmOutput<Route> = match client.query(dijkstra, &input_data) {
             Ok(out) => out,
             Err(why) => panic!("{:?}", why),
         };

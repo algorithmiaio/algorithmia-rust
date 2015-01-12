@@ -20,12 +20,12 @@ pub struct Client {
 }
 
 #[derive(RustcDecodable, Show)]
-pub struct Output<T> {
+pub struct AlgorithmOutput<T> {
     pub duration: f32,
     pub result: T,
 }
 
-pub type AlgorithmResult<T> = Result<Output<T>, HttpError>;
+pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, HttpError>;
 pub type AlgorithmRawResult = Result<String, HttpError>;
 
 impl Algorithm {
@@ -76,8 +76,8 @@ fn test_to_url() {
 #[test]
 fn test_json_decoding() {
     let json_output = "{\"duration\":0.46739511,\"result\":[5,41]}";
-    let expected = Output{ duration: 0.46739511f32, result: [5, 41] };
-    let decoded: Output<Vec<i32>> = json::decode(json_output).unwrap();
+    let expected = AlgorithmOutput{ duration: 0.46739511f32, result: [5, 41] };
+    let decoded: AlgorithmOutput<Vec<i32>> = json::decode(json_output).unwrap();
     assert_eq!(expected.duration, decoded.duration);
     assert_eq!(expected.result, decoded.result);
 }
