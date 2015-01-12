@@ -47,7 +47,7 @@ fn main() {
         return;
     }
 
-    let user_repo = &*matches.free[0].split_str("/").collect::<Vec<&str>>();
+    let user_repo: Vec<&str> = matches.free[0].split('/').collect();
     let data = match (matches.opt_str("data"), matches.opt_str("file")) {
         (Some(s), None) => s,
         (None, Some(f)) => read_file_to_string(Path::new(f)),
@@ -61,7 +61,7 @@ fn main() {
     let client = Client::new(env!("ALGORITHMIA_API_KEY"));
     let algorithm = Algorithm::new(user_repo[0], user_repo[1]);
 
-    let output = match client.query_raw(algorithm, data.as_slice()) {
+    let output = match client.query_raw(algorithm, &*data) {
         Ok(result) => result,
         Err(why) => panic!("{:?}", why),
     };

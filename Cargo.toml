@@ -7,3 +7,4 @@ authors = ["Anthony Nowell <anowell@gmail.com>"]
 [dependencies]
 hyper = "0.1.0"
 getopts = "*"
+rustc-serialize = "*"

@@ -2,12 +2,13 @@ extern crate hyper;
 extern crate mime;
 extern crate "rustc-serialize" as rustc_serialize;
 
-use hyper::{HttpError, Url};
+use hyper::Url;
 use hyper::header::common::authorization::Authorization;
 use hyper::header::common::content_type::ContentType;
 use hyper::net::HttpConnector;
 use mime::{Mime, TopLevel, SubLevel};
 use rustc_serialize::{json, Decoder, Decodable, Encodable};
+use self::AlgorithmiaError::{HttpError, DecoderError};
 
 pub struct Algorithm {
     user: String,
@@ -25,8 +26,14 @@ pub struct AlgorithmOutput<T> {
     pub result: T,
 }
 
-pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, HttpError>;
-pub type AlgorithmRawResult = Result<String, HttpError>;
+#[derive(Show)]
+pub enum AlgorithmiaError {
+    HttpError(hyper::HttpError),
+    DecoderError(json::DecoderError),
+}
+
+pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, AlgorithmiaError>;
+pub type AlgorithmJsonResult = Result<String, hyper::HttpError>;
 
 impl Algorithm {
     pub fn new(user: &str, repo: &str) -> Algorithm {
@@ -35,7 +42,7 @@ impl Algorithm {
 
     fn to_url(&self) -> Url {
         let url_string = format!("https://api.algorithmia.com/api/{}/{}", self.user, self.repo);
-        Url::parse(url_string.as_slice()).unwrap()
+        Url::parse(&*url_string).unwrap()
     }
 }
 
@@ -51,11 +58,11 @@ impl Client {
             where D: Decodable,
                   E: Encodable {
         let raw_input = json::encode(input_data);
-        let raw = try!(self.query_raw(algorithm, raw_input.as_slice()));
-        Ok(json::decode(raw.as_slice()).unwrap())
+        let json_output = try!(self.query_raw(algorithm, &*raw_input));
+        Ok(try!(json::decode(&*json_output)))
     }
 
-    pub fn query_raw(self, algorithm: Algorithm, input_data: &str) -> AlgorithmRawResult {
+    pub fn query_raw(self, algorithm: Algorithm, input_data: &str) -> AlgorithmJsonResult {
         let mut client = self.hyper_client;
         let req = client.post(algorithm.to_url())
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
@@ -64,6 +71,18 @@ impl Client {
 
         let mut res = try!(req.send());
         Ok(try!(res.read_to_string()))
+    }
+}
+
+impl std::error::FromError<hyper::HttpError> for AlgorithmiaError {
+    fn from_error(err: hyper::HttpError) -> AlgorithmiaError {
+        HttpError(err)
+    }
+}
+
+impl std::error::FromError<json::DecoderError> for AlgorithmiaError {
+    fn from_error(err: json::DecoderError) -> AlgorithmiaError {
+        DecoderError(err)
     }
 }
 
