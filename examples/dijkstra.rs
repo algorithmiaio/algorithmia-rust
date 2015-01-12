@@ -5,7 +5,7 @@ use algorithmia::{Algorithm, Client, Output};
 use std::collections::HashMap;
 use rustc_serialize::{json};
 
-type VertexMap<'a> = HashMap<&'a str, Vec<int>>;
+type VertexMap<'a> = HashMap<&'a str, Vec<i32>>;
 type EdgeMap<'a> = HashMap<&'a str, Vec<&'a str>>;
 
 // The input format for the kenny/Dijkstra algorithm
@@ -30,7 +30,7 @@ impl<'a> RouteMap<'a> {
 
         let output: Output<Route> = match client.query(dijkstra, &input_data) {
             Ok(out) => out,
-            Err(why) => panic!("{}", why),
+            Err(why) => panic!("{:?}", why),
         };
         output
     }
@@ -52,5 +52,5 @@ fn main() {
     };
 
     let output = input_map.get_dijkstra_route("a", "c");
-    println!("Shortest route: {}\nCompleted in {} seconds.", output.result, output.duration);
+    println!("Shortest route: {:?}\nCompleted in {} seconds.", output.result, output.duration);
 }

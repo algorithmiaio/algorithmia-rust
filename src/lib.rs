@@ -7,8 +7,7 @@ use hyper::header::common::authorization::Authorization;
 use hyper::header::common::content_type::ContentType;
 use hyper::net::HttpConnector;
 use mime::{Mime, TopLevel, SubLevel};
-use rustc_serialize::{json, Decoder, Decodable, Encoder, Encodable};
-use std::io::IoError;
+use rustc_serialize::{json, Decoder, Decodable, Encodable};
 
 pub struct Algorithm {
     user: String,
@@ -20,7 +19,7 @@ pub struct Client {
     hyper_client: hyper::Client<HttpConnector>,
 }
 
-#[deriving(RustcDecodable, Show)]
+#[derive(RustcDecodable, Show)]
 pub struct Output<T> {
     pub duration: f32,
     pub result: T,
@@ -49,8 +48,8 @@ impl Client {
     }
 
     pub fn query<'a, D, E>(self, algorithm: Algorithm, input_data: &E) -> AlgorithmResult<D>
-            where D: Decodable<json::Decoder, json::DecoderError>,
-                  E: Encodable<json::Encoder<'a>, IoError> {
+            where D: Decodable,
+                  E: Encodable {
         let raw_input = json::encode(input_data);
         let raw = try!(self.query_raw(algorithm, raw_input.as_slice()));
         Ok(json::decode(raw.as_slice()).unwrap())
@@ -78,7 +77,7 @@ fn test_to_url() {
 fn test_json_decoding() {
     let json_output = "{\"duration\":0.46739511,\"result\":[5,41]}";
     let expected = Output{ duration: 0.46739511f32, result: [5, 41] };
-    let decoded: Output<Vec<int>> = json::decode(json_output).unwrap();
+    let decoded: Output<Vec<i32>> = json::decode(json_output).unwrap();
     assert_eq!(expected.duration, decoded.duration);
     assert_eq!(expected.result, decoded.result);
 }

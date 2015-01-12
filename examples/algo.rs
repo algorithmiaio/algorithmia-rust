@@ -63,7 +63,7 @@ fn main() {
 
     let output = match client.query_raw(algorithm, data.as_slice()) {
         Ok(result) => result,
-        Err(why) => panic!("{}", why),
+        Err(why) => panic!("{:?}", why),
     };
 
     println!("{}", output);
