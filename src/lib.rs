@@ -3,8 +3,7 @@ extern crate mime;
 extern crate "rustc-serialize" as rustc_serialize;
 
 use hyper::Url;
-use hyper::header::common::authorization::Authorization;
-use hyper::header::common::content_type::ContentType;
+use hyper::header::{Authorization, ContentType};
 use hyper::net::HttpConnector;
 use mime::{Mime, TopLevel, SubLevel};
 use rustc_serialize::{json, Decoder, Decodable, Encodable};
@@ -15,9 +14,9 @@ pub struct Algorithm {
     repo: String,
 }
 
-pub struct Client {
+pub struct Client<'c> {
     api_key: String,
-    hyper_client: hyper::Client<HttpConnector>,
+    hyper_client: hyper::Client<HttpConnector<'c>>,
 }
 
 #[derive(RustcDecodable, Show)]
@@ -46,7 +45,7 @@ impl Algorithm {
     }
 }
 
-impl Client {
+impl<'c> Client<'c> {
     pub fn new(api_key: &str) -> Client {
         Client {
             api_key: api_key.to_string(),

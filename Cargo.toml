@@ -5,6 +5,7 @@ license = "MIT"
 authors = ["Anthony Nowell <anowell@gmail.com>"]
 
 [dependencies]
-hyper = "0.1.0"
+hyper = "0.1.*"
 getopts = "*"
+mime = "*"
 rustc-serialize = "*"
