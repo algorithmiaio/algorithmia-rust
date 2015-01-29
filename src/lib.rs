@@ -9,14 +9,15 @@ use mime::{Mime, TopLevel, SubLevel};
 use rustc_serialize::{json, Decoder, Decodable, Encodable};
 use self::AlgorithmiaError::{HttpError, DecoderError};
 
-pub struct Algorithm {
-    user: String,
-    repo: String,
+pub struct Algorithm<'a> {
+    user: &'a str,
+    repo: &'a str,
 }
 
-pub struct Client<'c> {
+pub struct Client<'c, T> {
     api_key: String,
     hyper_client: hyper::Client<HttpConnector<'c>>,
+    service: T
 }
 
 #[derive(RustcDecodable, Show)]
@@ -34,36 +35,44 @@ pub enum AlgorithmiaError {
 pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, AlgorithmiaError>;
 pub type AlgorithmJsonResult = Result<String, hyper::HttpError>;
 
-impl Algorithm {
-    pub fn new(user: &str, repo: &str) -> Algorithm {
-        Algorithm { user: user.to_string(), repo: repo.to_string() }
-    }
-
+impl<'a> Algorithm<'a> {
     fn to_url(&self) -> Url {
         let url_string = format!("https://api.algorithmia.com/api/{}/{}", self.user, self.repo);
         Url::parse(&*url_string).unwrap()
     }
 }
 
-impl<'c> Client<'c> {
-    pub fn new(api_key: &str) -> Client {
+impl<'c> Client<'c, ()> {
+    pub fn new(api_key: &str) -> Client<()> {
         Client {
             api_key: api_key.to_string(),
             hyper_client: hyper::Client::new(),
+            service: ()
         }
     }
 
-    pub fn query<'a, D, E>(self, algorithm: Algorithm, input_data: &E) -> AlgorithmResult<D>
+    pub fn algorithm(self, user: &'c str, repo: &'c str) -> Client<'c, Algorithm<'c>> {
+        Client {
+            api_key: self.api_key,
+            hyper_client: self.hyper_client,
+            service: Algorithm{ user: user, repo: repo }
+        }
+    }
+
+}
+
+impl<'c> Client<'c, Algorithm<'c>> {
+    pub fn query<'a, D, E>(self, input_data: &E) -> AlgorithmResult<D>
             where D: Decodable,
                   E: Encodable {
         let raw_input = json::encode(input_data);
-        let json_output = try!(self.query_raw(algorithm, &*raw_input));
+        let json_output = try!(self.query_raw(&*raw_input));
         Ok(try!(json::decode(&*json_output)))
     }
 
-    pub fn query_raw(self, algorithm: Algorithm, input_data: &str) -> AlgorithmJsonResult {
+    pub fn query_raw(self, input_data: &str) -> AlgorithmJsonResult {
         let mut client = self.hyper_client;
-        let req = client.post(algorithm.to_url())
+        let req = client.post(self.service.to_url())
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .header(Authorization(self.api_key))
             .body(input_data);
@@ -71,6 +80,7 @@ impl<'c> Client<'c> {
         let mut res = try!(req.send());
         Ok(try!(res.read_to_string()))
     }
+
 }
 
 impl std::error::FromError<hyper::HttpError> for AlgorithmiaError {
@@ -87,7 +97,7 @@ impl std::error::FromError<json::DecoderError> for AlgorithmiaError {
 
 #[test]
 fn test_to_url() {
-    let algorithm = Algorithm::new("kenny", "Factor");
+    let algorithm = Algorithm{ user: "kenny", repo: "Factor" };
     assert_eq!(algorithm.to_url().serialize(), "https://api.algorithmia.com/api/kenny/Factor")
 }
 

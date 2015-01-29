@@ -59,9 +59,9 @@ fn main() {
     };
 
     let client = Client::new(env!("ALGORITHMIA_API_KEY"));
-    let algorithm = Algorithm::new(user_repo[0], user_repo[1]);
+    let algorithm = client.algorithm(user_repo[0], user_repo[1]);
 
-    let output = match client.query_raw(algorithm, &*data) {
+    let output = match algorithm.query_raw(&*data) {
         Ok(result) => result,
         Err(why) => panic!("{:?}", why),
     };

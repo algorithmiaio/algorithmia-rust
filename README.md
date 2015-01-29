@@ -13,11 +13,11 @@ use algorithmia::{ Algorithm, Client, AlgorithmOutput };
 let client = Client::new("111112222233333444445555566");
 
 // Specify the algorithm you want to execute
-let factor = Algorithm::new("kenny", "Factor");
+let factor = client.algorithm("kenny", "Factor");
 
 // Run the algorithm using a type safe decoding of the output to Vec<int>
 //   since this algorithm outputs results as a JSON array of integers
-let output: AlgorithmOutput<Vec<int>> = try!(client.query(factor, "19635".to_string()));
+let output: AlgorithmOutput<Vec<int>> = try!(factor.query("19635".to_string()));
 println!("Completed in {} seconds with result: {}", output.duration, output.result);
 
 // Alternatively, query_raw will return the raw JSON string
