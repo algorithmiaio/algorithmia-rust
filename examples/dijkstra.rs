@@ -1,32 +1,40 @@
 extern crate algorithmia;
 extern crate "rustc-serialize" as rustc_serialize;
 
-use algorithmia::{Algorithm, Service, AlgorithmOutput};
+use algorithmia::{Service, AlgorithmOutput};
 use std::collections::HashMap;
 use rustc_serialize::{json};
 
-type VertexMap<'a> = HashMap<&'a str, Vec<i32>>;
-type EdgeMap<'a> = HashMap<&'a str, Vec<&'a str>>;
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = ::std::collections::HashMap::new();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
+
+// Map of all possible points to their possible destinations (with distances)
+type SrcDestMap<'a> = HashMap<&'a str, HashMap<&'a str, u32>>;
 
 // The input format for the kenny/Dijkstra algorithm
-type DijkstraInput<'a> = (VertexMap<'a>, EdgeMap<'a>, &'a str, &'a str);
+type DijkstraInput<'a> = (SrcDestMap<'a>, &'a str, &'a str);
 
 // The output format for the kenny/Dijkstra algorithm
 type Route = Vec<String>;
 
 struct RouteMap<'a> {
-  vertices: VertexMap<'a>,
-  edges: EdgeMap<'a>,
+  map: SrcDestMap<'a>
 }
 
 impl<'a> RouteMap<'a> {
     pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgorithmOutput<Route> {
         let service = Service::new(env!("ALGORITHMIA_API_KEY"));
-        let mut dijkstra = service.algorithm("kenny", "Dijkstra");
+        let mut dijkstra = service.algorithm("anowell", "Dijkstra");
 
         // Declaring type explicitly to enforce valid input types during build
-        let input_data: DijkstraInput = (self.vertices, self.edges, start, end);
-        println!("Input: {:?}", json::encode(&input_data));
+        let input_data: DijkstraInput = (self.map, start, end);
+        // println!("Input: {:?}", input_data);
+        println!("Input:\n{}", json::as_pretty_json(&input_data));
 
         let output: AlgorithmOutput<Route> = match dijkstra.query(&input_data) {
             Ok(out) => out,
@@ -37,18 +45,13 @@ impl<'a> RouteMap<'a> {
 }
 
 fn main() {
-    let mut vertices: VertexMap = HashMap::new();
-    let mut edges: EdgeMap = HashMap::new();
-
-    vertices.insert("a", vec![1,1]);
-    vertices.insert("b", vec![2,2]);
-    vertices.insert("c", vec![3,3]);
-    edges.insert("a", vec!["b"]);
-    edges.insert("b", vec!["c"]);
-
     let input_map = RouteMap {
-        vertices: vertices,
-        edges: edges,
+        map: hashmap!(
+            "a" => hashmap!("b" => 1),
+            "b" => hashmap!("a" => 2, "c" => 2),
+            "c" => hashmap!("b" => 2, "d" => 1),
+            "d" => hashmap!("a" => 1, "c" => 3)
+        )
     };
 
     let output = input_map.get_dijkstra_route("a", "c");

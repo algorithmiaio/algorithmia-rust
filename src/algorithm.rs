@@ -10,6 +10,7 @@ pub struct Algorithm<'a> {
     pub repo: &'a str,
 }
 
+// TODO: Ensure that we can decode API errors (i.e. that lack a 'result' field)
 pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, AlgorithmiaError>;
 pub type AlgorithmJsonResult = Result<String, hyper::HttpError>;
 
