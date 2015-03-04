@@ -52,12 +52,27 @@ A sample CLI tool that uses `query_raw` to execute algorithms:
     $ target/examples/algo -d 19635 kenny/Factor
     {"duration":0.47086329,"result":[3,5,7,11,17]}
 
+### [algodata](examples/algodata.rs)
+
+A sample CLI tool to interact with the Algorithmia Data API
+
+    $ algodata anowell/rustfoo
+    CollectionCreateResponse { stream_id: 123, object_id: "01234567-abcd-1234-9876-111111111111", stream_name: "rustfoo", username: "anowell", acl: "6004" }
+
 ### [dijkstra](examples/dijkstra.rs)
 
 A more complete type-safe example of using `query` to execute [kenny/Dijkstra](http://algorithmia.com/algorithms/kenny/Dijkstra).
 
     $ target/examples/dijkstra
-    Input: [{"b":[2,2],"c":[3,3],"a":[1,1]},{"a":["b"],"b":["c"]},"a","c"]
-    Shortest route: [a, b, c]
-    Completed in 0.010614 seconds.
-
+    Input:
+    [ {
+        "b": {"c": 2, "a": 2 },
+        "c": {"b": 2, "d": 1 },
+        "d": {"c": 3, "a": 1 },
+        "a": {"b": 1 }
+      },
+      "a",
+      "c"
+    ]
+    Shortest route: ["a", "b", "c"]
+    Completed in 0.001022 seconds.
