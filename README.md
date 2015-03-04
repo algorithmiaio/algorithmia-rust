@@ -11,8 +11,6 @@ use algorithmia::{Service, AlgorithmOutput};
 
 // Initialize a Client with the API key
 let client = Service::new("111112222233333444445555566");
-
-// Specify the algorithm you want to execute
 let mut factor = client.algorithm("kenny", "Factor");
 
 // Run the algorithm using a type safe decoding of the output to Vec<int>
@@ -23,6 +21,14 @@ println!("Completed in {} seconds with result: {}", output.duration, output.resu
 // Alternatively, query_raw will return the raw JSON string
 let raw_output = try!(client.query_raw(algorithm, "19635"));
 println!("Raw JSON output:\n{}", raw_output);
+
+// Create data collections for algorithms to use
+let my_bucket = service.collection("my_user", "my_bucket");
+
+// Create or upload files to your data collection
+// Coming soon...
+// my_bucket.upload_file(...)
+// my_bucket.write_file(...)
 ```
 
 See [dijkstra.rs](examples/dijkstra.rs) for a more complete example using custom types for input and output.

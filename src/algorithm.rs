@@ -69,7 +69,7 @@ fn test_to_url() {
 
 #[test]
 fn test_json_decoding() {
-    let json_output = "{\"duration\":0.46739511,\"result\":[5,41]}";
+    let json_output = r#"{"duration":0.46739511,"result":[5,41]}"#;
     let expected = AlgorithmOutput{ duration: 0.46739511f32, result: [5, 41] };
     let decoded: AlgorithmOutput<Vec<i32>> = json::decode(json_output).unwrap();
     assert_eq!(expected.duration, decoded.duration);

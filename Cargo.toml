@@ -5,11 +5,7 @@ license = "MIT"
 authors = ["Anthony Nowell <anowell@gmail.com>"]
 
 [dependencies]
-# hyper = "0.2.*"
+hyper = "0.3.*"
 getopts = "*"
 mime = "*"
 rustc-serialize = "*"
-
-[dependencies.hyper]
-git = "https://github.com/hyperium/hyper.git"
-rev = "2ce4385c163e1a9a393c89743cf04e047b776e83"
