@@ -45,12 +45,13 @@ impl<'c> AlgorithmService<'c> {
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
         let json_output = try!(self.query_raw(&*raw_input));
+        // println!("JSON Response: {}", json_output);
         Ok(try!(json::decode(&*json_output)))
     }
 
     pub fn query_raw(&'c mut self, input_data: &str) -> AlgorithmJsonResult {
         let ref mut service = self.service;
-        let req = service.post(self.algorithm.to_url())
+        let req = service.post_json(self.algorithm.to_url())
             .body(input_data);
 
         let mut res = try!(req.send());

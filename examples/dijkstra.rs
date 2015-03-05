@@ -3,6 +3,7 @@ extern crate "rustc-serialize" as rustc_serialize;
 
 use algorithmia::{Service, AlgorithmOutput};
 use std::collections::HashMap;
+use std::env;
 use rustc_serialize::{json};
 
 macro_rules! hashmap {
@@ -45,6 +46,12 @@ impl<'a> RouteMap<'a> {
 }
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    let (start, end) = match args.as_slice() {
+        [_, ref start, ref end] => (&**start, &**end),
+        _ => ("a", "c"),
+    };
+
     let input_map = RouteMap {
         map: hashmap!(
             "a" => hashmap!("b" => 1),
@@ -54,6 +61,6 @@ fn main() {
         )
     };
 
-    let output = input_map.get_dijkstra_route("a", "c");
+    let output = input_map.get_dijkstra_route(start, end);
     println!("Shortest route: {:?}\nCompleted in {} seconds.", output.result, output.duration);
 }
