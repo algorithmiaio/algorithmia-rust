@@ -1,4 +1,7 @@
 #![feature(io)]
+#![feature(fs)]
+#![feature(os)]
+#![feature(path)]
 
 extern crate hyper;
 extern crate mime;
@@ -8,7 +11,7 @@ pub mod algorithm;
 pub mod collection;
 
 pub use algorithm::{AlgorithmService,Algorithm,AlgorithmOutput};
-pub use collection::{CollectionService,Collection,CollectionCreateResponse};
+pub use collection::{CollectionService,Collection,CollectionCreated};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;

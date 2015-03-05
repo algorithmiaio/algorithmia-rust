@@ -56,12 +56,18 @@ A sample CLI tool that uses `query_raw` to execute algorithms:
 
 A sample CLI tool to interact with the Algorithmia Data API
 
-    $ algodata anowell/rustfoo
+    $ algodata anowell/rustfoo create
     CollectionCreateResponse { stream_id: 123, object_id: "01234567-abcd-1234-9876-111111111111", stream_name: "rustfoo", username: "anowell", acl: "6004" }
+
+    $ algodata anowell/rustfoo upload *.png
+    Uploading /home/anowell/Pictures/collections.png
+    Uploading /home/anowell/Pictures/notif-basic.png
+    Uploading /home/anowell/Pictures/publish_menu.png
+    Finished uploading 3 file(s)
 
 ### [dijkstra](examples/dijkstra.rs)
 
-A more complete type-safe example of using `query` to execute [kenny/Dijkstra](http://algorithmia.com/algorithms/kenny/Dijkstra).
+A more complete type-safe example of using `query` to execute [anowell/Dijkstra](http://algorithmia.com/algorithms/anowell/Dijkstra).
 
     $ target/examples/dijkstra
     Input:

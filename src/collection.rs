@@ -2,8 +2,9 @@ extern crate hyper;
 
 use ::{Service, AlgorithmiaError, ApiErrorResponse};
 use hyper::Url;
-use rustc_serialize::{json, Decoder, Encodable};
+use rustc_serialize::{json, Decoder};
 use std::io::Read;
+use std::fs::File;
 
 static COLLECTION_BASE_URI: &'static str = "https://api.algorithmia.com/data";
 
@@ -12,15 +13,21 @@ pub struct Collection<'a> {
     pub name: &'a str,
 }
 
-pub type CollectionResult = Result<CollectionCreateResponse, AlgorithmiaError>;
+pub type CollectionCreatedResult = Result<CollectionCreated, AlgorithmiaError>;
+pub type CollectionFileAddedResult = Result<CollectionFileAdded, AlgorithmiaError>;
 
 #[derive(RustcDecodable, Debug)]
-pub struct CollectionCreateResponse {
+pub struct CollectionCreated {
     pub stream_id: u32,
     pub object_id: String,
     pub stream_name: String,
     pub username: String,
     pub acl: String,
+}
+
+#[derive(RustcDecodable, Debug)]
+pub struct CollectionFileAdded {
+    pub file_added: String
 }
 
 pub struct CollectionService<'a> {
@@ -43,7 +50,7 @@ impl<'c> CollectionService<'c> {
         }
     }
 
-    pub fn create(&'c mut self) -> CollectionResult {
+    pub fn create(&'c mut self) -> CollectionCreatedResult {
         // Construct URL
         let url_string = format!("{}/{}", COLLECTION_BASE_URI, self.collection.user);
         let url = Url::parse(&*url_string).unwrap();
@@ -57,7 +64,7 @@ impl<'c> CollectionService<'c> {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match json::decode::<CollectionCreateResponse>(&*res_json) {
+        match json::decode::<CollectionCreated>(&*res_json) {
             Ok(result) => Ok(result),
             Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
                 Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
@@ -66,16 +73,35 @@ impl<'c> CollectionService<'c> {
         }
     }
 
-    // pub fn write_file(&'c mut self, filename: &str, input_data: SomeBufferType) -> SomeResult {
-    //     let ref mut service = self.service;
-    //     let req = service.post(FIXME_COLLECTION_URL_PLUS_FILENAME)
-    //         .body(&*input_data);
+    pub fn upload_file(&'c mut self, file: &mut File) -> CollectionFileAddedResult {
+        let url_string = format!("{}/{}",
+            self.collection.to_url(),
+            file.path().unwrap().file_name().unwrap().to_str().unwrap()
+        );
+        let url = Url::parse(&*url_string).unwrap();
 
-    //     let mut res = try!(req.send());
-    //     let mut res_json = String::new();
-    //     try!(res.read_to_string(&mut res_json));
-    //     Ok(try!(json::decode(&*res_json)))
-    // }
+        let ref mut service = self.service;
+        let req = service.post(url).body(file);
+
+        let mut res = try!(req.send());
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+        Ok(try!(json::decode(&*res_json)))
+    }
+
+
+    pub fn write_file(&'c mut self, filename: &str, input_data: &[u8]) -> CollectionFileAddedResult {
+        let url_string = format!("{}/{}", self.collection.to_url(), filename);
+        let url = Url::parse(&*url_string).unwrap();
+
+        let ref mut service = self.service;
+        let req = service.post(url).body(&*input_data);
+
+        let mut res = try!(req.send());
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+        Ok(try!(json::decode(&*res_json)))
+    }
 }
 
 #[test]
