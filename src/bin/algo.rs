@@ -1,7 +1,4 @@
-#![feature(collections)]
-#![feature(fs)]
 #![feature(io)]
-#![feature(os)]
 #![feature(old_path)]
 
 extern crate algorithmia;
@@ -11,7 +8,6 @@ use algorithmia::Service;
 use getopts::Options;
 use std::env;
 use std::io::Read;
-use std::os;
 use std::fs::File;
 
 fn print_usage(opts: &Options) {
@@ -35,13 +31,12 @@ fn read_file_to_string(path: Path) -> String {
 }
 
 fn main() {
-    let args = os::args();
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help");
     opts.optopt("d", "data", "string to use as input data", "DATA");
     opts.optopt("f", "file", "file containing input data", "FILE");
 
-    let matches = match opts.parse(args.tail()) {
+    let matches = match opts.parse(env::args()) {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);

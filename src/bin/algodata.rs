@@ -1,5 +1,4 @@
 #![feature(core)]
-#![feature(os)]
 
 extern crate algorithmia;
 extern crate getopts;
@@ -8,7 +7,6 @@ use algorithmia::{Service};
 use getopts::Options;
 use std::ascii::AsciiExt;
 use std::env;
-use std::os;
 use std::fs::File;
 // use std::thread;
 
@@ -38,9 +36,15 @@ impl<'a> AlgoData<'a> {
         let mut my_bucket = self.service.collection(username, collection_name);
         for file_path in file_paths {
             println!("Uploading {}", file_path);
-            let mut file = File::open(file_path).unwrap();
-            let ref mut bucket = my_bucket;
-            bucket.upload_file(&mut file);
+            match File::open(file_path) {
+                Ok(mut file) => {
+                    let ref mut bucket = my_bucket;
+                    bucket.upload_file(&mut file);
+                },
+                Err(e) => {
+                    println!("Failed to open {}: {}", file_path, e)
+                },
+            };
         }
         println!("Finished uploading {} file(s)", file_paths.len())
     }
@@ -74,15 +78,32 @@ fn main() {
         }
     };
 
-    let data = AlgoData::new(&*api_key);
-    let foo: Vec<&str> = args.free[0].split('/').collect();
-    let cmd = args.free[1].to_ascii_lowercase();
 
-    match foo.as_slice() {
+
+    let data = AlgoData::new(&*api_key);
+    let mut args_iter = args.free.into_iter();
+
+    let first = args_iter.next();
+    let user_collection: Vec<&str> = match first {
+        Some(ref arg) => arg.split('/').collect(),
+        None => {
+            print_usage(&opts);
+            return;
+        }
+    };
+    let cmd = match args_iter.next() {
+        Some(ref arg) => arg.to_ascii_lowercase(),
+        None => "create".to_string(),
+    };
+
+    match user_collection.as_slice() {
         [user, collection] => {
             match cmd.as_slice() {
                 "create" => data.create_collection(user, collection),
-                "upload" => data.upload_files(user, collection, args.free[2..].as_slice()),
+                "upload" => {
+                    let files: Vec<String> = args_iter.collect();
+                    data.upload_files(user, collection, files.as_slice());
+                },
                 _ => { print_usage(&opts); return; }
             }
         },
