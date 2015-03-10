@@ -1,9 +1,11 @@
 extern crate hyper;
 
-use ::{Service, AlgorithmiaError};
+use ::{Service, AlgorithmiaError, API_BASE_URL};
 use hyper::Url;
 use rustc_serialize::{json, Decoder, Decodable, Encodable};
 use std::io::Read;
+
+static ALGORITHM_BASE_PATH: &'static str = "api";
 
 pub struct Algorithm<'a> {
     pub user: &'a str,
@@ -27,7 +29,7 @@ pub struct AlgorithmService<'a> {
 
 impl<'a> Algorithm<'a> {
     fn to_url(&self) -> Url {
-        let url_string = format!("https://api.algorithmia.com/api/{}/{}", self.user, self.repo);
+        let url_string = format!("{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo);
         Url::parse(&*url_string).unwrap()
     }
 }
@@ -65,7 +67,7 @@ impl<'c> AlgorithmService<'c> {
 #[test]
 fn test_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor" };
-    assert_eq!(algorithm.to_url().serialize(), "https://api.algorithmia.com/api/kenny/Factor")
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL))
 }
 
 #[test]

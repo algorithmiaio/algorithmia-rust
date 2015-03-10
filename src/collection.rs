@@ -1,12 +1,12 @@
 extern crate hyper;
 
-use ::{Service, AlgorithmiaError, ApiErrorResponse};
+use ::{Service, AlgorithmiaError, ApiErrorResponse, API_BASE_URL};
 use hyper::Url;
 use rustc_serialize::{json, Decoder};
 use std::io::Read;
 use std::fs::File;
 
-static COLLECTION_BASE_URI: &'static str = "https://api.algorithmia.com/data";
+static COLLECTION_BASE_PATH: &'static str = "data";
 
 pub struct Collection<'a> {
     pub user: &'a str,
@@ -37,7 +37,7 @@ pub struct CollectionService<'a> {
 
 impl<'a> Collection<'a> {
     fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}", COLLECTION_BASE_URI, self.user, self.name);
+        let url_string = format!("{}/{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.user, self.name);
         Url::parse(&*url_string).unwrap()
     }
 }
@@ -52,7 +52,7 @@ impl<'c> CollectionService<'c> {
 
     pub fn create(&'c mut self) -> CollectionCreatedResult {
         // Construct URL
-        let url_string = format!("{}/{}", COLLECTION_BASE_URI, self.collection.user);
+        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.collection.user);
         let url = Url::parse(&*url_string).unwrap();
 
         // POST request
@@ -107,5 +107,5 @@ impl<'c> CollectionService<'c> {
 #[test]
 fn test_to_url() {
     let collection = Collection{ user: "anowell", name: "foo" };
-    assert_eq!(collection.to_url().serialize(), "https://api.algorithmia.com/data/anowell/foo")
+    assert_eq!(collection.to_url().serialize(), format!("{}/data/anowell/foo", API_BASE_URL));
 }

@@ -1,6 +1,4 @@
 #![feature(io)]
-#![feature(fs)]
-#![feature(os)]
 #![feature(path)]
 
 extern crate hyper;
@@ -21,6 +19,8 @@ use mime::{Mime, TopLevel, SubLevel};
 use rustc_serialize::{json};
 use self::AlgorithmiaError::*;
 use std::io;
+
+pub static API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 pub struct Service<'c> {
     api_key: String,

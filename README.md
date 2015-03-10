@@ -40,11 +40,11 @@ This project is built and tested with cargo:
     cargo build
     cargo test
 
-## Examples
+## Tools & Examples
 
-The examples directory (built with tests) contains additional samples.
+The [src/bin](src/bin) and [examples](examples) directories contain additional samples.
 
-### [algo](examples/algo.rs)
+### [algo](src/bin/algo.rs)
 
 A sample CLI tool that uses `query_raw` to execute algorithms:
 
@@ -52,7 +52,7 @@ A sample CLI tool that uses `query_raw` to execute algorithms:
     $ target/examples/algo -d 19635 kenny/Factor
     {"duration":0.47086329,"result":[3,5,7,11,17]}
 
-### [algodata](examples/algodata.rs)
+### [algodata](src/bin/algodata.rs)
 
 A sample CLI tool to interact with the Algorithmia Data API
 
