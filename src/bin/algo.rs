@@ -9,13 +9,14 @@ extern crate getopts;
 
 use algorithmia::Service;
 use getopts::Options;
+use std::env;
 use std::io::Read;
 use std::os;
 use std::fs::File;
 
 fn print_usage(opts: &Options) {
     print!("{}", opts.usage("Usage: algo [options] USER/REPO"));
-    os::set_exit_status(1);
+    env::set_exit_status(1);
 }
 
 fn read_file_to_string(path: Path) -> String {
@@ -35,7 +36,6 @@ fn read_file_to_string(path: Path) -> String {
 
 fn main() {
     let args = os::args();
-
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help");
     opts.optopt("d", "data", "string to use as input data", "DATA");
@@ -45,6 +45,15 @@ fn main() {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);
+            print_usage(&opts);
+            return;
+        }
+    };
+
+    let api_key = match env::var("ALGORITHMIA_API_KEY") {
+        Ok(val) => val,
+        Err(_) => {
+            println!("Must set ALGORITHMIA_API_KEY");
             print_usage(&opts);
             return;
         }
@@ -66,7 +75,7 @@ fn main() {
         }
     };
 
-    let service = Service::new(env!("ALGORITHMIA_API_KEY"));
+    let service = Service::new(&*api_key);
     let mut algorithm = service.algorithm(user_repo[0], user_repo[1]);
 
     let output = match algorithm.query_raw(&*data) {
