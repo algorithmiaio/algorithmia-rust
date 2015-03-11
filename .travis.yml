@@ -1,0 +1,15 @@
+language: rust
+
+script:
+  - cargo build --release --verbose
+  - cargo test --release --verbose
+  - tar -cvf algo.tgz -C target/release algo algodata
+
+deploy:
+  provider: releases
+  api-key: $GITHUB_API_TOKEN
+  file: "algo.tgz"
+  skip_cleanup: true
+  on:
+    tags: true
+    all_branches: true
