@@ -53,6 +53,12 @@ impl<'c> Service<'c> {
     }
 
     // Helper to inject API key
+    pub fn get(&'c mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector<'c>> {
+        self.client.get(url)
+            .header(Authorization(self.api_key.clone()))
+    }
+
+    // Helper to inject API key
     pub fn post(&'c mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector<'c>> {
         self.client.post(url)
             .header(Authorization(self.api_key.clone()))

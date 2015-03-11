@@ -30,6 +30,14 @@ impl<'a> AlgoData<'a> {
         AlgoData { service: Service::new(api_key) }
     }
 
+    fn show_collection(self, username: &str, collection_name: &str) {
+        let mut my_bucket = self.service.collection(username, collection_name);
+        match my_bucket.show() {
+            Ok(output) => println!("{:?}", output),
+            Err(why) => println!("ERROR: {:?}", why),
+        };
+    }
+
     fn create_collection(self, username: &str, collection_name: &str) {
         let mut my_bucket = self.service.collection(username, collection_name);
         match my_bucket.create() {
@@ -103,12 +111,13 @@ fn main() {
     };
     let cmd = match args_iter.next() {
         Some(ref arg) => arg.to_ascii_lowercase(),
-        None => "create".to_string(),
+        None => "show".to_string(),
     };
 
     match user_collection.as_slice() {
         [user, collection] => {
             match cmd.as_slice() {
+                "show" => data.show_collection(user, collection),
                 "create" => data.create_collection(user, collection),
                 "upload" => {
                     let files: Vec<String> = args_iter.collect();

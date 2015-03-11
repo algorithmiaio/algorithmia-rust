@@ -13,6 +13,7 @@ pub struct Collection<'a> {
     pub name: &'a str,
 }
 
+pub type CollectionShowResult = Result<CollectionShow, AlgorithmiaError>;
 pub type CollectionCreatedResult = Result<CollectionCreated, AlgorithmiaError>;
 pub type CollectionFileAddedResult = Result<CollectionFileAdded, AlgorithmiaError>;
 
@@ -32,6 +33,13 @@ pub struct CollectionCreated {
     pub collection_name: String,
     pub username: String,
     pub acl: CollectionAcl,
+}
+
+#[derive(RustcDecodable, Debug)]
+pub struct CollectionShow {
+    pub username: String,
+    pub collection_name: String,
+    pub files: Vec<String>,
 }
 
 #[derive(RustcDecodable, Debug)]
@@ -56,6 +64,25 @@ impl<'c> CollectionService<'c> {
         CollectionService {
             service: Service::new(api_key),
             collection: Collection{ user: user, name: name }
+        }
+    }
+
+    pub fn show(&'c mut self) -> CollectionShowResult {
+
+        let ref mut service = self.service;
+        let req = service.get(self.collection.to_url());
+
+        // Parse response
+        let mut res = try!(req.send());
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+
+        match json::decode::<CollectionShow>(&*res_json) {
+            Ok(result) => Ok(result),
+            Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
+                Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
+                Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
+            }
         }
     }
 
