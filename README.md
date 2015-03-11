@@ -3,7 +3,9 @@ Algorithmia Rust Client Library
 
 A rust client library to query the Algorithmia API.
 
-## Usage
+[![Build Status](https://travis-ci.org/anowell/algorithmia_rust.svg)](https://travis-ci.org/anowell/algorithmia_rust)
+
+## Library Usage
 
 ```rust
 extern crate algorithmia;
@@ -33,16 +35,8 @@ let my_bucket = service.collection("my_user", "my_bucket");
 
 See [dijkstra.rs](examples/dijkstra.rs) for a more complete example using custom types for input and output.
 
-## Build & Test
 
-This project is built and tested with cargo:
-
-    cargo build
-    cargo test
-
-## Tools & Examples
-
-The [src/bin](src/bin) and [examples](examples) directories contain additional samples.
+## CLI Usage
 
 ### [algo](src/bin/algo.rs)
 
@@ -56,29 +50,23 @@ A sample CLI tool that uses `query_raw` to execute algorithms:
 
 A sample CLI tool to interact with the Algorithmia Data API
 
-    $ algodata anowell/rustfoo create
-    CollectionCreateResponse { stream_id: 123, object_id: "01234567-abcd-1234-9876-111111111111", stream_name: "rustfoo", username: "anowell", acl: "6004" }
+    $ algodata anowell/foo create
+    CollectionCreated { collection_id: 180, object_id: "01234567-abcd-1234-9876-111111111111", collection_name: "foo", username: "anowell", acl: CollectionAcl { read_w: false, read_g: false, read_u: true, read_a: true } }
 
-    $ algodata anowell/rustfoo upload *.png
+    $ algodata anowell/foo upload *.png
     Uploading /home/anowell/Pictures/collections.png
     Uploading /home/anowell/Pictures/notif-basic.png
     Uploading /home/anowell/Pictures/publish_menu.png
     Finished uploading 3 file(s)
 
-### [dijkstra](examples/dijkstra.rs)
+    $ algodata anowell/foo
+    CollectionShow { username: "anowell", collection_name: "foo3", files: ["collections.png", "notif-basic.png", "publish_menu.png"] }
 
-A more complete type-safe example of using `query` to execute [anowell/Dijkstra](http://algorithmia.com/algorithms/anowell/Dijkstra).
 
-    $ target/examples/dijkstra
-    Input:
-    [ {
-        "b": {"c": 2, "a": 2 },
-        "c": {"b": 2, "d": 1 },
-        "d": {"c": 3, "a": 1 },
-        "a": {"b": 1 }
-      },
-      "a",
-      "c"
-    ]
-    Shortest route: ["a", "b", "c"]
-    Completed in 0.001022 seconds.
+## Build & Test
+
+This project is built and tested with cargo:
+
+    cargo build
+    cargo test
+

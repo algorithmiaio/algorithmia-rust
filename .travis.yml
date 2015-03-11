@@ -1,8 +1,8 @@
 language: rust
 
 script:
-  - cargo build --release --verbose
-  - cargo test --release --verbose
+  - cargo build --verbose
+  - cargo test --verbose
   - tar -cvf algo.tgz -C target/release algo algodata
 
 deploy:
