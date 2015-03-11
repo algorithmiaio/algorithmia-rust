@@ -16,13 +16,22 @@ pub struct Collection<'a> {
 pub type CollectionCreatedResult = Result<CollectionCreated, AlgorithmiaError>;
 pub type CollectionFileAddedResult = Result<CollectionFileAdded, AlgorithmiaError>;
 
+
+#[derive(RustcDecodable, Debug)]
+pub struct CollectionAcl {
+    pub read_w: bool,
+    pub read_g: bool,
+    pub read_u: bool,
+    pub read_a: bool,
+}
+
 #[derive(RustcDecodable, Debug)]
 pub struct CollectionCreated {
-    pub stream_id: u32,
+    pub collection_id: u32,
     pub object_id: String,
-    pub stream_name: String,
+    pub collection_name: String,
     pub username: String,
-    pub acl: String,
+    pub acl: CollectionAcl,
 }
 
 #[derive(RustcDecodable, Debug)]

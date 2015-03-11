@@ -11,7 +11,13 @@ use std::fs::File;
 // use std::thread;
 
 fn print_usage(opts: &Options) {
-    print!("{}", opts.usage("Usage: datatool USER/COLLECTION [CMD]"));
+    let brief = vec![
+        "Usage: algodata USER/COLLECTION [CMD [CMD_ARGS...]]",
+        "Supported CMDs",
+        "  CREATE",
+        "  UPLOAD FILE..."
+    ];
+    println!("{}", opts.usage(&*brief.connect("\n")));
     env::set_exit_status(1);
 }
 
@@ -58,7 +64,7 @@ fn main() {
     let args = match opts.parse(env::args()) {
         Ok(m) => m,
         Err(f) => {
-            println!("{}", f);
+            println!("Failed to parse args: {}", f);
             print_usage(&opts);
             return;
         }
@@ -83,10 +89,14 @@ fn main() {
     let data = AlgoData::new(&*api_key);
     let mut args_iter = args.free.into_iter();
 
-    let first = args_iter.next();
-    let user_collection: Vec<&str> = match first {
+    // Throwout program arg
+    args_iter.next();
+
+    let first_arg = args_iter.next();
+    let user_collection: Vec<&str> = match first_arg {
         Some(ref arg) => arg.split('/').collect(),
         None => {
+            println!("Did not specity USERNAME/COLLECTION");
             print_usage(&opts);
             return;
         }
@@ -104,9 +114,17 @@ fn main() {
                     let files: Vec<String> = args_iter.collect();
                     data.upload_files(user, collection, files.as_slice());
                 },
-                _ => { print_usage(&opts); return; }
+                invalid => {
+                    println!("Not a valid command: {}", invalid);
+                    print_usage(&opts);
+                    return;
+                }
             }
         },
-        _ => { print_usage(&opts); return; }
+        invalid => {
+            println!("Invalid data repository: {:?}", invalid );
+            print_usage(&opts);
+            return;
+        }
     }
 }
