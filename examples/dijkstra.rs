@@ -29,7 +29,11 @@ struct RouteMap<'a> {
 
 impl<'a> RouteMap<'a> {
     pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgorithmOutput<Route> {
-        let service = Service::new(env!("ALGORITHMIA_API_KEY"));
+        let api_key = match env::var("ALGORITHMIA_API_KEY") {
+            Ok(key) => key,
+            Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
+        };
+        let service = Service::new(&*api_key);
         let mut dijkstra = service.algorithm("anowell", "Dijkstra");
 
         // Declaring type explicitly to enforce valid input types during build
