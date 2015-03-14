@@ -24,16 +24,12 @@ pub static API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 pub struct Service{
     api_key: String,
-    // client: Client<HttpConnector<'c>>,
 }
 
 pub struct ApiClient<'c>{
     api_key: String,
     client: Client<HttpConnector<'c>>,
 }
-
-
-// pub type ApiError = String;
 
 #[derive(Debug)]
 pub enum AlgorithmiaError {
@@ -48,6 +44,38 @@ pub enum AlgorithmiaError {
 #[derive(RustcDecodable, Debug)]
 pub struct ApiErrorResponse {
     pub error: String,
+}
+
+
+impl<'a, 'c> Service {
+    pub fn new(api_key: &str) -> Service {
+        Service {
+            api_key: api_key.to_string(),
+        }
+    }
+
+    // Instantiate a new hyper client for each requests through this method
+    pub fn api_client(&self) -> ApiClient<'c> {
+        ApiClient {
+            api_key: self.api_key.clone(),
+            client: Client::new(),
+        }
+    }
+
+    pub fn algorithm(self, user: &'a str, repo: &'a str) -> AlgorithmService<'a> {
+        AlgorithmService {
+            service: self,
+            algorithm: Algorithm { user: user, repo: repo }
+        }
+    }
+
+    pub fn collection(self, user: &'a str, name: &'a str) -> CollectionService<'a> {
+        CollectionService {
+            service: self,
+            collection: Collection { user: user, name: name }
+        }
+    }
+
 }
 
 impl<'c> ApiClient<'c> {
@@ -81,42 +109,13 @@ impl<'c> ApiClient<'c> {
 }
 
 
-impl<'a, 'c> Service {
-    pub fn new(api_key: &str) -> Service {
-        Service {
-            api_key: api_key.to_string(),
-        }
-    }
-
-    pub fn api_client(&self) -> ApiClient<'c> {
-        ApiClient {
-            api_key: self.api_key.clone(),
-            client: Client::new(),
-        }
-    }
-
-    pub fn algorithm(self, user: &'a str, repo: &'a str) -> AlgorithmService<'a> {
-        AlgorithmService {
-            service: self,
-            algorithm: Algorithm { user: user, repo: repo }
-        }
-    }
-
-    pub fn collection(self, user: &'a str, name: &'a str) -> CollectionService<'a> {
-        CollectionService {
-            service: self,
-            collection: Collection { user: user, name: name }
-        }
-    }
-
-}
-
-
+/*
+* Trait implementations
+*/
 impl std::clone::Clone for Service {
     fn clone(&self) -> Service {
         Service {
             api_key: self.api_key.clone(),
-            // client: Client::new(),
         }
     }
 }
