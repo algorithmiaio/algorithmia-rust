@@ -8,7 +8,7 @@ use getopts::Options;
 use std::ascii::AsciiExt;
 use std::env;
 use std::fs::File;
-// use std::thread;
+use std::thread;
 
 fn print_usage(opts: &Options) {
     let brief = vec![
@@ -21,12 +21,12 @@ fn print_usage(opts: &Options) {
     env::set_exit_status(1);
 }
 
-struct AlgoData<'a> {
-    service: Service<'a>,
+struct AlgoData {
+    service: Service,
 }
 
-impl<'a> AlgoData<'a> {
-    fn new(api_key: &'a str) -> AlgoData<'a> {
+impl AlgoData {
+    fn new(api_key: &str) -> AlgoData {
         AlgoData { service: Service::new(api_key) }
     }
 
@@ -47,19 +47,25 @@ impl<'a> AlgoData<'a> {
     }
 
     fn upload_files(self, username: &str, collection_name: &str, file_paths: &[String]) {
-        let mut my_bucket = self.service.collection(username, collection_name);
-        for file_path in file_paths {
-            println!("Uploading {}", file_path);
-            match File::open(file_path) {
-                Ok(mut file) => {
-                    let ref mut bucket = my_bucket;
-                    bucket.upload_file(&mut file);
-                },
-                Err(e) => {
-                    println!("Failed to open {}: {}", file_path, e)
-                },
-            };
-        }
+        println!("Uploading {} file(s)...", file_paths.len());
+
+        let _: Vec<_> = file_paths.iter().map(|file_path| {
+            // println!("Uploading {}", file_path);
+            let service = self.service.clone();
+            thread::scoped( move || {
+                let mut my_bucket = service.collection(username, collection_name);
+                match File::open(file_path) {
+                    Ok(mut file) => {
+                        let ref mut bucket = my_bucket;
+                        match bucket.upload_file(&mut file) {
+                            Ok(file_added) => println!("Uploaded {}", file_added.result),
+                            Err(e) => println!("ERROR uploading {}: {:?}", file_path, e),
+                        };
+                    },
+                    Err(e) => println!("Failed to open {}: {}", file_path, e),
+                };
+            })
+        }).collect();
         println!("Finished uploading {} file(s)", file_paths.len())
     }
 }

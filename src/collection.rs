@@ -44,11 +44,11 @@ pub struct CollectionShow {
 
 #[derive(RustcDecodable, Debug)]
 pub struct CollectionFileAdded {
-    pub file_added: String
+    pub result: String
 }
 
 pub struct CollectionService<'a> {
-    pub service: Service<'a>,
+    pub service: Service,
     pub collection: Collection<'a>,
 }
 
@@ -69,8 +69,8 @@ impl<'c> CollectionService<'c> {
 
     pub fn show(&'c mut self) -> CollectionShowResult {
 
-        let ref mut service = self.service;
-        let req = service.get(self.collection.to_url());
+        let ref mut api_client = self.service.api_client();
+        let req = api_client.get(self.collection.to_url());
 
         // Parse response
         let mut res = try!(req.send());
@@ -92,8 +92,8 @@ impl<'c> CollectionService<'c> {
         let url = Url::parse(&*url_string).unwrap();
 
         // POST request
-        let ref mut service = self.service;
-        let req = service.post(url).body(self.collection.name);
+        let ref mut api_client = self.service.api_client();
+        let req = api_client.post(url).body(self.collection.name);
 
         // Parse response
         let mut res = try!(req.send());
@@ -116,13 +116,20 @@ impl<'c> CollectionService<'c> {
         );
         let url = Url::parse(&*url_string).unwrap();
 
-        let ref mut service = self.service;
-        let req = service.post(url).body(file);
+        let ref mut api_client = self.service.api_client();
+        let req = api_client.post(url).body(file);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
-        Ok(try!(json::decode(&*res_json)))
+
+        match json::decode::< CollectionFileAdded>(&*res_json) {
+            Ok(result) => Ok(result),
+            Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
+                Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
+                Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
+            }
+        }
     }
 
 
@@ -130,8 +137,8 @@ impl<'c> CollectionService<'c> {
         let url_string = format!("{}/{}", self.collection.to_url(), filename);
         let url = Url::parse(&*url_string).unwrap();
 
-        let ref mut service = self.service;
-        let req = service.post(url).body(&*input_data);
+        let ref mut api_client = self.service.api_client();
+        let req = api_client.post(url).body(&*input_data);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();

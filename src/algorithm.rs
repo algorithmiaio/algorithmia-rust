@@ -23,7 +23,7 @@ pub struct AlgorithmOutput<T> {
 }
 
 pub struct AlgorithmService<'a> {
-    pub service: Service<'a>,
+    pub service: Service,
     pub algorithm: Algorithm<'a>,
 }
 
@@ -52,8 +52,8 @@ impl<'c> AlgorithmService<'c> {
     }
 
     pub fn query_raw(&'c mut self, input_data: &str) -> AlgorithmJsonResult {
-        let ref mut service = self.service;
-        let req = service.post_json(self.algorithm.to_url())
+        let ref mut api_client = self.service.api_client();
+        let req = api_client.post_json(self.algorithm.to_url())
             .body(input_data);
 
         let mut res = try!(req.send());
