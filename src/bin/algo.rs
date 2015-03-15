@@ -1,4 +1,3 @@
-#![feature(io)]
 #![feature(old_path)]
 
 extern crate algorithmia;
@@ -26,7 +25,7 @@ fn read_file_to_string(path: Path) -> String {
     match file.read_to_string(&mut data) {
         Err(why) => panic!("could not read {}: {:?}", display, why),
         Ok(s) => s,
-    }
+    };
     data
 }
 

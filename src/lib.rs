@@ -1,6 +1,3 @@
-#![feature(io)]
-#![feature(path)]
-
 extern crate hyper;
 extern crate mime;
 extern crate "rustc-serialize" as rustc_serialize;
