@@ -18,6 +18,7 @@ fn print_usage(opts: &Options) {
     let brief = vec![
         "Usage: algodata USER/COLLECTION [CMD [CMD_ARGS...]]",
         "Supported CMDs",
+        "  SHOW",
         "  CREATE",
         "  UPLOAD FILE..."
     ];
