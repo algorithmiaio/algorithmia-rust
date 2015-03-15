@@ -88,7 +88,7 @@ fn main() {
     let mut algorithm = service.algorithm(user_repo[0], user_repo[1]);
 
     // Execute the algorithm
-    let output = match algorithm.query_raw(&*data) {
+    let output = match algorithm.exec_raw(&*data) {
         Ok(result) => result,
         Err(why) => panic!("{:?}", why),
     };

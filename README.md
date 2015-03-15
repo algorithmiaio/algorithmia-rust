@@ -1,7 +1,7 @@
 Algorithmia Rust Client Library
 -------------------------------
 
-A rust client library to query the Algorithmia API.
+A rust client library for the Algorithmia API.
 
 [![Build Status](https://travis-ci.org/anowell/algorithmia_rust.svg)](https://travis-ci.org/anowell/algorithmia_rust)
 
@@ -11,26 +11,25 @@ A rust client library to query the Algorithmia API.
 extern crate algorithmia;
 use algorithmia::{Service, AlgorithmOutput};
 
-// Initialize a Client with the API key
-let client = Service::new("111112222233333444445555566");
+// Initialize with an API key
+let algo_service = Service::new("111112222233333444445555566");
 let mut factor = client.algorithm("kenny", "Factor");
 
 // Run the algorithm using a type safe decoding of the output to Vec<int>
 //   since this algorithm outputs results as a JSON array of integers
-let output: AlgorithmOutput<Vec<int>> = try!(factor.query("19635".to_string()));
+let output: AlgorithmOutput<Vec<int>> = try!(factor.exec("19635".to_string()));
 println!("Completed in {} seconds with result: {}", output.duration, output.result);
 
-// Alternatively, query_raw will return the raw JSON string
-let raw_output = try!(client.query_raw(algorithm, "19635"));
+// Alternatively, exec_raw will return the raw JSON string
+let raw_output = try!(client.exec_raw(algorithm, "19635"));
 println!("Raw JSON output:\n{}", raw_output);
 
-// Create data collections for algorithms to use
+// Working with data collections
 let my_bucket = service.collection("my_user", "my_bucket");
-
-// Create or upload files to your data collection
-// Coming soon...
-// my_bucket.upload_file(...)
-// my_bucket.write_file(...)
+my_bucket.create();
+let mut my_file = File::open("/path/to/file").unwrap();
+my_bucket.upload_file(my_file);
+my_bucket.write_file("some_filename", "file_contents".as_bytes());
 ```
 
 See [dijkstra.rs](examples/dijkstra.rs) for a more complete example using custom types for input and output.
@@ -40,7 +39,7 @@ See [dijkstra.rs](examples/dijkstra.rs) for a more complete example using custom
 
 ### [algo](src/bin/algo.rs)
 
-A sample CLI tool that uses `query_raw` to execute algorithms:
+A sample CLI tool that uses `exec_raw` to execute algorithms:
 
     $ export ALGORITHMIA_API_KEY=111112222233333444445555566
     $ target/examples/algo -d 19635 kenny/Factor

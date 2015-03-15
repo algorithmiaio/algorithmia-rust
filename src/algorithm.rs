@@ -12,7 +12,6 @@ pub struct Algorithm<'a> {
     pub repo: &'a str,
 }
 
-// TODO: Ensure that we can decode API errors (i.e. that lack a 'result' field)
 pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, AlgorithmiaError>;
 pub type AlgorithmJsonResult = Result<String, hyper::HttpError>;
 
@@ -42,16 +41,16 @@ impl<'c> AlgorithmService<'c> {
         }
     }
 
-    pub fn query<'a, D, E>(&'c mut self, input_data: &E) -> AlgorithmResult<D>
+    pub fn exec<'a, D, E>(&'c mut self, input_data: &E) -> AlgorithmResult<D>
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
-        let res_json = try!(self.query_raw(&*raw_input));
+        let res_json = try!(self.exec_raw(&*raw_input));
 
         Service::decode_to_result::<AlgorithmOutput<D>>(res_json)
     }
 
-    pub fn query_raw(&'c mut self, input_data: &str) -> AlgorithmJsonResult {
+    pub fn exec_raw(&'c mut self, input_data: &str) -> AlgorithmJsonResult {
         let ref mut api_client = self.service.api_client();
         let req = api_client.post_json(self.algorithm.to_url())
             .body(input_data);
