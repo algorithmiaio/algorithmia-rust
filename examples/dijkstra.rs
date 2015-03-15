@@ -51,7 +51,7 @@ impl<'a> RouteMap<'a> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let (start, end) = match args.as_slice() {
+    let (start, end) = match &*args {
         [_, ref start, ref end] => (&**start, &**end),
         _ => ("a", "c"),
     };

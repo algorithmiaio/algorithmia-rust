@@ -1,5 +1,3 @@
-#![feature(old_path)]
-
 extern crate algorithmia;
 extern crate getopts;
 
@@ -8,13 +6,14 @@ use getopts::Options;
 use std::env;
 use std::io::Read;
 use std::fs::File;
+use std::path::Path;
 
 fn print_usage(opts: &Options) {
     print!("{}", opts.usage("Usage: algo [options] USER/REPO"));
     env::set_exit_status(1);
 }
 
-fn read_file_to_string(path: Path) -> String {
+fn read_file_to_string(path: &Path) -> String {
     let display = path.display();
     let mut file = match File::open(&path) {
         Err(why) => panic!("could not open {}: {:?}", display, why),
@@ -74,7 +73,7 @@ fn main() {
     // Get the --data or --file arg
     let data = match (argopts.opt_str("data"), argopts.opt_str("file")) {
         (Some(s), None) => s,
-        (None, Some(f)) => read_file_to_string(Path::new(f)),
+        (None, Some(f)) => read_file_to_string(Path::new(&*f)),
         _ => {
             println!("Must specify exactly one of -f or -d");
             print_usage(&opts);
