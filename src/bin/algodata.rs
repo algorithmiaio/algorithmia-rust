@@ -1,4 +1,5 @@
 #![feature(core)]
+#![feature(std_misc)]
 
 extern crate algorithmia;
 extern crate getopts;
@@ -9,6 +10,9 @@ use std::ascii::AsciiExt;
 use std::env;
 use std::fs::File;
 use std::thread;
+use std::sync::{Arc, Semaphore};
+
+static DEFAULT_UPLOAD_CONCURRENCY: u32 = 8;
 
 fn print_usage(opts: &Options) {
     let brief = vec![
@@ -46,11 +50,16 @@ impl AlgoData {
         };
     }
 
-    fn upload_files(self, username: &str, collection_name: &str, file_paths: &[String]) {
+    fn upload_files(self, username: &str, collection_name: &str, file_paths: &[String], concurrency: u32) {
         println!("Uploading {} file(s)...", file_paths.len());
+        let arc_sem = Arc::new(Semaphore::new(concurrency as isize));
 
         let _: Vec<_> = file_paths.iter().map(|file_path| {
+            // Acquire semaphore before we start the thread
+            let child_sem = arc_sem.clone();
+            child_sem.acquire();
             // println!("Uploading {}", file_path);
+
             let service = self.service.clone();
             thread::scoped( move || {
                 let mut my_bucket = service.collection(username, collection_name);
@@ -62,8 +71,13 @@ impl AlgoData {
                             Err(e) => println!("ERROR uploading {}: {:?}", file_path, e),
                         };
                     },
-                    Err(e) => println!("Failed to open {}: {}", file_path, e),
+                    Err(e) => {
+                        println!("Failed to open {}: {}", file_path, e);
+                    }
                 };
+
+                // Release the semaphore
+                child_sem.release();
             })
         }).collect();
         println!("Finished uploading {} file(s)", file_paths.len())
@@ -74,6 +88,7 @@ impl AlgoData {
 fn main() {
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help");
+    opts.optopt("c", "concurrency", &*format!("max concurrent threads to use for uploading files (default = {})", DEFAULT_UPLOAD_CONCURRENCY), "THREADS");
 
     let argopts = match opts.parse(env::args()) {
         Ok(m) => m,
@@ -98,6 +113,21 @@ fn main() {
             print_usage(&opts);
             return;
         }
+    };
+
+    // Get the --concurrency
+    let concurrency: u32 = match argopts.opt_str("concurrency") {
+        Some(nstr) => {
+            match nstr.parse::<u32>() {
+                Ok(n) => n,
+                Err(_) => {
+                    println!("Invalid concurrency option: {}", nstr);
+                    print_usage(&opts);
+                    return;
+                }
+            }
+        },
+        None => DEFAULT_UPLOAD_CONCURRENCY,
     };
 
     let data = AlgoData::new(&*api_key);
@@ -126,7 +156,7 @@ fn main() {
                 "create" => data.create_collection(user, collection),
                 "upload" => {
                     let files: Vec<String> = args_iter.collect();
-                    data.upload_files(user, collection, files.as_slice());
+                    data.upload_files(user, collection, files.as_slice(), concurrency);
                 },
                 invalid => {
                     println!("Not a valid command: {}", invalid);
