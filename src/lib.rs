@@ -17,6 +17,9 @@
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
 
+
+#![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
+
 extern crate hyper;
 extern crate mime;
 extern crate "rustc-serialize" as rustc_serialize;
@@ -29,7 +32,7 @@ use collection::{CollectionService,Collection,CollectionCreated};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
-use hyper::header::{Accept, Authorization, ContentType, qitem};
+use hyper::header::{Accept, Authorization, ContentType, UserAgent, qitem};
 use hyper::net::HttpConnector;
 use mime::{Mime, TopLevel, SubLevel};
 use rustc_serialize::{json, Decodable};
@@ -47,6 +50,7 @@ pub struct Service{
 pub struct ApiClient<'c>{
     api_key: String,
     client: Client<HttpConnector<'c>>,
+    user_agent: String,
 }
 
 /// Errors that may be returned by this library
@@ -84,10 +88,7 @@ impl<'a, 'c> Service {
 
     /// Instantiate a new hyper client for each request through this method
     pub fn api_client(&self) -> ApiClient<'c> {
-        ApiClient {
-            api_key: self.api_key.clone(),
-            client: Client::new(),
-        }
+        ApiClient::new(self.api_key.clone())
     }
 
     /// Instantiate an `AlgorithmService` from this `Service`
@@ -136,24 +137,25 @@ impl<'a, 'c> Service {
 }
 
 impl<'c> ApiClient<'c> {
-    pub fn new(api_key: &str) -> ApiClient {
+    pub fn new(api_key: String) -> ApiClient<'c> {
         ApiClient {
-            api_key: api_key.to_string(),
+            api_key: api_key,
             client: Client::new(),
+            user_agent: format!("rust/{} algorithmia.rs/{}", option_env!("CFG_RELEASE").unwrap_or("unknown"), option_env!("CARGO_PKG_VERSION").unwrap_or("unknown")),
         }
     }
 
     /// Helper to make Algorithmia GET requests with the API key
     pub fn get(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
-        // let client = self.client ;
         self.client.get(url)
+            .header(UserAgent(self.user_agent.clone()))
             .header(Authorization(self.api_key.clone()))
     }
 
     /// Helper to make Algorithmia POST requests with the API key
     pub fn post(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
-        // let client = self.client;
         self.client.post(url)
+            .header(UserAgent(self.user_agent.clone()))
             .header(Authorization(self.api_key.clone()))
     }
 
