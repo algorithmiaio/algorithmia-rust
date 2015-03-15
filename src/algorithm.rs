@@ -46,9 +46,9 @@ impl<'c> AlgorithmService<'c> {
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
-        let json_output = try!(self.query_raw(&*raw_input));
-        // println!("JSON Response: {}", json_output);
-        Ok(try!(json::decode(&*json_output)))
+        let res_json = try!(self.query_raw(&*raw_input));
+
+        Service::decode_to_result::<AlgorithmOutput<D>>(res_json)
     }
 
     pub fn query_raw(&'c mut self, input_data: &str) -> AlgorithmJsonResult {

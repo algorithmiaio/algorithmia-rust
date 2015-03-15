@@ -100,13 +100,9 @@ impl<'c> CollectionService<'c> {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match json::decode::<CollectionCreated>(&*res_json) {
-            Ok(result) => Ok(result),
-            Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
-                Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
-                Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
-            }
-        }
+
+        Service::decode_to_result::<CollectionCreated>(res_json)
+
     }
 
     pub fn upload_file(&'c mut self, file: &mut File) -> CollectionFileAddedResult {
@@ -123,13 +119,7 @@ impl<'c> CollectionService<'c> {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match json::decode::< CollectionFileAdded>(&*res_json) {
-            Ok(result) => Ok(result),
-            Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
-                Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
-                Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
-            }
-        }
+        Service::decode_to_result::<CollectionFileAdded>(res_json)
     }
 
 
@@ -143,8 +133,11 @@ impl<'c> CollectionService<'c> {
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
-        Ok(try!(json::decode(&*res_json)))
+
+        Service::decode_to_result::<CollectionFileAdded>(res_json)
     }
+
+
 }
 
 #[test]

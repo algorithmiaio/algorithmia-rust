@@ -16,7 +16,7 @@ use hyper::client::RequestBuilder;
 use hyper::header::{Accept, Authorization, ContentType, qitem};
 use hyper::net::HttpConnector;
 use mime::{Mime, TopLevel, SubLevel};
-use rustc_serialize::{json};
+use rustc_serialize::{json, Decodable};
 use self::AlgorithmiaError::*;
 use std::io;
 
@@ -44,6 +44,7 @@ pub enum AlgorithmiaError {
 #[derive(RustcDecodable, Debug)]
 pub struct ApiErrorResponse {
     pub error: String,
+    pub stacktrace: Option<String>,
 }
 
 
@@ -73,6 +74,17 @@ impl<'a, 'c> Service {
         CollectionService {
             service: self,
             collection: Collection { user: user, name: name }
+        }
+    }
+
+    // Helper to standardize decoding to a specific Algorithmia Result type
+    pub fn decode_to_result<T: Decodable>(res_json: String) -> Result<T, AlgorithmiaError> {
+        match json::decode::<T>(&*res_json) {
+            Ok(result) => Ok(result),
+            Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
+                Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
+                Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
+            }
         }
     }
 
