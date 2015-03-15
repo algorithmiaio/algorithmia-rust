@@ -1,7 +1,8 @@
 extern crate algorithmia;
 extern crate "rustc-serialize" as rustc_serialize;
 
-use algorithmia::{Service, AlgorithmOutput};
+use algorithmia::Service;
+use algorithmia::algorithm::AlgorithmOutput;
 use std::collections::HashMap;
 use std::env;
 use rustc_serialize::{json};

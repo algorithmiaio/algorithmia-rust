@@ -9,23 +9,25 @@ A rust client library for the Algorithmia API.
 
 ```rust
 extern crate algorithmia;
-use algorithmia::{Service, AlgorithmOutput};
+use algorithmia::Service;
+use algorithmia::algorithm::AlgorithmOutput;
 
 // Initialize with an API key
 let algo_service = Service::new("111112222233333444445555566");
-let mut factor = client.algorithm("kenny", "Factor");
+let mut factor = algo_service.algorithm("kenny", "Factor");
 
 // Run the algorithm using a type safe decoding of the output to Vec<int>
 //   since this algorithm outputs results as a JSON array of integers
-let output: AlgorithmOutput<Vec<int>> = try!(factor.exec("19635".to_string()));
-println!("Completed in {} seconds with result: {}", output.duration, output.result);
+let input = "19635".to_string();
+let output: AlgorithmOutput<Vec<i64>> = factor.exec(&input).unwrap();
+println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 
 // Alternatively, exec_raw will return the raw JSON string
-let raw_output = try!(client.exec_raw(algorithm, "19635"));
+let raw_output = try!(algo_service.exec_raw(algorithm, "19635"));
 println!("Raw JSON output:\n{}", raw_output);
 
-// Working with data collections
-let my_bucket = service.collection("my_user", "my_bucket");
+// Work with data collections
+let my_bucket = algo_service.collection("my_user", "my_bucket");
 my_bucket.create();
 let mut my_file = File::open("/path/to/file").unwrap();
 my_bucket.upload_file(my_file);
