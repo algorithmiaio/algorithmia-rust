@@ -75,7 +75,7 @@ fn main() {
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help");
 
-    let args = match opts.parse(env::args()) {
+    let argopts = match opts.parse(env::args()) {
         Ok(m) => m,
         Err(f) => {
             println!("Failed to parse args: {}", f);
@@ -84,7 +84,9 @@ fn main() {
         }
     };
 
-    if args.opt_present("help") || args.free.len() == 0 {
+
+    let mut args_iter = argopts.free.clone().into_iter().skip(1);
+    if argopts.opt_present("help") || args_iter.len() == 0 {
         print_usage(&opts);
         return;
     }
@@ -98,23 +100,20 @@ fn main() {
         }
     };
 
-
-
     let data = AlgoData::new(&*api_key);
-    let mut args_iter = args.free.into_iter();
 
-    // Throwout program arg
-    args_iter.next();
-
+    // Get the USERNAME/COLLECTION arg
     let first_arg = args_iter.next();
     let user_collection: Vec<&str> = match first_arg {
         Some(ref arg) => arg.split('/').collect(),
         None => {
-            println!("Did not specity USERNAME/COLLECTION");
+            println!("Did not specify USERNAME/COLLECTION");
             print_usage(&opts);
             return;
         }
     };
+
+    // Get the CMD arg
     let cmd = match args_iter.next() {
         Some(ref arg) => arg.to_ascii_lowercase(),
         None => "show".to_string(),

@@ -36,7 +36,7 @@ fn main() {
     opts.optopt("d", "data", "string to use as input data", "DATA");
     opts.optopt("f", "file", "file containing input data", "FILE");
 
-    let matches = match opts.parse(env::args()) {
+    let argopts = match opts.parse(env::args()) {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);
@@ -54,25 +54,40 @@ fn main() {
         }
     };
 
-    if matches.opt_present("help") || matches.free.len() == 0 {
+
+    let mut args_iter = argopts.free.clone().into_iter().skip(1);
+    if argopts.opt_present("help") || args_iter.len() == 0 {
         print_usage(&opts);
         return;
     }
 
-    let user_repo: Vec<&str> = matches.free[0].split('/').collect();
-    let data = match (matches.opt_str("data"), matches.opt_str("file")) {
-        (Some(s), None) => s,
-        (None, Some(f)) => read_file_to_string(Path::new(f)),
-        _ => {
-            println!("Must specify -f or -d");
+    // Get the USERNAME/ALGORITHM arg
+    let first_arg = args_iter.next();
+    let user_repo: Vec<&str> = match first_arg {
+        Some(ref arg) => arg.split('/').collect(),
+        None => {
+            println!("Did not specify USERNAME/ALGORITHM");
             print_usage(&opts);
             return;
         }
     };
 
+    // Get the --data or --file arg
+    let data = match (argopts.opt_str("data"), argopts.opt_str("file")) {
+        (Some(s), None) => s,
+        (None, Some(f)) => read_file_to_string(Path::new(f)),
+        _ => {
+            println!("Must specify exactly one of -f or -d");
+            print_usage(&opts);
+            return;
+        }
+    };
+
+    // Instantiate the algorithm service
     let service = Service::new(&*api_key);
     let mut algorithm = service.algorithm(user_repo[0], user_repo[1]);
 
+    // Execute the algorithm
     let output = match algorithm.query_raw(&*data) {
         Ok(result) => result,
         Err(why) => panic!("{:?}", why),
