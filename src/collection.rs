@@ -1,4 +1,4 @@
-//! Algorithm module for managing Algorithmia Data Collections
+//! Collection module for managing Algorithmia Data Collections
 //!
 //! # Examples
 //!
