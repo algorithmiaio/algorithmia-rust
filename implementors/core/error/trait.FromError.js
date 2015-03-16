@@ -1,0 +1,10 @@
+(function() {var implementors = {};
+implementors['algorithmia'] = ["<a class='stability Stable' title='Stable'></a>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/error/trait.FromError.html' title='core::error::FromError'>FromError</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/std/io/error/struct.Error.html' title='std::io::error::Error'>Error</a>&gt; for <a class='enum' href='algorithmia/enum.AlgorithmiaError.html' title='algorithmia::AlgorithmiaError'>AlgorithmiaError</a>","<a class='stability Stable' title='Stable'></a>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/error/trait.FromError.html' title='core::error::FromError'>FromError</a>&lt;HttpError&gt; for <a class='enum' href='algorithmia/enum.AlgorithmiaError.html' title='algorithmia::AlgorithmiaError'>AlgorithmiaError</a>","<a class='stability Stable' title='Stable'></a>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/error/trait.FromError.html' title='core::error::FromError'>FromError</a>&lt;<a class='enum' href='http://doc.rust-lang.org/rustc-serialize/rustc-serialize/json/enum.DecoderError.html' title='rustc-serialize::json::DecoderError'>DecoderError</a>&gt; for <a class='enum' href='algorithmia/enum.AlgorithmiaError.html' title='algorithmia::AlgorithmiaError'>AlgorithmiaError</a>","<a class='stability Stable' title='Stable'></a>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/error/trait.FromError.html' title='core::error::FromError'>FromError</a>&lt;<a class='enum' href='http://doc.rust-lang.org/rustc-serialize/rustc-serialize/json/enum.EncoderError.html' title='rustc-serialize::json::EncoderError'>EncoderError</a>&gt; for <a class='enum' href='algorithmia/enum.AlgorithmiaError.html' title='algorithmia::AlgorithmiaError'>AlgorithmiaError</a>",];
+
+            if (window.register_implementors) {
+                window.register_implementors(implementors);
+            } else {
+                window.pending_implementors = implementors;
+            }
+        
+})()
