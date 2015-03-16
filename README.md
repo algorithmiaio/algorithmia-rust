@@ -4,6 +4,7 @@ Algorithmia Rust Client Library
 A rust client library for the Algorithmia API.
 
 [Documentation](http://anowell.github.io/algorithmia_rust/algorithmia/)
+
 [![Build Status](https://travis-ci.org/anowell/algorithmia_rust.svg)](https://travis-ci.org/anowell/algorithmia_rust)
 
 
