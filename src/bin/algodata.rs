@@ -36,7 +36,7 @@ impl AlgoData {
     }
 
     fn show_collection(self, username: &str, collection_name: &str) {
-        let mut my_bucket = self.service.collection(username, collection_name);
+        let my_bucket = self.service.collection(username, collection_name);
         match my_bucket.show() {
             Ok(output) => println!("{:?}", output),
             Err(why) => println!("ERROR: {:?}", why),
@@ -44,7 +44,7 @@ impl AlgoData {
     }
 
     fn create_collection(self, username: &str, collection_name: &str) {
-        let mut my_bucket = self.service.collection(username, collection_name);
+        let my_bucket = self.service.collection(username, collection_name);
         match my_bucket.create() {
             Ok(output) => println!("{:?}", output),
             Err(why) => println!("ERROR: {:?}", why),
@@ -63,10 +63,10 @@ impl AlgoData {
 
             let service = self.service.clone();
             thread::scoped( move || {
-                let mut my_bucket = service.collection(username, collection_name);
+                let my_bucket = service.collection(username, collection_name);
                 match File::open(file_path) {
                     Ok(mut file) => {
-                        let ref mut bucket = my_bucket;
+                        let ref bucket = my_bucket;
                         match bucket.upload_file(&mut file) {
                             Ok(file_added) => println!("Uploaded {}", file_added.result),
                             Err(e) => println!("ERROR uploading {}: {:?}", file_path, e),

@@ -27,8 +27,8 @@ extern crate "rustc-serialize" as rustc_serialize;
 pub mod algorithm;
 pub mod collection;
 
-use algorithm::{AlgorithmService,Algorithm,AlgorithmOutput};
-use collection::{CollectionService,Collection,CollectionCreated};
+use algorithm::{AlgorithmService,Algorithm};
+use collection::{CollectionService,Collection};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
@@ -46,7 +46,7 @@ pub struct Service{
     pub api_key: String,
 }
 
-/// Internal ApiClient - generally instantiated by `Service::api_client`
+/// Internal ApiClient to manage connection and requests: wraps `hyper` client
 pub struct ApiClient<'c>{
     api_key: String,
     client: Client<HttpConnector<'c>>,
@@ -86,7 +86,7 @@ impl<'a, 'c> Service {
         }
     }
 
-    /// Instantiate a new hyper client for each request through this method
+    /// Instantiate a new hyper client - used internally by instantiating new api_client for every request
     pub fn api_client(&self) -> ApiClient<'c> {
         ApiClient::new(self.api_key.clone())
     }
@@ -137,6 +137,7 @@ impl<'a, 'c> Service {
 }
 
 impl<'c> ApiClient<'c> {
+    /// Instantiate an ApiClient - creates a new `hyper` client
     pub fn new(api_key: String) -> ApiClient<'c> {
         ApiClient {
             api_key: api_key,

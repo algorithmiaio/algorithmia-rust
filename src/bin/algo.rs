@@ -83,7 +83,7 @@ fn main() {
 
     // Instantiate the algorithm service
     let service = Service::new(&*api_key);
-    let mut algorithm = service.algorithm(user_repo[0], user_repo[1]);
+    let algorithm = service.algorithm(user_repo[0], user_repo[1]);
 
     // Execute the algorithm
     let output = match algorithm.exec_raw(&*data) {

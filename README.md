@@ -14,7 +14,7 @@ use algorithmia::algorithm::AlgorithmOutput;
 
 // Initialize with an API key
 let algo_service = Service::new("111112222233333444445555566");
-let mut factor = algo_service.algorithm("kenny", "Factor");
+let factor = algo_service.algorithm("kenny", "Factor");
 
 // Run the algorithm using a type safe decoding of the output to Vec<int>
 //   since this algorithm outputs results as a JSON array of integers
@@ -30,7 +30,7 @@ println!("Raw JSON output:\n{}", raw_output);
 let my_bucket = algo_service.collection("my_user", "my_bucket");
 my_bucket.create();
 let mut my_file = File::open("/path/to/file").unwrap();
-my_bucket.upload_file(my_file);
+my_bucket.upload_file(&my_file);
 my_bucket.write_file("some_filename", "file_contents".as_bytes());
 ```
 
