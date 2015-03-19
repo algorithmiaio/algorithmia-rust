@@ -6,6 +6,5 @@ authors = ["Anthony Nowell <anowell@gmail.com>"]
 
 [dependencies]
 hyper = "0.3.*"
-getopts = "*"
 mime = "*"
 rustc-serialize = "*"
