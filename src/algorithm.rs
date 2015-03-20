@@ -26,23 +26,65 @@ use std::io::Read;
 
 static ALGORITHM_BASE_PATH: &'static str = "api";
 
+trait Version {
+    pub fn to_string(&self) -> String
+}
+
 /// Algorithmia algorithm
 pub struct Algorithm<'a> {
     pub user: &'a str,
     pub repo: &'a str,
-    // pub version: Option<AlgorithmVersion>,
+    pub version: Option<Version>,
 }
 
-// pub struct SemanticVersion {
-//     pub major: u32,
-//     pub minor: u32,
-//     pub revision: u32,
-// }
+pub struct HashVersion<'a> {pub hash: &'a str}
+pub struct MajorVersion {pub major: u32}
+pub struct MinorVersion {pub major: u32, pub minor: u32}
+pub struct SemanticVersion {pub major: u32, pub minor: u32, pub revision: u32}
 
-// enum AlgorithmVersion {
-//     SemanticVersion,
-//     HashVersion(String)
-// }
+impl Version for MajorVersion {
+    pub fn to_string(&self) -> String { format!("{}", self.major) }
+}
+
+impl Version for MinorVersion {
+    pub fn to_string(&self) -> String { format!("{}.{}", self.major, self.minor) }
+}
+
+impl Version for SemanticVersion {
+    pub fn to_string(&self) -> String { format!("{}.{}.{}", self.major, self.minor, self.revision) }
+}
+
+impl Version for HashVersion<'a> {
+    pub fn to_string(&self) -> String { self.hash.to_string() }
+}
+
+/// Major version only, e.g., "1"
+impl Version for MajorVersion {
+    fn new(major: u32) -> MajorVersion {
+        MajorVersion {major: major}
+    }
+}
+
+/// Minor version, irrespective of revision number, e.g., "1.2"
+impl MinorVersion {
+    fn new(major: u32, minor: u32) -> MinorVersion {
+        MinorVersion {major: major, minor: minor}
+    }
+}
+
+/// Full semantic version, e.g., "1.2.3"
+impl SemanticVersion {
+    fn new(major: u32, minor: u32, revision: u32) -> SemanticVersion {
+        SemanticVersion {major: major, minor: minor, revision: revision}
+    }
+}
+
+/// Git hash version, e.g., "28702984bcb5168461c4cdb7722289db5dd7e2bc"
+impl HashVersion<'a> {
+    fn new(hash: &'a str) -> MajorVersion {
+        HashVersion {hash: hash}
+    }
+}
 
 /// Result type for generic `AlgorithmOutput` when calling `exec`
 pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, AlgorithmiaError>;
@@ -62,6 +104,18 @@ pub struct AlgorithmService<'a> {
     pub algorithm: Algorithm<'a>,
 }
 
+pub mod version {
+    /// Initialize a Version from a version string
+    pub fn from_str(version: &str) -> Version {
+        version.split('.').collect().map(|p| p.parse::<u32>()) match {
+            [Ok(major), Ok(minor), Ok(revision)] => SemanticVersion::new(major, minor, revision),
+            [Ok(major), Ok(minor)] => MinorVersion::new(major, minor),
+            [Ok(major)] => MajorVersion::new(major),
+            _ => HashVersion::new(&*version.to_string()),
+        }
+    }
+}
+
 impl<'a> Algorithm<'a> {
     /// Get the API Endpoint URL for a particular algorithm
     fn to_url(&self) -> Url {
@@ -79,10 +133,11 @@ impl<'c> AlgorithmService<'c> {
     /// # use algorithmia::algorithm::AlgorithmService;
     /// let mut factor = AlgorithmService::new("111112222233333444445555566", "kenny", "Factor");
     /// ```
-    pub fn new(api_key: &'c str, user: &'c str, repo: &'c str) -> AlgorithmService<'c> {
+    pub fn new(api_key: &'c str, user: &'c str, repo: &'c str, version: Option<Version>) -> AlgorithmService<'c> {
         AlgorithmService {
             service: Service::new(api_key),
-            algorithm: Algorithm{ user: user, repo: repo }
+            algorithm: Algorithm{ user: user, repo: repo },
+            version: version
         }
     }
 

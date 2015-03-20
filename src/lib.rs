@@ -98,12 +98,13 @@ impl<'a, 'c> Service {
     /// ```
     /// use algorithmia::Service;
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algorithm("anowell", "Dijkstra");
+    /// let factor = service.algorithm("anowell", "Dijkstra", None);
     /// ```
-    pub fn algorithm(self, user: &'a str, repo: &'a str) -> AlgorithmService<'a> {
+    pub fn algorithm(self, user: &'a str, repo: &'a str, version: Option<Version>) -> AlgorithmService<'a> {
         AlgorithmService {
             service: self,
-            algorithm: Algorithm { user: user, repo: repo }
+            algorithm: Algorithm { user: user, repo: repo },
+            version: version,
         }
     }
 
@@ -160,6 +161,15 @@ impl<'c> ApiClient<'c> {
             .header(Authorization(self.api_key.clone()))
     }
 
+    /// Helper to make Algorithmia POST requests with the API key
+    pub fn delete(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
+        self.client.delete(url)
+            .header(UserAgent(self.user_agent.clone()))
+            .header(Authorization(self.api_key.clone()))
+    }
+
+
+
     /// Helper to POST JSON to Algorithmia with the correct Mime types
     pub fn post_json(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
         self.post(url)
@@ -172,7 +182,7 @@ impl<'c> ApiClient<'c> {
 /*
 * Trait implementations
 */
-/// Allowing cloning a service in order to reuse the API key for multiple connections
+/// Allow cloning a service in order to reuse the API key for multiple connections
 impl std::clone::Clone for Service {
     fn clone(&self) -> Service {
         Service {
