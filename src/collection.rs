@@ -160,8 +160,34 @@ impl<'c> CollectionService<'c> {
 
 
         Service::decode_to_result::<CollectionCreated>(res_json)
-
     }
+
+
+    /// Delete a collection
+    ///
+    /// # Examples
+    /// ```no_run
+    /// # use algorithmia::Service;
+    /// let algo_service = Service::new("111112222233333444445555566");
+    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    /// match my_bucket.delete() {
+    ///   Ok(_) => println!("Successfully deleted collection"),
+    ///   Err(e) => println!("ERROR deleting collection: {:?}", e),
+    /// };
+    /// ```
+    pub fn delete(&'c self) -> CollectionDeletedResult {
+        // DELETE request
+        let ref mut api_client = self.service.api_client();
+        let req = api_client.delete(self.collection.to_url());
+
+        // Parse response
+        let mut res = try!(req.send());
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+
+        Service::decode_to_result::<CollectionDeleted>(res_json)
+    }
+
 
     /// Upload a file to an existing collection
     ///
@@ -222,6 +248,32 @@ impl<'c> CollectionService<'c> {
         Service::decode_to_result::<CollectionFileAdded>(res_json)
     }
 
+    /// Delete a file from a data collection
+    ///
+    /// # Examples
+    /// ```no_run
+    /// # use algorithmia::Service;
+    /// let algo_service = Service::new("111112222233333444445555566");
+    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    ///
+    /// match my_bucket.delete_file("some_filename") {
+    ///   Ok(_) => println!("Successfully deleted file"),
+    ///   Err(e) => println!("ERROR deleting file: {:?}", e),
+    /// };
+    /// ```
+    pub fn delete_file(&'c self, filename: &str) -> CollectionFileDeletedResult {
+        let url_string = format!("{}/{}", self.collection.to_url(), filename);
+        let url = Url::parse(&*url_string).unwrap();
+
+        let ref mut api_client = self.service.api_client();
+        let req = api_client.delete(url);
+
+        let mut res = try!(req.send());
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+
+        Service::decode_to_result::<CollectionFileDeleted>(res_json)
+    }
 
 }
 
