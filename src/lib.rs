@@ -4,11 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::algorithm::AlgorithmOutput;
+//! use algorithmia::algorithm::{AlgorithmOutput, Version};
 //!
 //! // Initialize with an API key
 //! let algo_service = Service::new("111112222233333444445555566");
-//! let mut factor = algo_service.algorithm("kenny", "Factor");
+//! let mut factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -27,7 +27,7 @@ extern crate "rustc-serialize" as rustc_serialize;
 pub mod algorithm;
 pub mod collection;
 
-use algorithm::{AlgorithmService,Algorithm};
+use algorithm::{AlgorithmService,Algorithm,Version};
 use collection::{CollectionService,Collection};
 
 use hyper::{Client, Url};
@@ -97,14 +97,14 @@ impl<'a, 'c> Service {
     ///
     /// ```
     /// use algorithmia::Service;
+    /// use algorithmia::algorithm::Version;
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algorithm("anowell", "Dijkstra", None);
+    /// let factor = service.algorithm("anowell", "Dijkstra", Version::Latest);
     /// ```
-    pub fn algorithm(self, user: &'a str, repo: &'a str, version: Option<Version>) -> AlgorithmService<'a> {
+    pub fn algorithm(self, user: &'a str, repo: &'a str, version: Version<'a>) -> AlgorithmService<'a> {
         AlgorithmService {
             service: self,
-            algorithm: Algorithm { user: user, repo: repo },
-            version: version,
+            algorithm: Algorithm { user: user, repo: repo, version: version },
         }
     }
 
@@ -115,7 +115,7 @@ impl<'a, 'c> Service {
     /// ```
     /// use algorithmia::Service;
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algorithm("anowell", "rustfoo");
+    /// let factor = service.collection("anowell", "rustfoo");
     /// ```
     pub fn collection(self, user: &'a str, name: &'a str) -> CollectionService<'a> {
         CollectionService {

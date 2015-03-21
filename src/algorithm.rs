@@ -4,11 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::algorithm::AlgorithmOutput;
+//! use algorithmia::algorithm::{AlgorithmOutput, Version};
 //!
 //! // Initialize with an API key
 //! let algo_service = Service::new("111112222233333444445555566");
-//! let factor = algo_service.algorithm("kenny", "Factor");
+//! let factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -23,67 +23,23 @@ use ::{Service, AlgorithmiaError, API_BASE_URL};
 use hyper::Url;
 use rustc_serialize::{json, Decoder, Decodable, Encodable};
 use std::io::Read;
+use std::fmt;
 
 static ALGORITHM_BASE_PATH: &'static str = "api";
-
-trait Version {
-    pub fn to_string(&self) -> String
-}
 
 /// Algorithmia algorithm
 pub struct Algorithm<'a> {
     pub user: &'a str,
     pub repo: &'a str,
-    pub version: Option<Version>,
+    pub version: Version<'a>,
 }
 
-pub struct HashVersion<'a> {pub hash: &'a str}
-pub struct MajorVersion {pub major: u32}
-pub struct MinorVersion {pub major: u32, pub minor: u32}
-pub struct SemanticVersion {pub major: u32, pub minor: u32, pub revision: u32}
-
-impl Version for MajorVersion {
-    pub fn to_string(&self) -> String { format!("{}", self.major) }
-}
-
-impl Version for MinorVersion {
-    pub fn to_string(&self) -> String { format!("{}.{}", self.major, self.minor) }
-}
-
-impl Version for SemanticVersion {
-    pub fn to_string(&self) -> String { format!("{}.{}.{}", self.major, self.minor, self.revision) }
-}
-
-impl Version for HashVersion<'a> {
-    pub fn to_string(&self) -> String { self.hash.to_string() }
-}
-
-/// Major version only, e.g., "1"
-impl Version for MajorVersion {
-    fn new(major: u32) -> MajorVersion {
-        MajorVersion {major: major}
-    }
-}
-
-/// Minor version, irrespective of revision number, e.g., "1.2"
-impl MinorVersion {
-    fn new(major: u32, minor: u32) -> MinorVersion {
-        MinorVersion {major: major, minor: minor}
-    }
-}
-
-/// Full semantic version, e.g., "1.2.3"
-impl SemanticVersion {
-    fn new(major: u32, minor: u32, revision: u32) -> SemanticVersion {
-        SemanticVersion {major: major, minor: minor, revision: revision}
-    }
-}
-
-/// Git hash version, e.g., "28702984bcb5168461c4cdb7722289db5dd7e2bc"
-impl HashVersion<'a> {
-    fn new(hash: &'a str) -> MajorVersion {
-        HashVersion {hash: hash}
-    }
+pub enum Version<'a> {
+    Latest,
+    Major(u32),
+    Minor(u32, u32),
+    Revision(u32, u32, u32),
+    Hash(&'a str),
 }
 
 /// Result type for generic `AlgorithmOutput` when calling `exec`
@@ -104,14 +60,20 @@ pub struct AlgorithmService<'a> {
     pub algorithm: Algorithm<'a>,
 }
 
-pub mod version {
+impl <'a> Version<'a> {
     /// Initialize a Version from a version string
-    pub fn from_str(version: &str) -> Version {
-        version.split('.').collect().map(|p| p.parse::<u32>()) match {
-            [Ok(major), Ok(minor), Ok(revision)] => SemanticVersion::new(major, minor, revision),
-            [Ok(major), Ok(minor)] => MinorVersion::new(major, minor),
-            [Ok(major)] => MajorVersion::new(major),
-            _ => HashVersion::new(&*version.to_string()),
+    pub fn from_str(version: &'a str) -> Version<'a> {
+        match version.split('.').map(|p| p.parse::<u32>()).collect() {
+            Ok(parts) => {
+                let ver_parts: Vec<u32> = parts;
+                match &*ver_parts {
+                    [major, minor, revision] => Version::Revision(major, minor, revision),
+                    [major, minor] => Version::Minor(major, minor),
+                    [major] => Version::Major(major),
+                    _ => panic!("Failed to parse version {}", version),
+                }
+            },
+            _ => Version::Hash(version),
         }
     }
 }
@@ -119,7 +81,10 @@ pub mod version {
 impl<'a> Algorithm<'a> {
     /// Get the API Endpoint URL for a particular algorithm
     fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo);
+        let url_string = match self.version {
+            Version::Latest => format!("{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo),
+            ref version => format!("{}/{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo, version),
+        };
         Url::parse(&*url_string).unwrap()
     }
 }
@@ -130,14 +95,13 @@ impl<'c> AlgorithmService<'c> {
     ///
     /// # Examples
     /// ```
-    /// # use algorithmia::algorithm::AlgorithmService;
-    /// let mut factor = AlgorithmService::new("111112222233333444445555566", "kenny", "Factor");
+    /// # use algorithmia::algorithm::{AlgorithmService, Version};
+    /// let mut factor = AlgorithmService::new("111112222233333444445555566", "kenny", "Factor", Version::Latest);
     /// ```
-    pub fn new(api_key: &'c str, user: &'c str, repo: &'c str, version: Option<Version>) -> AlgorithmService<'c> {
+    pub fn new(api_key: &'c str, user: &'c str, repo: &'c str, version: Version<'c>) -> AlgorithmService<'c> {
         AlgorithmService {
             service: Service::new(api_key),
-            algorithm: Algorithm{ user: user, repo: repo },
-            version: version
+            algorithm: Algorithm{ user: user, repo: repo, version: version },
         }
     }
 
@@ -156,9 +120,9 @@ impl<'c> AlgorithmService<'c> {
     ///
     /// ```no_run
     /// # use algorithmia::{Service, AlgorithmiaError};
-    /// # use algorithmia::algorithm::AlgorithmOutput;
+    /// # use algorithmia::algorithm::{AlgorithmOutput, Version};
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let mut factor = algo_service.algorithm("kenny", "Factor");
+    /// let mut factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
     /// let input = "19635".to_string();
     /// match factor.exec(&input) {
     ///     Ok(out) => {
@@ -192,8 +156,9 @@ impl<'c> AlgorithmService<'c> {
     ///
     /// ```no_run
     /// # use algorithmia::Service;
+    /// # use algorithmia::algorithm::Version;
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let mut factor = algo_service.algorithm("kenny", "Factor");
+    /// let mut factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
     ///
     /// let output = match factor.exec_raw("37") {
     ///    Ok(result) => result,
@@ -212,9 +177,22 @@ impl<'c> AlgorithmService<'c> {
 
 }
 
+impl <'a> fmt::Display for Version<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Version::Latest => write!(f, "latest"),
+            Version::Major(major) => write!(f, "{}", major),
+            Version::Minor(major, minor) => write!(f, "{}.{}", major, minor),
+            Version::Revision(major, minor, revision) => write!(f, "{}.{}.{}", major, minor, revision),
+            Version::Hash(hash) => write!(f, "{}", hash),
+        }
+    }
+}
+
+
 #[test]
 fn test_to_url() {
-    let algorithm = Algorithm{ user: "kenny", repo: "Factor" };
+    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Latest };
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL))
 }
 

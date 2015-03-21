@@ -2,7 +2,7 @@ extern crate algorithmia;
 extern crate "rustc-serialize" as rustc_serialize;
 
 use algorithmia::Service;
-use algorithmia::algorithm::AlgorithmOutput;
+use algorithmia::algorithm::{AlgorithmOutput, Version};
 use std::collections::HashMap;
 use std::env;
 use rustc_serialize::{json};
@@ -35,7 +35,7 @@ impl<'a> RouteMap<'a> {
             Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
         };
         let service = Service::new(&*api_key);
-        let dijkstra = service.algorithm("anowell", "Dijkstra");
+        let dijkstra = service.algorithm("anowell", "Dijkstra", Version::Latest);
 
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);

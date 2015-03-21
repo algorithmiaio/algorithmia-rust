@@ -34,7 +34,9 @@ pub struct Collection<'a> {
 
 pub type CollectionShowResult = Result<CollectionShow, AlgorithmiaError>;
 pub type CollectionCreatedResult = Result<CollectionCreated, AlgorithmiaError>;
+pub type CollectionDeletedResult = Result<CollectionDeleted, AlgorithmiaError>;
 pub type CollectionFileAddedResult = Result<CollectionFileAdded, AlgorithmiaError>;
+pub type CollectionFileDeletedResult = Result<CollectionFileDeleted, AlgorithmiaError>;
 
 
 /// Permissions for a data collection
@@ -60,6 +62,13 @@ pub struct CollectionCreated {
     pub acl: CollectionAcl,
 }
 
+/// Response when deleting a new collection
+#[derive(RustcDecodable, Debug)]
+pub struct CollectionDeleted {
+    pub unknown: String,
+}
+
+
 /// Response when querying an existing collection
 #[derive(RustcDecodable, Debug)]
 pub struct CollectionShow {
@@ -71,6 +80,12 @@ pub struct CollectionShow {
 /// Response when adding a file to a collection
 #[derive(RustcDecodable, Debug)]
 pub struct CollectionFileAdded {
+    pub result: String
+}
+
+/// Response when deleting a file to a collection
+#[derive(RustcDecodable, Debug)]
+pub struct CollectionFileDeleted {
     pub result: String
 }
 
