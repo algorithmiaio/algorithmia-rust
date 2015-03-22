@@ -34,11 +34,15 @@ pub struct Algorithm<'a> {
     pub version: Version<'a>,
 }
 
+/// Version of an algorithm
 pub enum Version<'a> {
+    /// Latest published version
     Latest,
-    Major(u32),
+    /// Latest published version with the same minor version, e.g., 1.2 implies 1.2.*
     Minor(u32, u32),
+    /// A specific published revision, e.g., 0.1.0
     Revision(u32, u32, u32),
+    /// A specific git hash - only works for the algorithm's author
     Hash(&'a str),
 }
 
@@ -61,7 +65,15 @@ pub struct AlgorithmService<'a> {
 }
 
 impl <'a> Version<'a> {
-    /// Initialize a Version from a version string
+    /// Initialize a Version from a version string slice
+    ///
+    /// # Examples
+    /// ```
+    /// # use algorithmia::algorithm::Version;
+    /// assert_eq!(Version::from_str("1.2").to_string(), Version::Minor(1,2).to_string());
+    /// assert_eq!(Version::from_str("1.2.3").to_string(), Version::Revision(1,2,3).to_string());
+    /// assert_eq!(Version::from_str("abc123").to_string(), Version::Hash("abc123").to_string());
+    /// ```
     pub fn from_str(version: &'a str) -> Version<'a> {
         match version.split('.').map(|p| p.parse::<u32>()).collect() {
             Ok(parts) => {
@@ -69,13 +81,15 @@ impl <'a> Version<'a> {
                 match &*ver_parts {
                     [major, minor, revision] => Version::Revision(major, minor, revision),
                     [major, minor] => Version::Minor(major, minor),
-                    [major] => Version::Major(major),
                     _ => panic!("Failed to parse version {}", version),
                 }
             },
             _ => Version::Hash(version),
         }
     }
+
+    /// Convert a Verion to string (uses its Display trait implementation)
+    pub fn to_string(&self) -> String { format!("{}", self) }
 }
 
 impl<'a> Algorithm<'a> {
@@ -177,11 +191,11 @@ impl<'c> AlgorithmService<'c> {
 
 }
 
+/// Displays Version values suitable for printing
 impl <'a> fmt::Display for Version<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Version::Latest => write!(f, "latest"),
-            Version::Major(major) => write!(f, "{}", major),
             Version::Minor(major, minor) => write!(f, "{}.{}", major, minor),
             Version::Revision(major, minor, revision) => write!(f, "{}.{}.{}", major, minor, revision),
             Version::Hash(hash) => write!(f, "{}", hash),
@@ -196,21 +210,23 @@ fn test_latest_to_url() {
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL))
 }
 
+#[test]
 fn test_revision_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Revision(0,1,0) };
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", API_BASE_URL))
 }
 
+#[test]
 fn test_minor_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Minor(0,1) };
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", API_BASE_URL))
 }
 
+#[test]
 fn test_hash_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456") };
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", API_BASE_URL))
 }
-
 
 #[test]
 fn test_json_decoding() {
