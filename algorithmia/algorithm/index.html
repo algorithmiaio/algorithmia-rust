@@ -43,17 +43,17 @@
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>algorithmia</a>::<wbr><a class='mod' href=''>algorithm</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-7' href='../../src/algorithmia/algorithm.rs.html#1-173'>[src]</a></span></h1>
+        </span><a id='src-7' href='../../src/algorithmia/algorithm.rs.html#1-238'>[src]</a></span></h1>
 <div class='docblock'><p>Algorithm module for executing Algorithmia algorithms</p>
 
 <h1 id="examples" class='section-header'><a
                            href="#examples">Examples</a></h1><pre id='rust-example-rendered' class='rust '>
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Service</span>;
-<span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>algorithm</span>::<span class='ident'>AlgorithmOutput</span>;
+<span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>algorithm</span>::{<span class='ident'>AlgorithmOutput</span>, <span class='ident'>Version</span>};
 
 <span class='comment'>// Initialize with an API key</span>
 <span class='kw'>let</span> <span class='ident'>algo_service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
-<span class='kw'>let</span> <span class='ident'>factor</span> <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>algorithm</span>(<span class='string'>&quot;kenny&quot;</span>, <span class='string'>&quot;Factor&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>factor</span> <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>algorithm</span>(<span class='string'>&quot;kenny&quot;</span>, <span class='string'>&quot;Factor&quot;</span>, <span class='ident'>Version</span>::<span class='ident'>Latest</span>);
 
 <span class='comment'>// Run the algorithm using a type safe decoding of the output to Vec&lt;int&gt;</span>
 <span class='comment'>//   since this algorithm outputs results as a JSON array of integers</span>
@@ -81,6 +81,14 @@
                         <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.AlgorithmService.html'
                                title='algorithmia::algorithm::AlgorithmService'>AlgorithmService</a></td>
                         <td class='docblock short'><p>Service endpoint for executing algorithms</p>
+</td>
+                    </tr>
+                </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                    <tr>
+                        <td><a class='stability Unmarked' title='No stability level'></a><a class='enum' href='enum.Version.html'
+                               title='algorithmia::algorithm::Version'>Version</a></td>
+                        <td class='docblock short'><p>Version of an algorithm</p>
 </td>
                     </tr>
                 </table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>

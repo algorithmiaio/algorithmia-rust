@@ -43,7 +43,7 @@
     <section id='main' class="content struct">
 <h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>collection</a>::<wbr><a class='struct' href=''>CollectionService</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-991' href='../../src/algorithmia/collection.rs.html#78-81'>[src]</a></span></h1>
+        </span><a id='src-1584' href='../../src/algorithmia/collection.rs.html#93-96'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct CollectionService&lt;'a&gt; {
     pub service: <a class='struct' href='../../algorithmia/struct.Service.html' title='algorithmia::Service'>Service</a>,
     pub collection: <a class='struct' href='../../algorithmia/collection/struct.Collection.html' title='algorithmia::collection::Collection'>Collection</a>&lt;'a&gt;,
@@ -80,6 +80,18 @@
   <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;ERROR creating collection: {:?}&quot;</span>, <span class='ident'>e</span>),
 };
 </pre>
+</div><h4 id='method.delete' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.delete' class='fnname'>delete</a>(&amp;'c self) -&gt; <a class='type' href='../../algorithmia/collection/type.CollectionDeletedResult.html' title='algorithmia::collection::CollectionDeletedResult'>CollectionDeletedResult</a></code></h4>
+<div class='docblock'><p>Delete a collection</p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre id='rust-example-rendered' class='rust '>
+<span class='kw'>let</span> <span class='ident'>algo_service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>my_bucket</span> <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>collection</span>(<span class='string'>&quot;my_user&quot;</span>, <span class='string'>&quot;my_bucket&quot;</span>);
+<span class='kw'>match</span> <span class='ident'>my_bucket</span>.<span class='ident'>delete</span>() {
+  <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Successfully deleted collection&quot;</span>),
+  <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;ERROR deleting collection: {:?}&quot;</span>, <span class='ident'>e</span>),
+};
+</pre>
 </div><h4 id='method.upload_file' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.upload_file' class='fnname'>upload_file</a>(&amp;'c self, file: &amp;mut <a class='struct' href='http://doc.rust-lang.org/nightly/std/fs/struct.File.html' title='std::fs::File'>File</a>) -&gt; <a class='type' href='../../algorithmia/collection/type.CollectionFileAddedResult.html' title='algorithmia::collection::CollectionFileAddedResult'>CollectionFileAddedResult</a></code></h4>
 <div class='docblock'><p>Upload a file to an existing collection</p>
 
@@ -105,6 +117,19 @@
 <span class='kw'>match</span> <span class='ident'>my_bucket</span>.<span class='ident'>write_file</span>(<span class='string'>&quot;some_filename&quot;</span>, <span class='string'>&quot;file_contents&quot;</span>.<span class='ident'>as_bytes</span>()) {
   <span class='prelude-val'>Ok</span>(<span class='ident'>response</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Successfully uploaded to: {}&quot;</span>, <span class='ident'>response</span>.<span class='ident'>result</span>),
   <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;ERROR uploading file: {:?}&quot;</span>, <span class='ident'>e</span>),
+};
+</pre>
+</div><h4 id='method.delete_file' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.delete_file' class='fnname'>delete_file</a>(&amp;'c self, filename: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../../algorithmia/collection/type.CollectionFileDeletedResult.html' title='algorithmia::collection::CollectionFileDeletedResult'>CollectionFileDeletedResult</a></code></h4>
+<div class='docblock'><p>Delete a file from a data collection</p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre id='rust-example-rendered' class='rust '>
+<span class='kw'>let</span> <span class='ident'>algo_service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>my_bucket</span> <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>collection</span>(<span class='string'>&quot;my_user&quot;</span>, <span class='string'>&quot;my_bucket&quot;</span>);
+
+<span class='kw'>match</span> <span class='ident'>my_bucket</span>.<span class='ident'>delete_file</span>(<span class='string'>&quot;some_filename&quot;</span>) {
+  <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Successfully deleted file&quot;</span>),
+  <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;ERROR deleting file: {:?}&quot;</span>, <span class='ident'>e</span>),
 };
 </pre>
 </div></div></section>

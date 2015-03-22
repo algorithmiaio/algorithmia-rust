@@ -43,17 +43,17 @@
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>algorithmia</a><wbr></span><span class='out-of-band'><a href='stability.html'>[stability]</a> <span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-0' href='../src/algorithmia/lib.rs.html#1-206'>[src]</a></span></h1>
+        </span><a id='src-0' href='../src/algorithmia/lib.rs.html#1-216'>[src]</a></span></h1>
 <div class='docblock'><p>Algorithmia client library</p>
 
 <h1 id="examples" class='section-header'><a
                            href="#examples">Examples</a></h1><pre id='rust-example-rendered' class='rust '>
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Service</span>;
-<span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>algorithm</span>::<span class='ident'>AlgorithmOutput</span>;
+<span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>algorithm</span>::{<span class='ident'>AlgorithmOutput</span>, <span class='ident'>Version</span>};
 
 <span class='comment'>// Initialize with an API key</span>
 <span class='kw'>let</span> <span class='ident'>algo_service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
-<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>factor</span> <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>algorithm</span>(<span class='string'>&quot;kenny&quot;</span>, <span class='string'>&quot;Factor&quot;</span>);
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>factor</span> <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>algorithm</span>(<span class='string'>&quot;kenny&quot;</span>, <span class='string'>&quot;Factor&quot;</span>, <span class='ident'>Version</span>::<span class='ident'>Latest</span>);
 
 <span class='comment'>// Run the algorithm using a type safe decoding of the output to Vec&lt;int&gt;</span>
 <span class='comment'>//   since this algorithm outputs results as a JSON array of integers</span>
@@ -73,7 +73,7 @@
                     <tr>
                         <td><a class='stability Unmarked' title='No stability level'></a><a class='mod' href='collection/index.html'
                                title='algorithmia::collection'>collection</a></td>
-                        <td class='docblock short'><p>Algorithm module for managing Algorithmia Data Collections</p>
+                        <td class='docblock short'><p>Collection module for managing Algorithmia Data Collections</p>
 </td>
                     </tr>
                 </table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
