@@ -37,6 +37,8 @@ impl<'a> RouteMap<'a> {
         let service = Service::new(&*api_key);
         let dijkstra = service.algorithm("anowell", "Dijkstra", Version::Latest);
 
+        println!("Making request to: {}", dijkstra.algorithm.to_url());
+
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);
         // println!("Input: {:?}", input_data);

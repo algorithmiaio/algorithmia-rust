@@ -80,7 +80,7 @@ impl <'a> Version<'a> {
 
 impl<'a> Algorithm<'a> {
     /// Get the API Endpoint URL for a particular algorithm
-    fn to_url(&self) -> Url {
+    pub fn to_url(&self) -> Url {
         let url_string = match self.version {
             Version::Latest => format!("{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo),
             ref version => format!("{}/{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo, version),
@@ -191,10 +191,26 @@ impl <'a> fmt::Display for Version<'a> {
 
 
 #[test]
-fn test_to_url() {
+fn test_latest_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Latest };
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL))
 }
+
+fn test_revision_to_url() {
+    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Revision(0,1,0) };
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", API_BASE_URL))
+}
+
+fn test_minor_to_url() {
+    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Minor(0,1) };
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", API_BASE_URL))
+}
+
+fn test_hash_to_url() {
+    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456") };
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", API_BASE_URL))
+}
+
 
 #[test]
 fn test_json_decoding() {
