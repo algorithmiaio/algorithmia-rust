@@ -1,5 +1,5 @@
 extern crate algorithmia;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 use algorithmia::Service;
 use algorithmia::algorithm::{AlgorithmOutput, Version};
