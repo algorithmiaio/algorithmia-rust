@@ -119,8 +119,8 @@ impl<'c> AlgorithmService<'c> {
         }
     }
 
-    /// Execute an algorithm with type-safety
-    ////
+    /// Execute an algorithm with typed JSON response decoding
+    ///
     /// input_data must be JSON-encodable
     ///     use `#[derive(RustcEncodable)]` for complex input
     ///
@@ -207,25 +207,46 @@ impl <'a> fmt::Display for Version<'a> {
 #[test]
 fn test_latest_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Latest };
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL))
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL));
 }
 
 #[test]
 fn test_revision_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Revision(0,1,0) };
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", API_BASE_URL))
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", API_BASE_URL));
 }
 
 #[test]
 fn test_minor_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Minor(0,1) };
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", API_BASE_URL))
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", API_BASE_URL));
 }
 
 #[test]
 fn test_hash_to_url() {
     let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456") };
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", API_BASE_URL))
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", API_BASE_URL));
+}
+
+#[test]
+fn test_latest_string() {
+    let version = Version::Latest;
+    assert_eq!(version.to_string(), format!("{}", version));
+    assert_eq!(&*version.to_string(), "latest");
+}
+
+#[test]
+fn test_revision_string() {
+    let version = Version::Revision(1,2,3);
+    assert_eq!(version.to_string(), format!("{}", version));
+    assert_eq!(&*version.to_string(), "1.2.3");
+}
+
+#[test]
+fn test_minor_string() {
+    let version = Version::Minor(1,2);
+    assert_eq!(version.to_string(), format!("{}", version));
+    assert_eq!(&*version.to_string(), "1.2");
 }
 
 #[test]

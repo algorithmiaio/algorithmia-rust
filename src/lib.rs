@@ -20,9 +20,10 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
+#![feature(file_path)]
 extern crate hyper;
 extern crate mime;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 pub mod algorithm;
 pub mod collection;
