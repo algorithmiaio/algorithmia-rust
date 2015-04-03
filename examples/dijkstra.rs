@@ -1,3 +1,4 @@
+#![feature(slice_patterns)]
 extern crate algorithmia;
 extern crate rustc_serialize;
 

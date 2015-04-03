@@ -20,6 +20,7 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
+#![feature(slice_patterns)]
 #![feature(file_path)]
 extern crate hyper;
 extern crate mime;
@@ -192,26 +193,26 @@ impl std::clone::Clone for Service {
     }
 }
 
-impl std::error::FromError<io::Error> for AlgorithmiaError {
-    fn from_error(err: io::Error) -> AlgorithmiaError {
+impl From<io::Error> for AlgorithmiaError {
+    fn from(err: io::Error) -> AlgorithmiaError {
         IoError(err)
     }
 }
 
-impl std::error::FromError<hyper::HttpError> for AlgorithmiaError {
-    fn from_error(err: hyper::HttpError) -> AlgorithmiaError {
+impl From<hyper::HttpError> for AlgorithmiaError {
+    fn from(err: hyper::HttpError) -> AlgorithmiaError {
         HttpError(err)
     }
 }
 
-impl std::error::FromError<json::DecoderError> for AlgorithmiaError {
-    fn from_error(err: json::DecoderError) -> AlgorithmiaError {
+impl From<json::DecoderError> for AlgorithmiaError {
+    fn from(err: json::DecoderError) -> AlgorithmiaError {
         DecoderError(err)
     }
 }
 
-impl std::error::FromError<json::EncoderError> for AlgorithmiaError {
-    fn from_error(err: json::EncoderError) -> AlgorithmiaError {
+impl From<json::EncoderError> for AlgorithmiaError {
+    fn from(err: json::EncoderError) -> AlgorithmiaError {
         EncoderError(err)
     }
 }

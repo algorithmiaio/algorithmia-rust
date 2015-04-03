@@ -255,5 +255,5 @@ fn test_json_decoding() {
     let expected = AlgorithmOutput{ duration: 0.46739511f32, result: [5, 41] };
     let decoded: AlgorithmOutput<Vec<i32>> = json::decode(json_output).unwrap();
     assert_eq!(expected.duration, decoded.duration);
-    assert_eq!(expected.result, decoded.result);
+    assert_eq!(expected.result, &*decoded.result);
 }

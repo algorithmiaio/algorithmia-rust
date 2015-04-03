@@ -96,8 +96,25 @@ pub struct CollectionService<'a> {
 }
 
 impl<'a> Collection<'a> {
+    /// Initializes a Collection from the data_uri
+    ///
+    /// # Examples
+    /// ```
+    /// # use algorithmia::collection::Collection;
+    /// let collection = Collection::from_str("anowell/foo").ok().unwrap();
+    /// assert_eq!(collection.user, "anowell");
+    /// assert_eq!(collection.name, "foo");
+    /// ```
+    pub fn from_str(data_uri: &'a str) -> Result<Collection<'a>, &'a str> {
+        // TODO: strip optional 'data://' prefix
+        match &*data_uri.split("/").collect::<Vec<_>>() {
+            [user, collection_name] => Ok(Collection{user: user, name: collection_name}),
+            _ => Err("Invalid collection URI")
+        }
+    }
+
     /// Get the API Endpoint URL for a particular collection
-    fn to_url(&self) -> Url {
+    pub fn to_url(&self) -> Url {
         let url_string = format!("{}/{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.user, self.name);
         Url::parse(&*url_string).unwrap()
     }
