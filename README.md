@@ -19,3 +19,9 @@ This project is built and tested with cargo:
     cargo build
     cargo test
     cargo doc --no-deps
+
+
+Pro-tip: before building docs, clone existing docs to track changes
+
+    git clone -b gh-pages git@github.com:anowell/algorithmia_rust.git target/doc
+
