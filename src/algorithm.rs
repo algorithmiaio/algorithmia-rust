@@ -93,6 +93,37 @@ impl <'a> Version<'a> {
 }
 
 impl<'a> Algorithm<'a> {
+    /// Instantiate an algorithm from it's parts
+    ///
+    /// # Examples
+    /// ```
+    /// # use algorithmia::algorithm::{Algorithm, Version};
+    /// let factor = Algorithm::new("kenny", "Factor", Version::Minor(0,1));
+    /// ```
+    pub fn new(user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
+        Algorithm {
+            user: user,
+            repo: repo,
+            version: version
+        }
+    }
+
+    /// Instantiate an algorithm from the algorithm's URI
+    ///
+    /// # Examples
+    /// ```
+    /// # use algorithmia::algorithm::{Algorithm, Version};
+    /// let factor = Algorithm::from_str("kenny/Factor/0.1");
+    /// ```
+    pub fn from_str(algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
+        // TODO: strip optional 'algo://' prefix
+        match &*algo_uri.split("/").collect::<Vec<_>>() {
+            [user, algo, version] => Ok(Algorithm::new(user, algo, Version::from_str(version))),
+            [user, algo] => Ok(Algorithm::new(user, algo, Version::Latest)),
+            _ => Err("Invalid algorithm URI")
+        }
+    }
+
     /// Get the API Endpoint URL for a particular algorithm
     pub fn to_url(&self) -> Url {
         let url_string = match self.version {
@@ -110,7 +141,7 @@ impl<'c> AlgorithmService<'c> {
     /// # Examples
     /// ```
     /// # use algorithmia::algorithm::{AlgorithmService, Version};
-    /// let mut factor = AlgorithmService::new("111112222233333444445555566", "kenny", "Factor", Version::Latest);
+    /// let factor = AlgorithmService::new("111112222233333444445555566", "kenny", "Factor", Version::Latest);
     /// ```
     pub fn new(api_key: &'c str, user: &'c str, repo: &'c str, version: Version<'c>) -> AlgorithmService<'c> {
         AlgorithmService {
@@ -136,7 +167,7 @@ impl<'c> AlgorithmService<'c> {
     /// # use algorithmia::{Service, AlgorithmiaError};
     /// # use algorithmia::algorithm::{AlgorithmOutput, Version};
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let mut factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
+    /// let factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
     /// let input = "19635".to_string();
     /// match factor.exec(&input) {
     ///     Ok(out) => {
