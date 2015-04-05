@@ -8,12 +8,13 @@
 //!
 //! // Initialize with an API key
 //! let algo_service = Service::new("111112222233333444445555566");
-//! let mut factor = algo_service.algorithm(Algorithm::new("kenny", "Factor", Version::Revision(0,1,0)));
+//! let factor = Algorithm::new("kenny", "Factor", Version::Revision(0,1,0));
+//! let factor_service = algo_service.algorithm(&factor);
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = "19635".to_string();
-//! let output: AlgorithmOutput<Vec<i64>> = factor.exec(&input).unwrap();
+//! let output: AlgorithmOutput<Vec<i64>> = factor_service.exec(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
 
@@ -45,7 +46,7 @@ pub static API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia service endpoints
 pub struct Service{
-    pub api_key: String,
+    api_key: String,
 }
 
 /// Internal ApiClient to manage connection and requests: wraps `hyper` client
@@ -101,9 +102,10 @@ impl<'a, 'c> Service {
     /// use algorithmia::Service;
     /// use algorithmia::algorithm::{Algorithm, Version};
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algorithm(Algorithm::new("anowell", "Dijkstra", Version::Latest));
+    /// let factor = Algorithm::new("anowell", "Dijkstra", Version::Latest);
+    /// let factor_service = service.algorithm(&factor);
     /// ```
-    pub fn algorithm(self, algorithm: Algorithm<'a>) -> AlgorithmService<'a> {
+    pub fn algorithm(self, algorithm: &'a Algorithm<'a>) -> AlgorithmService<'a> {
         AlgorithmService {
             service: self,
             algorithm: algorithm,
@@ -118,9 +120,10 @@ impl<'a, 'c> Service {
     /// use algorithmia::Service;
     /// use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.collection(Collection::new("anowell", "rustfoo"));
+    /// let rustfoo = Collection::new("anowell", "rustfoo");
+    /// let rustfoo_service = service.collection(&rustfoo);
     /// ```
-    pub fn collection(self, collection: Collection<'a>) -> CollectionService<'a> {
+    pub fn collection(self, collection: &'a Collection<'a>) -> CollectionService<'a> {
         CollectionService {
             service: self,
             collection: collection,

@@ -36,16 +36,17 @@ impl<'a> RouteMap<'a> {
             Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
         };
         let service = Service::new(&*api_key);
-        let dijkstra = service.algorithm(Algorithm::new("anowell", "Dijkstra", Version::Latest));
+        let dijkstra = Algorithm::new("anowell", "Dijkstra", Version::Latest);
+        let dijkstra_service = service.algorithm(&dijkstra);
 
-        println!("Making request to: {}", dijkstra.algorithm.to_url());
+        println!("Making request to: {}", dijkstra.to_url());
 
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);
         // println!("Input: {:?}", input_data);
         println!("Input:\n{}", json::as_pretty_json(&input_data));
 
-        let output: AlgorithmOutput<Route> = match dijkstra.exec(&input_data) {
+        let output: AlgorithmOutput<Route> = match dijkstra_service.exec(&input_data) {
             Ok(out) => out,
             Err(why) => panic!("{:?}", why),
         };

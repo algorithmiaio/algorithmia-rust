@@ -8,12 +8,13 @@
 //!
 //! // Initialize with an API key
 //! let service = Service::new("111112222233333444445555566");
-//! let factor = service.algorithm(Algorithm::new("kenny", "Factor", Version::Revision(0,1,0)));
+//! let factor = Algorithm::new("kenny", "Factor", Version::Revision(0,1,0));
+//! let factor_service = factor.as_service(service);
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = "19635".to_string();
-//! let output: AlgorithmOutput<Vec<i64>> = factor.exec(&input).unwrap();
+//! let output: AlgorithmOutput<Vec<i64>> = factor_service.exec(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
 
@@ -61,7 +62,7 @@ pub struct AlgorithmOutput<T> {
 /// Service endpoint for executing algorithms
 pub struct AlgorithmService<'a> {
     pub service: Service,
-    pub algorithm: Algorithm<'a>,
+    pub algorithm: &'a Algorithm<'a>,
 }
 
 impl <'a> Version<'a> {
@@ -132,6 +133,13 @@ impl<'a> Algorithm<'a> {
         };
         Url::parse(&*url_string).unwrap()
     }
+
+    pub fn as_service(&'a self, service: Service) -> AlgorithmService<'a> {
+        AlgorithmService {
+            service: service,
+            algorithm: self,
+        }
+    }
 }
 
 impl<'c> AlgorithmService<'c> {
@@ -151,10 +159,11 @@ impl<'c> AlgorithmService<'c> {
     /// ```no_run
     /// # use algorithmia::{Service, AlgorithmiaError};
     /// # use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
-    /// let algo_service = Service::new("111112222233333444445555566");
-    /// let factor = algo_service.algorithm(Algorithm::new("kenny", "Factor", Version::Latest));
+    /// let service = Service::new("111112222233333444445555566");
+    /// let factor = Algorithm::new("kenny", "Factor", Version::Latest);
+    /// let factor_service = service.algorithm(&factor);
     /// let input = "19635".to_string();
-    /// match factor.exec(&input) {
+    /// match factor_service.exec(&input) {
     ///     Ok(out) => {
     ///         let myVal: AlgorithmOutput<Vec<i64>> = out;
     ///         println!("{:?}", myVal.result);
@@ -188,9 +197,10 @@ impl<'c> AlgorithmService<'c> {
     /// # use algorithmia::Service;
     /// # use algorithmia::algorithm::{Algorithm, Version};
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let mut factor = algo_service.algorithm(Algorithm::new("kenny", "Factor", Version::Latest));
+    /// let factor = Algorithm::new("kenny", "Factor", Version::Latest);
+    /// let factor_service = algo_service.algorithm(&factor);
     ///
-    /// let output = match factor.exec_raw("37") {
+    /// let output = match factor_service.exec_raw("37") {
     ///    Ok(result) => result,
     ///    Err(why) => panic!("{:?}", why),
     /// };
