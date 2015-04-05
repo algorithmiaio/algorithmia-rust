@@ -4,10 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
+//! use algorithmia::collection::Collection;
 //! use std::fs::File;
 //!
-//! let algo_service = Service::new("111112222233333444445555566");
-//! let my_bucket = algo_service.collection("my_user", "my_bucket");
+//! let service = Service::new("111112222233333444445555566");
+//! let my_bucket = service.collection(Collection::new("my_user", "my_bucket"));
 //!
 //! my_bucket.create();
 //! let mut my_file = File::open("/path/to/file").unwrap();
@@ -96,6 +97,22 @@ pub struct CollectionService<'a> {
 }
 
 impl<'a> Collection<'a> {
+    /// Initializes a regular Collection from the username and collection name
+    ///
+    /// # Examples
+    /// ```
+    /// # use algorithmia::collection::Collection;
+    /// let collection = Collection::new("anowell", "foo");
+    /// assert_eq!(collection.user, "anowell");
+    /// assert_eq!(collection.name, "foo");
+    /// ```
+    pub fn new(user: &'a str, name: &'a str) -> Collection<'a> {
+        Collection {
+            user: user,
+            name: name,
+        }
+    }
+
     /// Initializes a Collection from the data_uri
     ///
     /// # Examples
@@ -121,27 +138,14 @@ impl<'a> Collection<'a> {
 }
 
 impl<'c> CollectionService<'c> {
-    /// Instantiate `CollectionService` directly - alternative to `Service::collection`
-    ///
-    /// # Examples
-    /// ```
-    /// # use algorithmia::collection::CollectionService;
-    /// let my_bucket = CollectionService::new("111112222233333444445555566", "my_user", "my_bucket");
-    /// ```
-    pub fn new(api_key: &'c str, user: &'c str, name: &'c str) -> CollectionService<'c> {
-        CollectionService {
-            service: Service::new(api_key),
-            collection: Collection{ user: user, name: name }
-        }
-    }
-
     /// Display collection details if it exists
     ///
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
+    /// # use algorithmia::collection::Collection;
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    /// let my_bucket = algo_service.collection(Collection::new("my_user", "my_bucket"));
     /// match my_bucket.show() {
     ///   Ok(bucket) => println!("Files: {}", bucket.files.connect(", ")),
     ///   Err(e) => println!("ERROR: {:?}", e),
@@ -169,8 +173,9 @@ impl<'c> CollectionService<'c> {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
+    /// # use algorithmia::collection::Collection;
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    /// let my_bucket = algo_service.collection(Collection::new("my_user", "my_bucket"));
     /// match my_bucket.create() {
     ///   Ok(_) => println!("Successfully created collection"),
     ///   Err(e) => println!("ERROR creating collection: {:?}", e),
@@ -200,8 +205,9 @@ impl<'c> CollectionService<'c> {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
+    /// # use algorithmia::collection::Collection;
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    /// let my_bucket = algo_service.collection(Collection::new("my_user", "my_bucket"));
     /// match my_bucket.delete() {
     ///   Ok(_) => println!("Successfully deleted collection"),
     ///   Err(e) => println!("ERROR deleting collection: {:?}", e),
@@ -226,9 +232,10 @@ impl<'c> CollectionService<'c> {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
+    /// # use algorithmia::collection::Collection;
     /// # use std::fs::File;
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    /// let my_bucket = algo_service.collection(Collection::new("my_user", "my_bucket"));
     ///
     /// let mut my_file = File::open("/path/to/file").unwrap();
     /// match my_bucket.upload_file(&mut my_file) {
@@ -258,8 +265,9 @@ impl<'c> CollectionService<'c> {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
+    /// # use algorithmia::collection::Collection;
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    /// let my_bucket = algo_service.collection(Collection::new("my_user", "my_bucket"));
     ///
     /// match my_bucket.write_file("some_filename", "file_contents".as_bytes()) {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
@@ -285,8 +293,9 @@ impl<'c> CollectionService<'c> {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
+    /// # use algorithmia::collection::Collection;
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let my_bucket = algo_service.collection("my_user", "my_bucket");
+    /// let my_bucket = algo_service.collection(Collection::new("my_user", "my_bucket"));
     ///
     /// match my_bucket.delete_file("some_filename") {
     ///   Ok(_) => println!("Successfully deleted file"),

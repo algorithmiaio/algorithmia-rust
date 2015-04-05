@@ -4,11 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::algorithm::{AlgorithmOutput, Version};
+//! use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
 //!
 //! // Initialize with an API key
 //! let algo_service = Service::new("111112222233333444445555566");
-//! let mut factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
+//! let mut factor = algo_service.algorithm(Algorithm::new("kenny", "Factor", Version::Revision(0,1,0)));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -29,8 +29,8 @@ extern crate rustc_serialize;
 pub mod algorithm;
 pub mod collection;
 
-use algorithm::{AlgorithmService,Algorithm,Version};
-use collection::{CollectionService,Collection};
+use algorithm::{Algorithm, AlgorithmService};
+use collection::{Collection, CollectionService};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
@@ -99,14 +99,14 @@ impl<'a, 'c> Service {
     ///
     /// ```
     /// use algorithmia::Service;
-    /// use algorithmia::algorithm::Version;
+    /// use algorithmia::algorithm::{Algorithm, Version};
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algorithm("anowell", "Dijkstra", Version::Latest);
+    /// let factor = service.algorithm(Algorithm::new("anowell", "Dijkstra", Version::Latest));
     /// ```
-    pub fn algorithm(self, user: &'a str, repo: &'a str, version: Version<'a>) -> AlgorithmService<'a> {
+    pub fn algorithm(self, algorithm: Algorithm<'a>) -> AlgorithmService<'a> {
         AlgorithmService {
             service: self,
-            algorithm: Algorithm { user: user, repo: repo, version: version },
+            algorithm: algorithm,
         }
     }
 
@@ -116,13 +116,14 @@ impl<'a, 'c> Service {
     ///
     /// ```
     /// use algorithmia::Service;
+    /// use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.collection("anowell", "rustfoo");
+    /// let factor = service.collection(Collection::new("anowell", "rustfoo"));
     /// ```
-    pub fn collection(self, user: &'a str, name: &'a str) -> CollectionService<'a> {
+    pub fn collection(self, collection: Collection<'a>) -> CollectionService<'a> {
         CollectionService {
             service: self,
-            collection: Collection { user: user, name: name }
+            collection: collection,
         }
     }
 

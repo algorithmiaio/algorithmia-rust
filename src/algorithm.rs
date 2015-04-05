@@ -4,11 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::algorithm::{AlgorithmOutput, Version};
+//! use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
 //!
 //! // Initialize with an API key
-//! let algo_service = Service::new("111112222233333444445555566");
-//! let factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
+//! let service = Service::new("111112222233333444445555566");
+//! let factor = service.algorithm(Algorithm::new("kenny", "Factor", Version::Revision(0,1,0)));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -98,7 +98,7 @@ impl<'a> Algorithm<'a> {
     /// # Examples
     /// ```
     /// # use algorithmia::algorithm::{Algorithm, Version};
-    /// let factor = Algorithm::new("kenny", "Factor", Version::Minor(0,1));
+    /// let factor = Algorithm::new("kenny", "Factor", Version::Revision(0,1,0));
     /// ```
     pub fn new(user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
         Algorithm {
@@ -135,21 +135,6 @@ impl<'a> Algorithm<'a> {
 }
 
 impl<'c> AlgorithmService<'c> {
-
-    /// Instantiate `AlgorithmService` directly - alternative to `Service::algorithm`
-    ///
-    /// # Examples
-    /// ```
-    /// # use algorithmia::algorithm::{AlgorithmService, Version};
-    /// let factor = AlgorithmService::new("111112222233333444445555566", "kenny", "Factor", Version::Latest);
-    /// ```
-    pub fn new(api_key: &'c str, user: &'c str, repo: &'c str, version: Version<'c>) -> AlgorithmService<'c> {
-        AlgorithmService {
-            service: Service::new(api_key),
-            algorithm: Algorithm{ user: user, repo: repo, version: version },
-        }
-    }
-
     /// Execute an algorithm with typed JSON response decoding
     ///
     /// input_data must be JSON-encodable
@@ -165,9 +150,9 @@ impl<'c> AlgorithmService<'c> {
     ///
     /// ```no_run
     /// # use algorithmia::{Service, AlgorithmiaError};
-    /// # use algorithmia::algorithm::{AlgorithmOutput, Version};
+    /// # use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
+    /// let factor = algo_service.algorithm(Algorithm::new("kenny", "Factor", Version::Latest));
     /// let input = "19635".to_string();
     /// match factor.exec(&input) {
     ///     Ok(out) => {
@@ -201,9 +186,9 @@ impl<'c> AlgorithmService<'c> {
     ///
     /// ```no_run
     /// # use algorithmia::Service;
-    /// # use algorithmia::algorithm::Version;
+    /// # use algorithmia::algorithm::{Algorithm, Version};
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let mut factor = algo_service.algorithm("kenny", "Factor", Version::Latest);
+    /// let mut factor = algo_service.algorithm(Algorithm::new("kenny", "Factor", Version::Latest));
     ///
     /// let output = match factor.exec_raw("37") {
     ///    Ok(result) => result,
