@@ -34,7 +34,6 @@ use collection::{Collection};
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
 use hyper::header::{Accept, Authorization, ContentType, UserAgent, qitem};
-use hyper::net::HttpConnector;
 use mime::{Mime, TopLevel, SubLevel};
 use rustc_serialize::{json, Decodable};
 use self::AlgorithmiaError::*;
@@ -48,9 +47,9 @@ pub struct Service<'a>{
 }
 
 /// Internal ApiClient to manage connection and requests: wraps `hyper` client
-pub struct ApiClient<'c>{
+pub struct ApiClient{
     api_key: String,
-    client: Client<HttpConnector<'c>>,
+    client: Client,
     user_agent: String,
 }
 
@@ -88,7 +87,7 @@ impl<'a, 'c> Service<'a> {
     }
 
     /// Instantiate a new hyper client - used internally by instantiating new api_client for every request
-    pub fn api_client(&self) -> ApiClient<'c> {
+    pub fn api_client(&self) -> ApiClient {
         ApiClient::new(self.api_key.to_string())
     }
 
@@ -173,9 +172,9 @@ impl<'a, 'c> Service<'a> {
 
 }
 
-impl<'c> ApiClient<'c> {
+impl ApiClient {
     /// Instantiate an ApiClient - creates a new `hyper` client
-    pub fn new(api_key: String) -> ApiClient<'c> {
+    pub fn new(api_key: String) -> ApiClient {
         ApiClient {
             api_key: api_key,
             client: Client::new(),
@@ -184,28 +183,28 @@ impl<'c> ApiClient<'c> {
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn get(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
+    pub fn get(&mut self, url: Url) -> RequestBuilder<Url> {
         self.client.get(url)
             .header(UserAgent(self.user_agent.clone()))
             .header(Authorization(self.api_key.clone()))
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn post(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
+    pub fn post(&mut self, url: Url) -> RequestBuilder<Url> {
         self.client.post(url)
             .header(UserAgent(self.user_agent.clone()))
             .header(Authorization(self.api_key.clone()))
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn delete(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
+    pub fn delete(&mut self, url: Url) -> RequestBuilder<Url> {
         self.client.delete(url)
             .header(UserAgent(self.user_agent.clone()))
             .header(Authorization(self.api_key.clone()))
     }
 
     /// Helper to POST JSON to Algorithmia with the correct Mime types
-    pub fn post_json(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
+    pub fn post_json(&mut self, url: Url) -> RequestBuilder<Url> {
         self.post(url)
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .header(Accept(vec![qitem(Mime(TopLevel::Application, SubLevel::Json, vec![]))]))
