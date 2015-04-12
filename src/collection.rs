@@ -8,14 +8,13 @@
 //! use std::fs::File;
 //!
 //! let service = Service::new("111112222233333444445555566");
-//! let my_bucket = Collection::new("my_user", "my_bucket");
-//! let my_bucket_service = service.collection(&my_bucket);
+//! let my_bucket = service.collection("my_user/my_bucket");
 //!
-//! my_bucket_service.create();
+//! my_bucket.create();
 //! let mut my_file = File::open("/path/to/file").unwrap();
-//! my_bucket_service.upload_file(&mut my_file);
+//! my_bucket.upload_file(&mut my_file);
 //!
-//! my_bucket_service.write_file("some_filename", "file_contents".as_bytes());
+//! my_bucket.write_file("some_filename", "file_contents".as_bytes());
 //! ```
 
 extern crate hyper;
@@ -30,8 +29,8 @@ static COLLECTION_BASE_PATH: &'static str = "data";
 
 /// Algorithmia data collection
 pub struct Collection<'a> {
-    pub user: &'a str,
-    pub name: &'a str,
+    pub service: Service<'a>,
+    pub path: &'a str,
 }
 
 pub type CollectionShowResult = Result<CollectionShow, AlgorithmiaError>;
@@ -91,54 +90,31 @@ pub struct CollectionFileDeleted {
     pub result: String
 }
 
-/// Service endpoint for managing Algorithmia data collections
-pub struct CollectionService<'a> {
-    pub service: Service,
-    pub collection: &'a Collection<'a>,
-}
-
 impl<'a> Collection<'a> {
-    /// Initializes a regular Collection from the username and collection name
-    ///
-    /// # Examples
-    /// ```
-    /// # use algorithmia::collection::Collection;
-    /// let collection = Collection::new("anowell", "foo");
-    /// assert_eq!(collection.user, "anowell");
-    /// assert_eq!(collection.name, "foo");
-    /// ```
-    pub fn new(user: &'a str, name: &'a str) -> Collection<'a> {
-        Collection {
-            user: user,
-            name: name,
+
+    // assert_eq!(collection.dirname(), "anowell");
+    // assert_eq!(collection.basename(), "foo");
+    pub fn dirname(&self) -> &'a str {
+        match &*self.path.rsplitn(1, "/").collect::<Vec<_>>() {
+            [_, path] => path,
+            _ => "/"
         }
     }
 
-    /// Initializes a Collection from the data_uri
-    ///
-    /// # Examples
-    /// ```
-    /// # use algorithmia::collection::Collection;
-    /// let collection = Collection::from_str("anowell/foo").ok().unwrap();
-    /// assert_eq!(collection.user, "anowell");
-    /// assert_eq!(collection.name, "foo");
-    /// ```
-    pub fn from_str(data_uri: &'a str) -> Result<Collection<'a>, &'a str> {
-        // TODO: strip optional 'data://' prefix
-        match &*data_uri.split("/").collect::<Vec<_>>() {
-            [user, collection_name] => Ok(Collection{user: user, name: collection_name}),
-            _ => Err("Invalid collection URI")
+    pub fn basename(&self) -> &'a str {
+        match &*self.path.rsplitn(1, "/").collect::<Vec<_>>() {
+            [name, _] => name,
+            _ => self.path
         }
     }
+
 
     /// Get the API Endpoint URL for a particular collection
     pub fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.user, self.name);
+        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.path);
         Url::parse(&*url_string).unwrap()
     }
-}
 
-impl<'c> CollectionService<'c> {
     /// Display collection details if it exists
     ///
     /// # Examples
@@ -146,16 +122,15 @@ impl<'c> CollectionService<'c> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = Collection::new("my_user", "my_bucket");
-    /// let my_bucket_service = service.collection(&my_bucket);
-    /// match my_bucket_service.show() {
+    /// let my_bucket = service.collection("my_user/my_bucket");
+    /// match my_bucket.show() {
     ///   Ok(bucket) => println!("Files: {}", bucket.files.connect(", ")),
     ///   Err(e) => println!("ERROR: {:?}", e),
     /// };
     /// ```
-    pub fn show(&'c self) -> CollectionShowResult {
+    pub fn show(&'a self) -> CollectionShowResult {
         let ref mut api_client = self.service.api_client();
-        let req = api_client.get(self.collection.to_url());
+        let req = api_client.get(self.to_url());
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -177,21 +152,20 @@ impl<'c> CollectionService<'c> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = Collection::new("my_user", "my_bucket");
-    /// let my_bucket_service = service.collection(&my_bucket);
-    /// match my_bucket_service.create() {
+    /// let my_bucket = service.collection("my_user/my_bucket");
+    /// match my_bucket.create() {
     ///   Ok(_) => println!("Successfully created collection"),
     ///   Err(e) => println!("ERROR creating collection: {:?}", e),
     /// };
     /// ```
-    pub fn create(&'c self) -> CollectionCreatedResult {
+    pub fn create(&'a self) -> CollectionCreatedResult {
         // Construct URL
-        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.collection.user);
+        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.dirname());
         let url = Url::parse(&*url_string).unwrap();
 
         // POST request
         let ref mut api_client = self.service.api_client();
-        let req = api_client.post(url).body(self.collection.name);
+        let req = api_client.post(url).body(self.basename());
 
         // Parse response
         let mut res = try!(req.send());
@@ -210,17 +184,16 @@ impl<'c> CollectionService<'c> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = Collection::new("my_user", "my_bucket");
-    /// let my_bucket_service = service.collection(&my_bucket);
-    /// match my_bucket_service.delete() {
+    /// let my_bucket = service.collection("my_user/my_bucket");
+    /// match my_bucket.delete() {
     ///   Ok(_) => println!("Successfully deleted collection"),
     ///   Err(e) => println!("ERROR deleting collection: {:?}", e),
     /// };
     /// ```
-    pub fn delete(&'c self) -> CollectionDeletedResult {
+    pub fn delete(&'a self) -> CollectionDeletedResult {
         // DELETE request
         let ref mut api_client = self.service.api_client();
-        let req = api_client.delete(self.collection.to_url());
+        let req = api_client.delete(self.to_url());
 
         // Parse response
         let mut res = try!(req.send());
@@ -239,18 +212,17 @@ impl<'c> CollectionService<'c> {
     /// # use algorithmia::collection::Collection;
     /// # use std::fs::File;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = Collection::new("my_user", "my_bucket");
-    /// let my_bucket_service = service.collection(&my_bucket);
+    /// let my_bucket = service.collection("my_user/my_bucket");
     ///
     /// let mut my_file = File::open("/path/to/file").unwrap();
-    /// match my_bucket_service.upload_file(&mut my_file) {
+    /// match my_bucket.upload_file(&mut my_file) {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
     ///   Err(e) => println!("ERROR uploading file: {:?}", e),
     /// };
     /// ```
-    pub fn upload_file(&'c self, file: &mut File) -> CollectionFileAddedResult {
+    pub fn upload_file(&'a self, file: &mut File) -> CollectionFileAddedResult {
         let url_string = format!("{}/{}",
-            self.collection.to_url(),
+            self.to_url(),
             file.path().unwrap().file_name().unwrap().to_str().unwrap()
         );
         let url = Url::parse(&*url_string).unwrap();
@@ -272,16 +244,15 @@ impl<'c> CollectionService<'c> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = Collection::new("my_user", "my_bucket");
-    /// let my_bucket_service = service.collection(&my_bucket);
+    /// let my_bucket = service.collection("my_user/my_bucket");
     ///
-    /// match my_bucket_service.write_file("some_filename", "file_contents".as_bytes()) {
+    /// match my_bucket.write_file("some_filename", "file_contents".as_bytes()) {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
     ///   Err(e) => println!("ERROR uploading file: {:?}", e),
     /// };
     /// ```
-    pub fn write_file(&'c self, filename: &str, input_data: &[u8]) -> CollectionFileAddedResult {
-        let url_string = format!("{}/{}", self.collection.to_url(), filename);
+    pub fn write_file(&'a self, filename: &str, input_data: &[u8]) -> CollectionFileAddedResult {
+        let url_string = format!("{}/{}", self.to_url(), filename);
         let url = Url::parse(&*url_string).unwrap();
 
         let ref mut api_client = self.service.api_client();
@@ -301,16 +272,15 @@ impl<'c> CollectionService<'c> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = Collection::new("my_user", "my_bucket");
-    /// let my_bucket_service = service.collection(&my_bucket);
+    /// let my_bucket = service.collection("my_user/my_bucket");
     ///
-    /// match my_bucket_service.delete_file("some_filename") {
+    /// match my_bucket.delete_file("some_filename") {
     ///   Ok(_) => println!("Successfully deleted file"),
     ///   Err(e) => println!("ERROR deleting file: {:?}", e),
     /// };
     /// ```
-    pub fn delete_file(&'c self, filename: &str) -> CollectionFileDeletedResult {
-        let url_string = format!("{}/{}", self.collection.to_url(), filename);
+    pub fn delete_file(&'a self, filename: &str) -> CollectionFileDeletedResult {
+        let url_string = format!("{}/{}", self.to_url(), filename);
         let url = Url::parse(&*url_string).unwrap();
 
         let ref mut api_client = self.service.api_client();
@@ -327,6 +297,6 @@ impl<'c> CollectionService<'c> {
 
 #[test]
 fn test_to_url() {
-    let collection = Collection{ user: "anowell", name: "foo" };
+    let collection = Collection { path: "anowell/foo", service: Service::new("")};
     assert_eq!(collection.to_url().serialize(), format!("{}/data/anowell/foo", API_BASE_URL));
 }

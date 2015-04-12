@@ -7,17 +7,15 @@
 //! use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
 //!
 //! // Initialize with an API key
-//! let algo_service = Service::new("111112222233333444445555566");
-//! let factor = Algorithm::new("kenny", "Factor", Version::Revision(0,1,0));
-//! let factor_service = algo_service.algorithm(&factor);
+//! let service = Service::new("111112222233333444445555566");
+//! let factor = service.algorithm("kenny", "Factor", Version::Revision(0,1,0));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = "19635".to_string();
-//! let output: AlgorithmOutput<Vec<i64>> = factor_service.exec(&input).unwrap();
+//! let output: AlgorithmOutput<Vec<i64>> = factor.exec(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
-
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
@@ -30,8 +28,8 @@ extern crate rustc_serialize;
 pub mod algorithm;
 pub mod collection;
 
-use algorithm::{Algorithm, AlgorithmService};
-use collection::{Collection, CollectionService};
+use algorithm::{Algorithm, Version};
+use collection::{Collection};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
@@ -45,8 +43,8 @@ use std::io;
 pub static API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia service endpoints
-pub struct Service{
-    api_key: String,
+pub struct Service<'a>{
+    api_key: &'a str,
 }
 
 /// Internal ApiClient to manage connection and requests: wraps `hyper` client
@@ -81,17 +79,17 @@ pub struct ApiErrorResponse {
 }
 
 
-impl<'a, 'c> Service {
+impl<'a, 'c> Service<'a> {
     /// Instantiate a new Service
     pub fn new(api_key: &str) -> Service {
         Service {
-            api_key: api_key.to_string(),
+            api_key: api_key,
         }
     }
 
     /// Instantiate a new hyper client - used internally by instantiating new api_client for every request
     pub fn api_client(&self) -> ApiClient<'c> {
-        ApiClient::new(self.api_key.clone())
+        ApiClient::new(self.api_key.to_string())
     }
 
     /// Instantiate an `AlgorithmService` from this `Service`
@@ -102,13 +100,46 @@ impl<'a, 'c> Service {
     /// use algorithmia::Service;
     /// use algorithmia::algorithm::{Algorithm, Version};
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = Algorithm::new("anowell", "Dijkstra", Version::Latest);
-    /// let factor_service = service.algorithm(&factor);
+    /// let factor = service.algorithm("anowell", "Dijkstra", Version::Latest);
     /// ```
-    pub fn algorithm(self, algorithm: &'a Algorithm<'a>) -> AlgorithmService<'a> {
-        AlgorithmService {
+    pub fn algorithm(self, user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
+        Algorithm {
             service: self,
-            algorithm: algorithm,
+            user: user,
+            repo: repo,
+            version: version
+        }
+    }
+
+    /// Instantiate an algorithm from the algorithm's URI
+    ///
+    /// # Examples
+    /// ```
+    /// use algorithmia::Service;
+    /// use algorithmia::algorithm::{Algorithm, Version};
+    /// let service = Service::new("111112222233333444445555566");
+    /// let factor = service.algorithm_from_str("anowell/Dijkstra/0.1");
+    /// ```
+    pub fn algorithm_from_str(self, algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
+        // TODO: strip optional 'algo://' prefix
+        match &*algo_uri.split("/").collect::<Vec<_>>() {
+            [user, repo, version] => Ok(
+                Algorithm {
+                    service: self,
+                    user: user,
+                    repo: repo,
+                    version: Version::from_str(version)
+                }
+            ),
+            [user, repo] => Ok(
+                Algorithm {
+                    service: self,
+                    user: user,
+                    repo: repo,
+                    version: Version::Latest
+                }
+            ),
+            _ => Err("Invalid algorithm URI")
         }
     }
 
@@ -120,13 +151,12 @@ impl<'a, 'c> Service {
     /// use algorithmia::Service;
     /// use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let rustfoo = Collection::new("anowell", "rustfoo");
-    /// let rustfoo_service = service.collection(&rustfoo);
+    /// let rustfoo = service.collection("anowell/rustfoo");
     /// ```
-    pub fn collection(self, collection: &'a Collection<'a>) -> CollectionService<'a> {
-        CollectionService {
+    pub fn collection(self, path: &'a str) -> Collection<'a> {
+        Collection {
             service: self,
-            collection: collection,
+            path: path,
         }
     }
 
@@ -174,8 +204,6 @@ impl<'c> ApiClient<'c> {
             .header(Authorization(self.api_key.clone()))
     }
 
-
-
     /// Helper to POST JSON to Algorithmia with the correct Mime types
     pub fn post_json(&mut self, url: Url) -> RequestBuilder<'c, Url, HttpConnector> {
         self.post(url)
@@ -189,8 +217,8 @@ impl<'c> ApiClient<'c> {
 * Trait implementations
 */
 /// Allow cloning a service in order to reuse the API key for multiple connections
-impl std::clone::Clone for Service {
-    fn clone(&self) -> Service {
+impl<'a> std::clone::Clone for Service<'a> {
+    fn clone(&self) -> Service<'a> {
         Service {
             api_key: self.api_key.clone(),
         }

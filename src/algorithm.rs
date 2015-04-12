@@ -8,13 +8,12 @@
 //!
 //! // Initialize with an API key
 //! let service = Service::new("111112222233333444445555566");
-//! let factor = Algorithm::new("kenny", "Factor", Version::Revision(0,1,0));
-//! let factor_service = factor.as_service(service);
+//! let factor = service.algorithm("kenny", "Factor", Version::Revision(0,1,0));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = "19635".to_string();
-//! let output: AlgorithmOutput<Vec<i64>> = factor_service.exec(&input).unwrap();
+//! let output: AlgorithmOutput<Vec<i64>> = factor.exec(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
 
@@ -30,6 +29,7 @@ static ALGORITHM_BASE_PATH: &'static str = "api";
 
 /// Algorithmia algorithm
 pub struct Algorithm<'a> {
+    pub service: Service<'a>,
     pub user: &'a str,
     pub repo: &'a str,
     pub version: Version<'a>,
@@ -57,12 +57,6 @@ pub type AlgorithmJsonResult = Result<String, hyper::HttpError>;
 pub struct AlgorithmOutput<T> {
     pub duration: f32,
     pub result: T,
-}
-
-/// Service endpoint for executing algorithms
-pub struct AlgorithmService<'a> {
-    pub service: Service,
-    pub algorithm: &'a Algorithm<'a>,
 }
 
 impl <'a> Version<'a> {
@@ -94,37 +88,6 @@ impl <'a> Version<'a> {
 }
 
 impl<'a> Algorithm<'a> {
-    /// Instantiate an algorithm from it's parts
-    ///
-    /// # Examples
-    /// ```
-    /// # use algorithmia::algorithm::{Algorithm, Version};
-    /// let factor = Algorithm::new("kenny", "Factor", Version::Revision(0,1,0));
-    /// ```
-    pub fn new(user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
-        Algorithm {
-            user: user,
-            repo: repo,
-            version: version
-        }
-    }
-
-    /// Instantiate an algorithm from the algorithm's URI
-    ///
-    /// # Examples
-    /// ```
-    /// # use algorithmia::algorithm::{Algorithm, Version};
-    /// let factor = Algorithm::from_str("kenny/Factor/0.1");
-    /// ```
-    pub fn from_str(algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
-        // TODO: strip optional 'algo://' prefix
-        match &*algo_uri.split("/").collect::<Vec<_>>() {
-            [user, algo, version] => Ok(Algorithm::new(user, algo, Version::from_str(version))),
-            [user, algo] => Ok(Algorithm::new(user, algo, Version::Latest)),
-            _ => Err("Invalid algorithm URI")
-        }
-    }
-
     /// Get the API Endpoint URL for a particular algorithm
     pub fn to_url(&self) -> Url {
         let url_string = match self.version {
@@ -134,15 +97,6 @@ impl<'a> Algorithm<'a> {
         Url::parse(&*url_string).unwrap()
     }
 
-    pub fn as_service(&'a self, service: Service) -> AlgorithmService<'a> {
-        AlgorithmService {
-            service: service,
-            algorithm: self,
-        }
-    }
-}
-
-impl<'c> AlgorithmService<'c> {
     /// Execute an algorithm with typed JSON response decoding
     ///
     /// input_data must be JSON-encodable
@@ -160,8 +114,7 @@ impl<'c> AlgorithmService<'c> {
     /// # use algorithmia::{Service, AlgorithmiaError};
     /// # use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = Algorithm::new("kenny", "Factor", Version::Latest);
-    /// let factor_service = service.algorithm(&factor);
+    /// let factor_service = service.algorithm("kenny", "Factor", Version::Latest);
     /// let input = "19635".to_string();
     /// match factor_service.exec(&input) {
     ///     Ok(out) => {
@@ -174,7 +127,7 @@ impl<'c> AlgorithmService<'c> {
     ///     Err(e) => println!("ERROR: {:?}", e),
     /// };
     /// ```
-    pub fn exec<'a, D, E>(&'c self, input_data: &E) -> AlgorithmResult<D>
+    pub fn exec<D, E>(&'a self, input_data: &E) -> AlgorithmResult<D>
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
@@ -197,16 +150,15 @@ impl<'c> AlgorithmService<'c> {
     /// # use algorithmia::Service;
     /// # use algorithmia::algorithm::{Algorithm, Version};
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let factor = Algorithm::new("kenny", "Factor", Version::Latest);
-    /// let factor_service = algo_service.algorithm(&factor);
+    /// let factor  = algo_service.algorithm("kenny", "Factor", Version::Latest);
     ///
-    /// let output = match factor_service.exec_raw("37") {
+    /// let output = match factor.exec_raw("37") {
     ///    Ok(result) => result,
     ///    Err(why) => panic!("{:?}", why),
     /// };
-    pub fn exec_raw(&'c self, input_data: &str) -> AlgorithmJsonResult {
+    pub fn exec_raw(&'a self, input_data: &str) -> AlgorithmJsonResult {
         let ref mut api_client = self.service.api_client();
-        let req = api_client.post_json(self.algorithm.to_url())
+        let req = api_client.post_json(self.to_url())
             .body(input_data);
 
         let mut res = try!(req.send());
@@ -232,25 +184,25 @@ impl <'a> fmt::Display for Version<'a> {
 
 #[test]
 fn test_latest_to_url() {
-    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Latest };
+    let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Latest, service: Service::new("")};
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL));
 }
 
 #[test]
 fn test_revision_to_url() {
-    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Revision(0,1,0) };
+    let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Revision(0,1,0), service: Service::new("")};
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", API_BASE_URL));
 }
 
 #[test]
 fn test_minor_to_url() {
-    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Minor(0,1) };
+    let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Minor(0,1), service: Service::new("")};
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", API_BASE_URL));
 }
 
 #[test]
 fn test_hash_to_url() {
-    let algorithm = Algorithm{ user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456") };
+    let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456"), service: Service::new("")};
     assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", API_BASE_URL));
 }
 
