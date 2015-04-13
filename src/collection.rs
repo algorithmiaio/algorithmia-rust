@@ -29,7 +29,7 @@ static COLLECTION_BASE_PATH: &'static str = "data";
 
 /// Algorithmia data collection
 pub struct Collection<'a> {
-    pub service: Service<'a>,
+    pub service: Service,
     pub path: &'a str,
 }
 

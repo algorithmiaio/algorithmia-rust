@@ -42,8 +42,8 @@ use std::io;
 pub static API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia service endpoints
-pub struct Service<'a>{
-    api_key: &'a str,
+pub struct Service{
+    pub api_key: String,
 }
 
 /// Internal ApiClient to manage connection and requests: wraps `hyper` client
@@ -78,11 +78,11 @@ pub struct ApiErrorResponse {
 }
 
 
-impl<'a, 'c> Service<'a> {
+impl<'a, 'c> Service {
     /// Instantiate a new Service
     pub fn new(api_key: &str) -> Service {
         Service {
-            api_key: api_key,
+            api_key: api_key.to_string(),
         }
     }
 
@@ -216,8 +216,8 @@ impl ApiClient {
 * Trait implementations
 */
 /// Allow cloning a service in order to reuse the API key for multiple connections
-impl<'a> std::clone::Clone for Service<'a> {
-    fn clone(&self) -> Service<'a> {
+impl std::clone::Clone for Service {
+    fn clone(&self) -> Service {
         Service {
             api_key: self.api_key.clone(),
         }

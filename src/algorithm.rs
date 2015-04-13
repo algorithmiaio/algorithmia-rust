@@ -29,7 +29,7 @@ static ALGORITHM_BASE_PATH: &'static str = "api";
 
 /// Algorithmia algorithm
 pub struct Algorithm<'a> {
-    pub service: Service<'a>,
+    pub service: Service,
     pub user: &'a str,
     pub repo: &'a str,
     pub version: Version<'a>,
