@@ -100,7 +100,7 @@ impl<'a> Collection<'a> {
     /// assert_eq!(my_dir.parent(), "my_user");
     /// ```
     pub fn parent(&self) -> &'a str {
-        match &*self.path.rsplitn(1, "/").collect::<Vec<_>>() {
+        match &*self.path.rsplitn(2, "/").collect::<Vec<_>>() {
             [_, path] => path,
             _ => "/"
         }
@@ -115,7 +115,7 @@ impl<'a> Collection<'a> {
     /// assert_eq!(my_dir.basename(), "my_dir");
     /// ```
     pub fn basename(&self) -> &'a str {
-        match &*self.path.rsplitn(1, "/").collect::<Vec<_>>() {
+        match &*self.path.rsplitn(2, "/").collect::<Vec<_>>() {
             [name, _] => name,
             _ => self.path
         }
