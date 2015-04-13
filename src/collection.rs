@@ -4,17 +4,16 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::collection::Collection;
 //! use std::fs::File;
 //!
 //! let service = Service::new("111112222233333444445555566");
-//! let my_bucket = service.collection("my_user/my_bucket");
+//! let my_dir = service.collection("my_user/my_dir");
 //!
-//! my_bucket.create();
+//! my_dir.create();
 //! let mut my_file = File::open("/path/to/file").unwrap();
-//! my_bucket.upload_file(&mut my_file);
+//! my_dir.upload_file(&mut my_file);
 //!
-//! my_bucket.write_file("some_filename", "file_contents".as_bytes());
+//! my_dir.write_file("some_filename", "file_contents".as_bytes());
 //! ```
 
 extern crate hyper;
@@ -92,15 +91,29 @@ pub struct CollectionFileDeleted {
 
 impl<'a> Collection<'a> {
 
-    // assert_eq!(collection.dirname(), "anowell");
-    // assert_eq!(collection.basename(), "foo");
-    pub fn dirname(&self) -> &'a str {
+    /// Get the parent path of a collection (i.e. unix `dirname`)
+    ///
+    /// ```
+    /// # use algorithmia::Service;
+    /// # let service = Service::new("111112222233333444445555566");
+    /// let my_dir = service.collection("my_user/my_dir");
+    /// assert_eq!(my_dir.parent(), "my_user");
+    /// ```
+    pub fn parent(&self) -> &'a str {
         match &*self.path.rsplitn(1, "/").collect::<Vec<_>>() {
             [_, path] => path,
             _ => "/"
         }
     }
 
+    /// Get the basename of the collection (i.e. unix `basename`)
+    ///
+    /// ```
+    /// # use algorithmia::Service;
+    /// # let service = Service::new("111112222233333444445555566");
+    /// let my_dir = service.collection("my_user/my_dir");
+    /// assert_eq!(my_dir.basename(), "my_dir");
+    /// ```
     pub fn basename(&self) -> &'a str {
         match &*self.path.rsplitn(1, "/").collect::<Vec<_>>() {
             [name, _] => name,
@@ -120,11 +133,10 @@ impl<'a> Collection<'a> {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
-    /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = service.collection("my_user/my_bucket");
-    /// match my_bucket.show() {
-    ///   Ok(bucket) => println!("Files: {}", bucket.files.connect(", ")),
+    /// let my_dir = service.collection("my_user/my_dir");
+    /// match my_dir.show() {
+    ///   Ok(dir) => println!("Files: {}", dir.files.connect(", ")),
     ///   Err(e) => println!("ERROR: {:?}", e),
     /// };
     /// ```
@@ -150,17 +162,16 @@ impl<'a> Collection<'a> {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Service;
-    /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = service.collection("my_user/my_bucket");
-    /// match my_bucket.create() {
+    /// let my_dir = service.collection("my_user/my_dir");
+    /// match my_dir.create() {
     ///   Ok(_) => println!("Successfully created collection"),
     ///   Err(e) => println!("ERROR creating collection: {:?}", e),
     /// };
     /// ```
     pub fn create(&'a self) -> CollectionCreatedResult {
         // Construct URL
-        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.dirname());
+        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.parent());
         let url = Url::parse(&*url_string).unwrap();
 
         // POST request
@@ -184,8 +195,8 @@ impl<'a> Collection<'a> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = service.collection("my_user/my_bucket");
-    /// match my_bucket.delete() {
+    /// let my_dir = service.collection("my_user/my_dir");
+    /// match my_dir.delete() {
     ///   Ok(_) => println!("Successfully deleted collection"),
     ///   Err(e) => println!("ERROR deleting collection: {:?}", e),
     /// };
@@ -212,10 +223,10 @@ impl<'a> Collection<'a> {
     /// # use algorithmia::collection::Collection;
     /// # use std::fs::File;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = service.collection("my_user/my_bucket");
+    /// let my_dir = service.collection("my_user/my_dir");
     ///
     /// let mut my_file = File::open("/path/to/file").unwrap();
-    /// match my_bucket.upload_file(&mut my_file) {
+    /// match my_dir.upload_file(&mut my_file) {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
     ///   Err(e) => println!("ERROR uploading file: {:?}", e),
     /// };
@@ -244,9 +255,9 @@ impl<'a> Collection<'a> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = service.collection("my_user/my_bucket");
+    /// let my_dir = service.collection("my_user/my_dir");
     ///
-    /// match my_bucket.write_file("some_filename", "file_contents".as_bytes()) {
+    /// match my_dir.write_file("some_filename", "file_contents".as_bytes()) {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
     ///   Err(e) => println!("ERROR uploading file: {:?}", e),
     /// };
@@ -272,9 +283,9 @@ impl<'a> Collection<'a> {
     /// # use algorithmia::Service;
     /// # use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let my_bucket = service.collection("my_user/my_bucket");
+    /// let my_dir = service.collection("my_user/my_dir");
     ///
-    /// match my_bucket.delete_file("some_filename") {
+    /// match my_dir.delete_file("some_filename") {
     ///   Ok(_) => println!("Successfully deleted file"),
     ///   Err(e) => println!("ERROR deleting file: {:?}", e),
     /// };
@@ -299,4 +310,10 @@ impl<'a> Collection<'a> {
 fn test_to_url() {
     let collection = Collection { path: "anowell/foo", service: Service::new("")};
     assert_eq!(collection.to_url().serialize(), format!("{}/data/anowell/foo", API_BASE_URL));
+}
+
+#[test]
+fn test_parent() {
+    let collection = Collection { path: "anowell/foo", service: Service::new("")};
+    assert_eq!(collection.parent(), "anowell");
 }
