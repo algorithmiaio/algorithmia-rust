@@ -19,7 +19,6 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
-#![feature(slice_patterns)]
 #![feature(file_path)]
 extern crate hyper;
 extern crate mime;
@@ -120,21 +119,27 @@ impl<'a, 'c> Service {
     /// let factor = service.algorithm_from_str("anowell/Dijkstra/0.1");
     /// ```
     pub fn algorithm_from_str(self, algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
-        // TODO: strip optional 'algo://' prefix
-        match &*algo_uri.split("/").collect::<Vec<_>>() {
-            [user, repo, version] => Ok(
+        // TODO: test that this works for stripping algo:// prefix
+        // let stripped = match algo_uri.rsplitn(2, "//").nth(0) {
+        //     Some(path) => path,
+        //     None => return Err("Invalid algorithm URI"),
+        // };
+
+        let parts: Vec<_> = algo_uri.split("/").collect();
+        match parts.len() {
+            3 => Ok(
                 Algorithm {
                     service: self,
-                    user: user,
-                    repo: repo,
-                    version: Version::from_str(version)
+                    user: parts[0],
+                    repo: parts[1],
+                    version: Version::from_str(parts[2])
                 }
             ),
-            [user, repo] => Ok(
+            2 => Ok(
                 Algorithm {
                     service: self,
-                    user: user,
-                    repo: repo,
+                    user: parts[0],
+                    repo: parts[1],
                     version: Version::Latest
                 }
             ),

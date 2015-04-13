@@ -73,9 +73,9 @@ impl <'a> Version<'a> {
         match version.split('.').map(|p| p.parse::<u32>()).collect() {
             Ok(parts) => {
                 let ver_parts: Vec<u32> = parts;
-                match &*ver_parts {
-                    [major, minor, revision] => Version::Revision(major, minor, revision),
-                    [major, minor] => Version::Minor(major, minor),
+                match ver_parts.len() {
+                    3 => Version::Revision(ver_parts[0], ver_parts[1], ver_parts[2]),
+                    2 => Version::Minor(ver_parts[0], ver_parts[1]),
                     _ => panic!("Failed to parse version {}", version),
                 }
             },
