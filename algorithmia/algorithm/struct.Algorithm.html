@@ -43,15 +43,62 @@
     <section id='main' class="content struct">
 <h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>algorithm</a>::<wbr><a class='struct' href=''>Algorithm</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-27' href='../../src/algorithmia/algorithm.rs.html#31-35'>[src]</a></span></h1>
+        </span><a id='src-27' href='../../src/algorithmia/algorithm.rs.html#31-36'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Algorithm&lt;'a&gt; {
+    pub service: <a class='struct' href='../../algorithmia/struct.Service.html' title='algorithmia::Service'>Service</a>,
     pub user: &amp;'a <a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>,
     pub repo: &amp;'a <a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>,
     pub version: <a class='enum' href='../../algorithmia/algorithm/enum.Version.html' title='algorithmia::algorithm::Version'>Version</a>&lt;'a&gt;,
 }</pre><div class='docblock'><p>Algorithmia algorithm</p>
 </div><h2 class='fields'>Fields</h2>
-<table><tr><td id='structfield.user'><a class='stability Unmarked' title='No stability level'></a><code>user</code></td><td></td></tr><tr><td id='structfield.repo'><a class='stability Unmarked' title='No stability level'></a><code>repo</code></td><td></td></tr><tr><td id='structfield.version'><a class='stability Unmarked' title='No stability level'></a><code>version</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a&gt; <a class='struct' href='../../algorithmia/algorithm/struct.Algorithm.html' title='algorithmia::algorithm::Algorithm'>Algorithm</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.to_url' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.to_url' class='fnname'>to_url</a>(&amp;self) -&gt; Url</code></h4>
+<table><tr><td id='structfield.service'><a class='stability Unmarked' title='No stability level'></a><code>service</code></td><td></td></tr><tr><td id='structfield.user'><a class='stability Unmarked' title='No stability level'></a><code>user</code></td><td></td></tr><tr><td id='structfield.repo'><a class='stability Unmarked' title='No stability level'></a><code>repo</code></td><td></td></tr><tr><td id='structfield.version'><a class='stability Unmarked' title='No stability level'></a><code>version</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><a class='stability Unmarked' title='No stability level'></a><code>impl&lt;'a&gt; <a class='struct' href='../../algorithmia/algorithm/struct.Algorithm.html' title='algorithmia::algorithm::Algorithm'>Algorithm</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.to_url' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.to_url' class='fnname'>to_url</a>(&amp;self) -&gt; Url</code></h4>
 <div class='docblock'><p>Get the API Endpoint URL for a particular algorithm</p>
+</div><h4 id='method.pipe' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.pipe' class='fnname'>pipe</a>&lt;D, E&gt;(&amp;'a self, input_data: &amp;E) -&gt; <a class='type' href='../../algorithmia/algorithm/type.AlgorithmResult.html' title='algorithmia::algorithm::AlgorithmResult'>AlgorithmResult</a>&lt;D&gt; <span class='where'>where D: <a class='trait' href='http://doc.rust-lang.org/rustc-serialize/rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a>, E: <a class='trait' href='http://doc.rust-lang.org/rustc-serialize/rustc_serialize/serialize/trait.Encodable.html' title='rustc_serialize::serialize::Encodable'>Encodable</a></span></code></h4>
+<div class='docblock'><p>pipeute an algorithm with typed JSON response decoding</p>
+
+<p>input_data must be JSON-encodable
+    use <code>#[derive(RustcEncodable)]</code> for complex input</p>
+
+<p>You must explicitly specify the output type <code>T</code>
+    <code>pipe</code> will attempt to decode the response into AlgorithmOutput<T></p>
+
+<p>If decoding fails, it will attempt to decode into <code>ApiError</code>
+    and if that fails, it will error with <code>DecoderErrorWithContext</code></p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre id='rust-example-rendered' class='rust '>
+<span class='kw'>let</span> <span class='ident'>service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>factor_service</span> <span class='op'>=</span> <span class='ident'>service</span>.<span class='ident'>algorithm</span>(<span class='string'>&quot;kenny&quot;</span>, <span class='string'>&quot;Factor&quot;</span>, <span class='ident'>Version</span>::<span class='ident'>Latest</span>);
+<span class='kw'>let</span> <span class='ident'>input</span> <span class='op'>=</span> <span class='string'>&quot;19635&quot;</span>.<span class='ident'>to_string</span>();
+<span class='kw'>match</span> <span class='ident'>factor_service</span>.<span class='ident'>pipe</span>(<span class='kw-2'>&amp;</span><span class='ident'>input</span>) {
+    <span class='prelude-val'>Ok</span>(<span class='ident'>out</span>) <span class='op'>=&gt;</span> {
+        <span class='kw'>let</span> <span class='ident'>myVal</span>: <span class='ident'>AlgorithmOutput</span><span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>i64</span><span class='op'>&gt;&gt;</span> <span class='op'>=</span> <span class='ident'>out</span>;
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>myVal</span>.<span class='ident'>result</span>);
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>AlgorithmiaError</span>::<span class='ident'>ApiError</span>(<span class='ident'>error</span>)) <span class='op'>=&gt;</span> {
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;API Error: {:?}&quot;</span>, <span class='ident'>error</span>)
+    },
+    <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;ERROR: {:?}&quot;</span>, <span class='ident'>e</span>),
+};
+</pre>
+</div><h4 id='method.pipe_raw' class='method'><a class='stability Unmarked' title='No stability level'></a><code>fn <a href='#method.pipe_raw' class='fnname'>pipe_raw</a>(&amp;'a self, input_data: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='type' href='../../algorithmia/algorithm/type.AlgorithmJsonResult.html' title='algorithmia::algorithm::AlgorithmJsonResult'>AlgorithmJsonResult</a></code></h4>
+<div class='docblock'><p>pipeute an algorithm with with string input and receive the raw JSON response</p>
+
+<p><code>pipe</code> provides an encoding/decoding wrapper around this method</p>
+
+<p>TODO: Understand if we need to support NOT setting Content-Type to application/json
+    if the input isn&#39;t actually JSON</p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre id='rust-example-rendered' class='rust '>
+<span class='kw'>let</span> <span class='ident'>algo_service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>factor</span>  <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>algorithm</span>(<span class='string'>&quot;kenny&quot;</span>, <span class='string'>&quot;Factor&quot;</span>, <span class='ident'>Version</span>::<span class='ident'>Latest</span>);
+
+<span class='kw'>let</span> <span class='ident'>output</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>factor</span>.<span class='ident'>pipe_raw</span>(<span class='string'>&quot;37&quot;</span>) {
+   <span class='prelude-val'>Ok</span>(<span class='ident'>result</span>) <span class='op'>=&gt;</span> <span class='ident'>result</span>,
+   <span class='prelude-val'>Err</span>(<span class='ident'>why</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>why</span>),
+};
+</pre>
 </div></div></section>
     <section id='search' class="content hidden"></section>
 

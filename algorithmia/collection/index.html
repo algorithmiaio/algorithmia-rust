@@ -43,7 +43,7 @@
     <section id='main' class="content mod">
 <h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>algorithmia</a>::<wbr><a class='mod' href=''>collection</a><wbr></span><span class='out-of-band'><span id='render-detail'>
             <a id="collapse-all" href="#">[-]</a>&nbsp;<a id="expand-all" href="#">[+]</a>
-        </span><a id='src-848' href='../../src/algorithmia/collection.rs.html#1-316'>[src]</a></span></h1>
+        </span><a id='src-797' href='../../src/algorithmia/collection.rs.html#1-319'>[src]</a></span></h1>
 <div class='docblock'><p>Collection module for managing Algorithmia Data Collections</p>
 
 <h1 id="examples" class='section-header'><a
@@ -51,14 +51,14 @@
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Service</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fs</span>::<span class='ident'>File</span>;
 
-<span class='kw'>let</span> <span class='ident'>algo_service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
-<span class='kw'>let</span> <span class='ident'>my_bucket</span> <span class='op'>=</span> <span class='ident'>algo_service</span>.<span class='ident'>collection</span>(<span class='string'>&quot;my_user&quot;</span>, <span class='string'>&quot;my_bucket&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>service</span> <span class='op'>=</span> <span class='ident'>Service</span>::<span class='ident'>new</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>my_dir</span> <span class='op'>=</span> <span class='ident'>service</span>.<span class='ident'>collection</span>(<span class='string'>&quot;my_user/my_dir&quot;</span>);
 
-<span class='ident'>my_bucket</span>.<span class='ident'>create</span>();
+<span class='ident'>my_dir</span>.<span class='ident'>create</span>();
 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>my_file</span> <span class='op'>=</span> <span class='ident'>File</span>::<span class='ident'>open</span>(<span class='string'>&quot;/path/to/file&quot;</span>).<span class='ident'>unwrap</span>();
-<span class='ident'>my_bucket</span>.<span class='ident'>upload_file</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>my_file</span>);
+<span class='ident'>my_dir</span>.<span class='ident'>upload_file</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>my_file</span>);
 
-<span class='ident'>my_bucket</span>.<span class='ident'>write_file</span>(<span class='string'>&quot;some_filename&quot;</span>, <span class='string'>&quot;file_contents&quot;</span>.<span class='ident'>as_bytes</span>());
+<span class='ident'>my_dir</span>.<span class='ident'>write_file</span>(<span class='string'>&quot;some_filename&quot;</span>, <span class='string'>&quot;file_contents&quot;</span>.<span class='ident'>as_bytes</span>());
 </pre>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
@@ -101,13 +101,6 @@
                         <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.CollectionFileDeleted.html'
                                title='algorithmia::collection::CollectionFileDeleted'>CollectionFileDeleted</a></td>
                         <td class='docblock short'><p>Response when deleting a file to a collection</p>
-</td>
-                    </tr>
-                
-                    <tr>
-                        <td><a class='stability Unmarked' title='No stability level'></a><a class='struct' href='struct.CollectionService.html'
-                               title='algorithmia::collection::CollectionService'>CollectionService</a></td>
-                        <td class='docblock short'><p>Service endpoint for managing Algorithmia data collections</p>
 </td>
                     </tr>
                 
