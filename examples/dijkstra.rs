@@ -45,7 +45,7 @@ impl<'a> RouteMap<'a> {
         // println!("Input: {:?}", input_data);
         println!("Input:\n{}", json::as_pretty_json(&input_data));
 
-        let output: AlgorithmOutput<Route> = match dijkstra.exec(&input_data) {
+        let output: AlgorithmOutput<Route> = match dijkstra.pipe(&input_data) {
             Ok(out) => out,
             Err(why) => panic!("{:?}", why),
         };

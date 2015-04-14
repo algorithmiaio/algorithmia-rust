@@ -13,7 +13,7 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = "19635".to_string();
-//! let output: AlgorithmOutput<Vec<i64>> = factor.exec(&input).unwrap();
+//! let output: AlgorithmOutput<Vec<i64>> = factor.pipe(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
 

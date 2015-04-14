@@ -13,7 +13,7 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = "19635".to_string();
-//! let output: AlgorithmOutput<Vec<i64>> = factor.exec(&input).unwrap();
+//! let output: AlgorithmOutput<Vec<i64>> = factor.pipe(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
 
@@ -47,9 +47,9 @@ pub enum Version<'a> {
     Hash(&'a str),
 }
 
-/// Result type for generic `AlgorithmOutput` when calling `exec`
+/// Result type for generic `AlgorithmOutput` when calling `pipe`
 pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, AlgorithmiaError>;
-/// Result type for the raw JSON returned by calling `exec_raw`
+/// Result type for the raw JSON returned by calling `pipe_raw`
 pub type AlgorithmJsonResult = Result<String, hyper::HttpError>;
 
 /// Generic struct for decoding an algorithm response JSON
@@ -97,13 +97,13 @@ impl<'a> Algorithm<'a> {
         Url::parse(&*url_string).unwrap()
     }
 
-    /// Execute an algorithm with typed JSON response decoding
+    /// pipeute an algorithm with typed JSON response decoding
     ///
     /// input_data must be JSON-encodable
     ///     use `#[derive(RustcEncodable)]` for complex input
     ///
     /// You must explicitly specify the output type `T`
-    ///     `exec` will attempt to decode the response into AlgorithmOutput<T>
+    ///     `pipe` will attempt to decode the response into AlgorithmOutput<T>
     ///
     /// If decoding fails, it will attempt to decode into `ApiError`
     ///     and if that fails, it will error with `DecoderErrorWithContext`
@@ -116,7 +116,7 @@ impl<'a> Algorithm<'a> {
     /// let service = Service::new("111112222233333444445555566");
     /// let factor_service = service.algorithm("kenny", "Factor", Version::Latest);
     /// let input = "19635".to_string();
-    /// match factor_service.exec(&input) {
+    /// match factor_service.pipe(&input) {
     ///     Ok(out) => {
     ///         let myVal: AlgorithmOutput<Vec<i64>> = out;
     ///         println!("{:?}", myVal.result);
@@ -127,19 +127,19 @@ impl<'a> Algorithm<'a> {
     ///     Err(e) => println!("ERROR: {:?}", e),
     /// };
     /// ```
-    pub fn exec<D, E>(&'a self, input_data: &E) -> AlgorithmResult<D>
+    pub fn pipe<D, E>(&'a self, input_data: &E) -> AlgorithmResult<D>
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
-        let res_json = try!(self.exec_raw(&*raw_input));
+        let res_json = try!(self.pipe_raw(&*raw_input));
 
         Service::decode_to_result::<AlgorithmOutput<D>>(res_json)
     }
 
 
-    /// Execute an algorithm with with string input and receive the raw JSON response
+    /// pipeute an algorithm with with string input and receive the raw JSON response
     ///
-    /// `exec` provides an encoding/decoding wrapper around this method
+    /// `pipe` provides an encoding/decoding wrapper around this method
     ///
     /// TODO: Understand if we need to support NOT setting Content-Type to application/json
     ///     if the input isn't actually JSON
@@ -152,11 +152,11 @@ impl<'a> Algorithm<'a> {
     /// let algo_service = Service::new("111112222233333444445555566");
     /// let factor  = algo_service.algorithm("kenny", "Factor", Version::Latest);
     ///
-    /// let output = match factor.exec_raw("37") {
+    /// let output = match factor.pipe_raw("37") {
     ///    Ok(result) => result,
     ///    Err(why) => panic!("{:?}", why),
     /// };
-    pub fn exec_raw(&'a self, input_data: &str) -> AlgorithmJsonResult {
+    pub fn pipe_raw(&'a self, input_data: &str) -> AlgorithmJsonResult {
         let ref mut api_client = self.service.api_client();
         let req = api_client.post_json(self.to_url())
             .body(input_data);
