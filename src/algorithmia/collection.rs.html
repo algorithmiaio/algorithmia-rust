@@ -359,6 +359,8 @@
 <span id="317">317</span>
 <span id="318">318</span>
 <span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Collection module for managing Algorithmia Data Collections</span>
 <span class='doccomment'>//!</span>
@@ -372,8 +374,7 @@
 <span class='doccomment'>//! let my_dir = service.collection(&quot;my_user/my_dir&quot;);</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! my_dir.create();</span>
-<span class='doccomment'>//! let mut my_file = File::open(&quot;/path/to/file&quot;).unwrap();</span>
-<span class='doccomment'>//! my_dir.upload_file(&amp;mut my_file);</span>
+<span class='doccomment'>//! my_dir.upload_file(&quot;/path/to/file&quot;);</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! my_dir.write_file(&quot;some_filename&quot;, &quot;file_contents&quot;.as_bytes());</span>
 <span class='doccomment'>//! ```</span>
@@ -385,6 +386,7 @@
 <span class='kw'>use</span> <span class='ident'>rustc_serialize</span>::{<span class='ident'>json</span>, <span class='ident'>Decoder</span>};
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>::<span class='ident'>Read</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fs</span>::<span class='ident'>File</span>;
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>path</span>::<span class='ident'>Path</span>;
 
 <span class='kw'>static</span> <span class='ident'>COLLECTION_BASE_PATH</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span> <span class='op'>=</span> <span class='string'>&quot;data&quot;</span>;
 
@@ -587,21 +589,23 @@
     <span class='doccomment'>/// let service = Service::new(&quot;111112222233333444445555566&quot;);</span>
     <span class='doccomment'>/// let my_dir = service.collection(&quot;my_user/my_dir&quot;);</span>
     <span class='doccomment'>///</span>
-    <span class='doccomment'>/// let mut my_file = File::open(&quot;/path/to/file&quot;).unwrap();</span>
-    <span class='doccomment'>/// match my_dir.upload_file(&amp;mut my_file) {</span>
+    <span class='doccomment'>/// match my_dir.upload_file(&quot;/path/to/file&quot;) {</span>
     <span class='doccomment'>///   Ok(response) =&gt; println!(&quot;Successfully uploaded to: {}&quot;, response.result),</span>
     <span class='doccomment'>///   Err(e) =&gt; println!(&quot;ERROR uploading file: {:?}&quot;, e),</span>
     <span class='doccomment'>/// };</span>
     <span class='doccomment'>/// ```</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>upload_file</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>, <span class='ident'>file</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>File</span>) <span class='op'>-&gt;</span> <span class='ident'>CollectionFileAddedResult</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>upload_file</span><span class='op'>&lt;</span><span class='ident'>P</span>: <span class='ident'>AsRef</span><span class='op'>&lt;</span><span class='ident'>Path</span><span class='op'>&gt;&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>, <span class='ident'>file_path</span>: <span class='ident'>P</span>) <span class='op'>-&gt;</span> <span class='ident'>CollectionFileAddedResult</span> {
+        <span class='comment'>// FIXME: A whole lot of unwrap going on here...</span>
+        <span class='kw'>let</span> <span class='ident'>path_ref</span> <span class='op'>=</span> <span class='ident'>file_path</span>.<span class='ident'>as_ref</span>();
         <span class='kw'>let</span> <span class='ident'>url_string</span> <span class='op'>=</span> <span class='macro'>format</span><span class='macro'>!</span>(<span class='string'>&quot;{}/{}&quot;</span>,
             <span class='self'>self</span>.<span class='ident'>to_url</span>(),
-            <span class='ident'>file</span>.<span class='ident'>path</span>().<span class='ident'>unwrap</span>().<span class='ident'>file_name</span>().<span class='ident'>unwrap</span>().<span class='ident'>to_str</span>().<span class='ident'>unwrap</span>()
+            <span class='ident'>path_ref</span>.<span class='ident'>file_name</span>().<span class='ident'>unwrap</span>().<span class='ident'>to_str</span>().<span class='ident'>unwrap</span>()
         );
         <span class='kw'>let</span> <span class='ident'>url</span> <span class='op'>=</span> <span class='ident'>Url</span>::<span class='ident'>parse</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>url_string</span>).<span class='ident'>unwrap</span>();
 
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>file</span> <span class='op'>=</span> <span class='ident'>File</span>::<span class='ident'>open</span>(<span class='ident'>path_ref</span>).<span class='ident'>unwrap</span>();
         <span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='kw-2'>mut</span> <span class='ident'>api_client</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>service</span>.<span class='ident'>api_client</span>();
-        <span class='kw'>let</span> <span class='ident'>req</span> <span class='op'>=</span> <span class='ident'>api_client</span>.<span class='ident'>post</span>(<span class='ident'>url</span>).<span class='ident'>body</span>(<span class='ident'>file</span>);
+        <span class='kw'>let</span> <span class='ident'>req</span> <span class='op'>=</span> <span class='ident'>api_client</span>.<span class='ident'>post</span>(<span class='ident'>url</span>).<span class='ident'>body</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>file</span>);
 
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>req</span>.<span class='ident'>send</span>());
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res_json</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>new</span>();
