@@ -19,7 +19,6 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
-#![feature(file_path)]
 extern crate hyper;
 extern crate mime;
 extern crate rustc_serialize;

@@ -10,8 +10,7 @@
 //! let my_dir = service.collection("my_user/my_dir");
 //!
 //! my_dir.create();
-//! let mut my_file = File::open("/path/to/file").unwrap();
-//! my_dir.upload_file(&mut my_file);
+//! my_dir.upload_file("/path/to/file");
 //!
 //! my_dir.write_file("some_filename", "file_contents".as_bytes());
 //! ```
@@ -23,6 +22,7 @@ use hyper::Url;
 use rustc_serialize::{json, Decoder};
 use std::io::Read;
 use std::fs::File;
+use std::path::Path;
 
 static COLLECTION_BASE_PATH: &'static str = "data";
 
@@ -225,21 +225,23 @@ impl<'a> Collection<'a> {
     /// let service = Service::new("111112222233333444445555566");
     /// let my_dir = service.collection("my_user/my_dir");
     ///
-    /// let mut my_file = File::open("/path/to/file").unwrap();
-    /// match my_dir.upload_file(&mut my_file) {
+    /// match my_dir.upload_file("/path/to/file") {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
     ///   Err(e) => println!("ERROR uploading file: {:?}", e),
     /// };
     /// ```
-    pub fn upload_file(&'a self, file: &mut File) -> CollectionFileAddedResult {
+    pub fn upload_file<P: AsRef<Path>>(&'a self, file_path: P) -> CollectionFileAddedResult {
+        // FIXME: A whole lot of unwrap going on here...
+        let path_ref = file_path.as_ref();
         let url_string = format!("{}/{}",
             self.to_url(),
-            file.path().unwrap().file_name().unwrap().to_str().unwrap()
+            path_ref.file_name().unwrap().to_str().unwrap()
         );
         let url = Url::parse(&*url_string).unwrap();
 
+        let mut file = File::open(path_ref).unwrap();
         let ref mut api_client = self.service.api_client();
-        let req = api_client.post(url).body(file);
+        let req = api_client.post(url).body(&mut file);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
