@@ -31,8 +31,7 @@ use collection::{Collection};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
-use hyper::header::{Accept, Authorization, ContentType, UserAgent, qitem};
-use mime::{Mime, TopLevel, SubLevel};
+use hyper::header::{Authorization, UserAgent};
 use rustc_serialize::{json, Decodable};
 use self::AlgorithmiaError::*;
 use std::io;
@@ -74,7 +73,6 @@ pub struct ApiErrorResponse {
     pub error: String,
     pub stacktrace: Option<String>,
 }
-
 
 impl<'a, 'c> Service {
     /// Instantiate a new Service
@@ -205,13 +203,6 @@ impl ApiClient {
         self.client.delete(url)
             .header(UserAgent(self.user_agent.clone()))
             .header(Authorization(self.api_key.clone()))
-    }
-
-    /// Helper to POST JSON to Algorithmia with the correct Mime types
-    pub fn post_json(&mut self, url: Url) -> RequestBuilder<Url> {
-        self.post(url)
-            .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
-            .header(Accept(vec![qitem(Mime(TopLevel::Application, SubLevel::Json, vec![]))]))
     }
 }
 

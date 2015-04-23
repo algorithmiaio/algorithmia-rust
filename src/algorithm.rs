@@ -24,6 +24,8 @@ use hyper::Url;
 use rustc_serialize::{json, Decoder, Decodable, Encodable};
 use std::io::Read;
 use std::fmt;
+use hyper::header::ContentType;
+use mime::{Mime, TopLevel, SubLevel};
 
 static ALGORITHM_BASE_PATH: &'static str = "api";
 
@@ -131,7 +133,7 @@ impl<'a> Algorithm<'a> {
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
-        let res_json = try!(self.pipe_raw(&*raw_input));
+        let res_json = try!(self.pipe_raw(&*raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
 
         Service::decode_to_result::<AlgorithmOutput<D>>(res_json)
     }
@@ -139,10 +141,9 @@ impl<'a> Algorithm<'a> {
 
     /// pipeute an algorithm with with string input and receive the raw JSON response
     ///
-    /// `pipe` provides an encoding/decoding wrapper around this method
+    /// `pipe` provides a JSON encoding/decoding wrapper around this method
     ///
-    /// TODO: Understand if we need to support NOT setting Content-Type to application/json
-    ///     if the input isn't actually JSON
+    /// TODO: Consider using byte slice input and output instead of strings
     ///
     /// # Examples
     ///
@@ -152,13 +153,14 @@ impl<'a> Algorithm<'a> {
     /// let algo_service = Service::new("111112222233333444445555566");
     /// let factor  = algo_service.algorithm("kenny", "Factor", Version::Latest);
     ///
-    /// let output = match factor.pipe_raw("37") {
+    /// let output = match factor.pipe_raw("37", "text/plain".parse().unwrap()) {
     ///    Ok(result) => result,
     ///    Err(why) => panic!("{:?}", why),
     /// };
-    pub fn pipe_raw(&'a self, input_data: &str) -> AlgorithmJsonResult {
+    pub fn pipe_raw(&'a self, input_data: &str, content_type: Mime) -> AlgorithmJsonResult {
         let ref mut api_client = self.service.api_client();
-        let req = api_client.post_json(self.to_url())
+        let req = api_client.post(self.to_url())
+            .header(ContentType(content_type))
             .body(input_data);
 
         let mut res = try!(req.send());
@@ -180,7 +182,6 @@ impl <'a> fmt::Display for Version<'a> {
         }
     }
 }
-
 
 #[test]
 fn test_latest_to_url() {
