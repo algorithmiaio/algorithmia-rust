@@ -8,12 +8,12 @@
 //!
 //! // Initialize with an API key
 //! let service = Service::new("111112222233333444445555566");
-//! let factor = service.algorithm("kenny", "Factor", Version::Revision(0,1,0));
+//! let moving_avg = service.algorithm("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
-//! let input = "19635".to_string();
-//! let output: AlgorithmOutput<Vec<i64>> = factor.pipe(&input).unwrap();
+//! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
+//! let output: AlgorithmOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
 //! ```
 
@@ -116,11 +116,11 @@ impl<'a> Algorithm<'a> {
     /// # use algorithmia::{Service, AlgorithmiaError};
     /// # use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor_service = service.algorithm("kenny", "Factor", Version::Latest);
-    /// let input = "19635".to_string();
-    /// match factor_service.pipe(&input) {
+    /// let moving_avg = service.algorithm("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
+    /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
+    /// match moving_avg.pipe(&input) {
     ///     Ok(out) => {
-    ///         let myVal: AlgorithmOutput<Vec<i64>> = out;
+    ///         let myVal: AlgorithmOutput<Vec<f64>> = out;
     ///         println!("{:?}", myVal.result);
     ///     },
     ///     Err(AlgorithmiaError::ApiError(error)) => {
@@ -151,9 +151,9 @@ impl<'a> Algorithm<'a> {
     /// # use algorithmia::Service;
     /// # use algorithmia::algorithm::{Algorithm, Version};
     /// let algo_service = Service::new("111112222233333444445555566");
-    /// let factor  = algo_service.algorithm("kenny", "Factor", Version::Latest);
+    /// let minmax  = algo_service.algorithm("codeb34v3r", "FindMinMax", Version::Minor(0,1));
     ///
-    /// let output = match factor.pipe_raw("37", "text/plain".parse().unwrap()) {
+    /// let output = match minmax.pipe_raw("[2,3,4]", "application/json".parse().unwrap()) {
     ///    Ok(result) => result,
     ///    Err(why) => panic!("{:?}", why),
     /// };
