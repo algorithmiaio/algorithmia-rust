@@ -8,4 +8,3 @@ authors = ["Anthony Nowell <anowell@gmail.com>"]
 hyper = "0.3.*"
 mime = "*"
 rustc-serialize = "*"
-lazy_static = "0.1.*"
