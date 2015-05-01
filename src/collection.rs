@@ -17,7 +17,7 @@
 
 extern crate hyper;
 
-use ::{Service, AlgorithmiaError, ApiErrorResponse, API_BASE_URL};
+use ::{Service, AlgorithmiaError, ApiErrorResponse};
 use hyper::Url;
 use rustc_serialize::{json, Decoder};
 use std::io::Read;
@@ -124,7 +124,7 @@ impl<'a> Collection<'a> {
 
     /// Get the API Endpoint URL for a particular collection
     pub fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.path);
+        let url_string = format!("{}/{}/{}", Service::get_api(), COLLECTION_BASE_PATH, self.path);
         Url::parse(&*url_string).unwrap()
     }
 
@@ -171,7 +171,7 @@ impl<'a> Collection<'a> {
     /// ```
     pub fn create(&'a self) -> CollectionCreatedResult {
         // Construct URL
-        let url_string = format!("{}/{}/{}", API_BASE_URL, COLLECTION_BASE_PATH, self.parent());
+        let url_string = format!("{}/{}/{}", Service::get_api(), COLLECTION_BASE_PATH, self.parent());
         let url = Url::parse(&*url_string).unwrap();
 
         // POST request
@@ -311,7 +311,7 @@ impl<'a> Collection<'a> {
 #[test]
 fn test_to_url() {
     let collection = Collection { path: "anowell/foo", service: Service::new("")};
-    assert_eq!(collection.to_url().serialize(), format!("{}/data/anowell/foo", API_BASE_URL));
+    assert_eq!(collection.to_url().serialize(), format!("{}/data/anowell/foo", Service::get_api()));
 }
 
 #[test]

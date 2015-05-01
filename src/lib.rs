@@ -34,9 +34,9 @@ use hyper::client::RequestBuilder;
 use hyper::header::{Authorization, UserAgent};
 use rustc_serialize::{json, Decodable};
 use self::AlgorithmiaError::*;
-use std::io;
+use std::{io, env};
 
-pub static API_BASE_URL: &'static str = "https://api.algorithmia.com";
+static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia service endpoints
 pub struct Service{
@@ -79,6 +79,14 @@ impl<'a, 'c> Service {
     pub fn new(api_key: &str) -> Service {
         Service {
             api_key: api_key.to_string(),
+        }
+    }
+
+    pub fn get_api() -> String {
+        // TODO: memoize
+        match env::var("ALGORITHMIA_API") {
+            Ok(url) => url,
+            Err(_) => DEFAULT_API_BASE_URL.to_string(),
         }
     }
 

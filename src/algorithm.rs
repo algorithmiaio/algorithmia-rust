@@ -19,7 +19,7 @@
 
 extern crate hyper;
 
-use ::{Service, AlgorithmiaError, API_BASE_URL};
+use ::{Service, AlgorithmiaError};
 use hyper::Url;
 use rustc_serialize::{json, Decoder, Decodable, Encodable};
 use std::io::Read;
@@ -93,8 +93,8 @@ impl<'a> Algorithm<'a> {
     /// Get the API Endpoint URL for a particular algorithm
     pub fn to_url(&self) -> Url {
         let url_string = match self.version {
-            Version::Latest => format!("{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo),
-            ref version => format!("{}/{}/{}/{}/{}", API_BASE_URL, ALGORITHM_BASE_PATH, self.user, self.repo, version),
+            Version::Latest => format!("{}/{}/{}/{}", Service::get_api(), ALGORITHM_BASE_PATH, self.user, self.repo),
+            ref version => format!("{}/{}/{}/{}/{}", Service::get_api(), ALGORITHM_BASE_PATH, self.user, self.repo, version),
         };
         Url::parse(&*url_string).unwrap()
     }
@@ -186,25 +186,25 @@ impl <'a> fmt::Display for Version<'a> {
 #[test]
 fn test_latest_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Latest, service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", API_BASE_URL));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", Service::get_api()));
 }
 
 #[test]
 fn test_revision_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Revision(0,1,0), service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", API_BASE_URL));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", Service::get_api()));
 }
 
 #[test]
 fn test_minor_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Minor(0,1), service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", API_BASE_URL));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", Service::get_api()));
 }
 
 #[test]
 fn test_hash_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456"), service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", API_BASE_URL));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", Service::get_api()));
 }
 
 #[test]
