@@ -96,7 +96,7 @@ impl<'a> Algorithm<'a> {
             Version::Latest => format!("{}/{}/{}/{}", Service::get_api(), ALGORITHM_BASE_PATH, self.user, self.repo),
             ref version => format!("{}/{}/{}/{}/{}", Service::get_api(), ALGORITHM_BASE_PATH, self.user, self.repo, version),
         };
-        Url::parse(&*url_string).unwrap()
+        Url::parse(&url_string).unwrap()
     }
 
     /// pipeute an algorithm with typed JSON response decoding
@@ -133,7 +133,7 @@ impl<'a> Algorithm<'a> {
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
-        let res_json = try!(self.pipe_raw(&*raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
+        let res_json = try!(self.pipe_raw(&raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
 
         Service::decode_to_result::<AlgorithmOutput<D>>(res_json)
     }

@@ -171,9 +171,9 @@ impl<'a, 'c> Service {
 
     /// Helper to standardize decoding to a specific Algorithmia Result type
     pub fn decode_to_result<T: Decodable>(res_json: String) -> Result<T, AlgorithmiaError> {
-        match json::decode::<T>(&*res_json) {
+        match json::decode::<T>(&res_json) {
             Ok(result) => Ok(result),
-            Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
+            Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
                 Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
                 Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
             }

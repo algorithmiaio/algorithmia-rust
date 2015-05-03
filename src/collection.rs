@@ -125,7 +125,7 @@ impl<'a> Collection<'a> {
     /// Get the API Endpoint URL for a particular collection
     pub fn to_url(&self) -> Url {
         let url_string = format!("{}/{}/{}", Service::get_api(), COLLECTION_BASE_PATH, self.path);
-        Url::parse(&*url_string).unwrap()
+        Url::parse(&url_string).unwrap()
     }
 
     /// Display collection details if it exists
@@ -148,9 +148,9 @@ impl<'a> Collection<'a> {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match json::decode::<CollectionShow>(&*res_json) {
+        match json::decode::<CollectionShow>(&res_json) {
             Ok(result) => Ok(result),
-            Err(why) => match json::decode::<ApiErrorResponse>(&*res_json) {
+            Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
                 Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
                 Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
             }
@@ -172,7 +172,7 @@ impl<'a> Collection<'a> {
     pub fn create(&'a self) -> CollectionCreatedResult {
         // Construct URL
         let url_string = format!("{}/{}/{}", Service::get_api(), COLLECTION_BASE_PATH, self.parent());
-        let url = Url::parse(&*url_string).unwrap();
+        let url = Url::parse(&url_string).unwrap();
 
         // POST request
         let ref mut api_client = self.service.api_client();
@@ -237,7 +237,7 @@ impl<'a> Collection<'a> {
             self.to_url(),
             path_ref.file_name().unwrap().to_str().unwrap()
         );
-        let url = Url::parse(&*url_string).unwrap();
+        let url = Url::parse(&url_string).unwrap();
 
         let mut file = File::open(path_ref).unwrap();
         let ref mut api_client = self.service.api_client();
@@ -266,10 +266,10 @@ impl<'a> Collection<'a> {
     /// ```
     pub fn write_file(&'a self, filename: &str, input_data: &[u8]) -> CollectionFileAddedResult {
         let url_string = format!("{}/{}", self.to_url(), filename);
-        let url = Url::parse(&*url_string).unwrap();
+        let url = Url::parse(&url_string).unwrap();
 
         let ref mut api_client = self.service.api_client();
-        let req = api_client.post(url).body(&*input_data);
+        let req = api_client.post(url).body(input_data);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -294,7 +294,7 @@ impl<'a> Collection<'a> {
     /// ```
     pub fn delete_file(&'a self, filename: &str) -> CollectionFileDeletedResult {
         let url_string = format!("{}/{}", self.to_url(), filename);
-        let url = Url::parse(&*url_string).unwrap();
+        let url = Url::parse(&url_string).unwrap();
 
         let ref mut api_client = self.service.api_client();
         let req = api_client.delete(url);
