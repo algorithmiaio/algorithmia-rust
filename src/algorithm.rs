@@ -4,7 +4,7 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
+//! use algorithmia::algorithm::{Algorithm, PipeOutput, Version};
 //!
 //! // Initialize with an API key
 //! let service = Service::new("111112222233333444445555566");
@@ -13,8 +13,8 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let output: AlgorithmOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
-//! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
+//! let output: PipeOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
+//! println!("Completed in {} seconds with result: {:?}", output.metadata.duration, output.result);
 //! ```
 
 extern crate hyper;
@@ -27,7 +27,7 @@ use std::fmt;
 use hyper::header::ContentType;
 use mime::{Mime, TopLevel, SubLevel};
 
-static ALGORITHM_BASE_PATH: &'static str = "api";
+static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
 /// Algorithmia algorithm
 pub struct Algorithm<'a> {
@@ -49,15 +49,20 @@ pub enum Version<'a> {
     Hash(&'a str),
 }
 
-/// Result type for generic `AlgorithmOutput` when calling `pipe`
-pub type AlgorithmResult<T> = Result<AlgorithmOutput<T>, AlgorithmiaError>;
+/// Result type for generic `PipeOutput` when calling `pipe`
+pub type AlgorithmResult<T> = Result<PipeOutput<T>, AlgorithmiaError>;
 /// Result type for the raw JSON returned by calling `pipe_raw`
 pub type AlgorithmJsonResult = Result<String, hyper::HttpError>;
 
+#[derive(RustcDecodable, Debug)]
+pub struct PipeMetadata {
+    pub duration: f32
+}
+
 /// Generic struct for decoding an algorithm response JSON
 #[derive(RustcDecodable, Debug)]
-pub struct AlgorithmOutput<T> {
-    pub duration: f32,
+pub struct PipeOutput<T> {
+    pub metadata: PipeMetadata,
     pub result: T,
 }
 
@@ -99,13 +104,13 @@ impl<'a> Algorithm<'a> {
         Url::parse(&url_string).unwrap()
     }
 
-    /// pipeute an algorithm with typed JSON response decoding
+    /// Execute an algorithm with typed JSON response decoding
     ///
     /// input_data must be JSON-encodable
     ///     use `#[derive(RustcEncodable)]` for complex input
     ///
     /// You must explicitly specify the output type `T`
-    ///     `pipe` will attempt to decode the response into AlgorithmOutput<T>
+    ///     `pipe` will attempt to decode the response into PipeOutput<T>
     ///
     /// If decoding fails, it will attempt to decode into `ApiError`
     ///     and if that fails, it will error with `DecoderErrorWithContext`
@@ -114,17 +119,14 @@ impl<'a> Algorithm<'a> {
     ///
     /// ```no_run
     /// # use algorithmia::{Service, AlgorithmiaError};
-    /// # use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
+    /// # use algorithmia::algorithm::{Algorithm, PipeOutput, Version};
     /// let service = Service::new("111112222233333444445555566");
     /// let moving_avg = service.algorithm("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
     /// match moving_avg.pipe(&input) {
     ///     Ok(out) => {
-    ///         let myVal: AlgorithmOutput<Vec<f64>> = out;
+    ///         let myVal: PipeOutput<Vec<f64>> = out;
     ///         println!("{:?}", myVal.result);
-    ///     },
-    ///     Err(AlgorithmiaError::ApiError(error)) => {
-    ///         println!("API Error: {:?}", error)
     ///     },
     ///     Err(e) => println!("ERROR: {:?}", e),
     /// };
@@ -135,7 +137,7 @@ impl<'a> Algorithm<'a> {
         let raw_input = try!(json::encode(input_data));
         let res_json = try!(self.pipe_raw(&raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
 
-        Service::decode_to_result::<AlgorithmOutput<D>>(res_json)
+        Service::decode_to_result::<PipeOutput<D>>(res_json)
     }
 
 
@@ -186,25 +188,25 @@ impl <'a> fmt::Display for Version<'a> {
 #[test]
 fn test_latest_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Latest, service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor", Service::get_api()));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor", Service::get_api()));
 }
 
 #[test]
 fn test_revision_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Revision(0,1,0), service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1.0", Service::get_api()));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor/0.1.0", Service::get_api()));
 }
 
 #[test]
 fn test_minor_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Minor(0,1), service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/0.1", Service::get_api()));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor/0.1", Service::get_api()));
 }
 
 #[test]
 fn test_hash_to_url() {
     let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456"), service: Service::new("")};
-    assert_eq!(algorithm.to_url().serialize(), format!("{}/api/kenny/Factor/abcdef123456", Service::get_api()));
+    assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor/abcdef123456", Service::get_api()));
 }
 
 #[test]
@@ -230,9 +232,9 @@ fn test_minor_string() {
 
 #[test]
 fn test_json_decoding() {
-    let json_output = r#"{"duration":0.46739511,"result":[5,41]}"#;
-    let expected = AlgorithmOutput{ duration: 0.46739511f32, result: [5, 41] };
-    let decoded: AlgorithmOutput<Vec<i32>> = json::decode(json_output).unwrap();
-    assert_eq!(expected.duration, decoded.duration);
+    let json_output = r#"{"metadata":{"duration":0.46739511},"result":[5,41]}"#;
+    let expected = PipeOutput{ metadata: PipeMetadata { duration: 0.46739511f32} , result: [5, 41] };
+    let decoded: PipeOutput<Vec<i32>> = json::decode(json_output).unwrap();
+    assert_eq!(expected.metadata.duration, decoded.metadata.duration);
     assert_eq!(expected.result, &*decoded.result);
 }

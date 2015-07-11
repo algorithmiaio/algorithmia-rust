@@ -1,9 +1,8 @@
-#![feature(slice_patterns)]
 extern crate algorithmia;
 extern crate rustc_serialize;
 
 use algorithmia::Service;
-use algorithmia::algorithm::{AlgorithmOutput, Version};
+use algorithmia::algorithm::{PipeOutput, Version};
 use std::collections::HashMap;
 use std::env;
 use rustc_serialize::{json};
@@ -30,7 +29,7 @@ struct RouteMap<'a> {
 }
 
 impl<'a> RouteMap<'a> {
-    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgorithmOutput<Route> {
+    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> PipeOutput<Route> {
         let api_key = match env::var("ALGORITHMIA_API_KEY") {
             Ok(key) => key,
             Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
@@ -45,7 +44,7 @@ impl<'a> RouteMap<'a> {
         // println!("Input: {:?}", input_data);
         println!("Input:\n{}", json::as_pretty_json(&input_data));
 
-        let output: AlgorithmOutput<Route> = match dijkstra.pipe(&input_data) {
+        let output: PipeOutput<Route> = match dijkstra.pipe(&input_data) {
             Ok(out) => out,
             Err(why) => panic!("{:?}", why),
         };
@@ -54,11 +53,10 @@ impl<'a> RouteMap<'a> {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let (start, end) = match &*args {
-        [_, ref start, ref end] => (&**start, &**end),
-        _ => ("a", "c"),
-    };
+    let mut args = env::args();
+    args.next(); // discard args[0]
+    let start = args.next().unwrap_or("a".to_string());
+    let end = args.next().unwrap_or("c".to_string());
 
     let input_map = RouteMap {
         map: hashmap!(
@@ -69,6 +67,6 @@ fn main() {
         )
     };
 
-    let output = input_map.get_dijkstra_route(start, end);
-    println!("Shortest route: {:?}\nCompleted in {} seconds.", output.result, output.duration);
+    let output = input_map.get_dijkstra_route(&start, &end);
+    println!("Shortest route: {:?}\nCompleted in {} seconds.", output.result, output.metadata.duration);
 }

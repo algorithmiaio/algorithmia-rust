@@ -4,7 +4,7 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};
+//! use algorithmia::algorithm::{Algorithm, PipeOutput, Version};
 //!
 //! // Initialize with an API key
 //! let service = Service::new("111112222233333444445555566");
@@ -13,8 +13,8 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let output: AlgorithmOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
-//! println!("Completed in {} seconds with result: {:?}", output.duration, output.result);
+//! let output: PipeOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
+//! println!("Completed in {} seconds with result: {:?}", output.metadata.duration, output.result);
 //! ```
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
@@ -32,6 +32,7 @@ use collection::{Collection};
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
 use hyper::header::{Authorization, UserAgent};
+use hyper::method::Method;
 use rustc_serialize::{json, Decodable};
 use self::AlgorithmiaError::*;
 use std::{io, env};
@@ -53,8 +54,8 @@ pub struct ApiClient{
 /// Errors that may be returned by this library
 #[derive(Debug)]
 pub enum AlgorithmiaError {
-    /// Errors returned by the Algorithmia API
-    ApiError(String), //TODO: add the optional stacktrace or use ApiErrorResponse directly
+    /// Errors returned by the Algorithmia API, Optional Stacktrace
+    AlgorithmiaApiError(ApiError),
     /// HTTP errors encountered by the hyper client
     HttpError(hyper::HttpError),
     /// Errors decoding response json
@@ -67,11 +68,16 @@ pub enum AlgorithmiaError {
     IoError(io::Error),
 }
 
+#[derive(RustcDecodable, Debug)]
+pub struct ApiError {
+    pub message: String,
+    pub stacktrace: Option<String>,
+}
+
 /// Struct for decoding Algorithmia API error responses
 #[derive(RustcDecodable, Debug)]
 pub struct ApiErrorResponse {
-    pub error: String,
-    pub stacktrace: Option<String>,
+    pub error: ApiError,
 }
 
 impl<'a, 'c> Service {
@@ -174,9 +180,16 @@ impl<'a, 'c> Service {
         match json::decode::<T>(&res_json) {
             Ok(result) => Ok(result),
             Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
-                Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
+                Ok(err_res) => Err(AlgorithmiaError::AlgorithmiaApiError(err_res.error)),
                 Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
             }
+        }
+    }
+
+    pub fn decode_to_error(res_json: String) -> AlgorithmiaError {
+        match json::decode::<ApiErrorResponse>(&res_json) {
+            Ok(err_res) => AlgorithmiaError::AlgorithmiaApiError(err_res.error),
+            Err(why) => AlgorithmiaError::DecoderErrorWithContext(why, res_json),
         }
     }
 
@@ -194,23 +207,31 @@ impl ApiClient {
 
     /// Helper to make Algorithmia GET requests with the API key
     pub fn get(&mut self, url: Url) -> RequestBuilder<Url> {
-        self.client.get(url)
-            .header(UserAgent(self.user_agent.clone()))
-            .header(Authorization(self.api_key.clone()))
+        self.build_request(Method::Get, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
     pub fn post(&mut self, url: Url) -> RequestBuilder<Url> {
-        self.client.post(url)
-            .header(UserAgent(self.user_agent.clone()))
-            .header(Authorization(self.api_key.clone()))
+        self.build_request(Method::Post, url)
+    }
+
+    /// Helper to make Algorithmia PUT requests with the API key
+    pub fn put(&mut self, url: Url) -> RequestBuilder<Url> {
+        self.build_request(Method::Put, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
     pub fn delete(&mut self, url: Url) -> RequestBuilder<Url> {
-        self.client.delete(url)
-            .header(UserAgent(self.user_agent.clone()))
-            .header(Authorization(self.api_key.clone()))
+        self.build_request(Method::Delete, url)
+    }
+
+
+    fn build_request(&mut self, verb: Method, url: Url) -> RequestBuilder<Url> {
+        let req = self.client.request(verb, url);
+
+        // TODO: Support Secure Auth
+        req.header(UserAgent(self.user_agent.clone()))
+           .header(Authorization(format!("Simple {}", self.api_key)))
     }
 }
 

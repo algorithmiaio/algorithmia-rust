@@ -16,15 +16,20 @@
 //! ```
 
 extern crate hyper;
+extern crate chrono;
 
 use ::{Service, AlgorithmiaError, ApiErrorResponse};
 use hyper::Url;
+use hyper::status::StatusCode;
 use rustc_serialize::{json, Decoder};
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
+use hyper::header::ContentType;
+use mime::{Mime, TopLevel, SubLevel};
+use self::chrono::{DateTime, UTC};
 
-static COLLECTION_BASE_PATH: &'static str = "data";
+static COLLECTION_BASE_PATH: &'static str = "v1/data";
 
 /// Algorithmia data collection
 pub struct Collection<'a> {
@@ -33,48 +38,53 @@ pub struct Collection<'a> {
 }
 
 pub type CollectionShowResult = Result<CollectionShow, AlgorithmiaError>;
-pub type CollectionCreatedResult = Result<CollectionCreated, AlgorithmiaError>;
+pub type CollectionCreatedResult = Result<(), AlgorithmiaError>;
 pub type CollectionDeletedResult = Result<CollectionDeleted, AlgorithmiaError>;
 pub type CollectionFileAddedResult = Result<CollectionFileAdded, AlgorithmiaError>;
 pub type CollectionFileDeletedResult = Result<CollectionFileDeleted, AlgorithmiaError>;
 
-
-/// Permissions for a data collection
 #[derive(RustcDecodable, Debug)]
-pub struct CollectionAcl {
-    /// Readable by world
-    pub read_w: bool,
-    /// Readable by group
-    pub read_g: bool,
-    /// Readable by user
-    pub read_u: bool,
-    /// Readable by user's algorithms regardless who runs them
-    pub read_a: bool,
+pub struct CollectionUpdated {
+    pub acl: Option<DataAcl>,
 }
 
-/// Response when creating a new collection
 #[derive(RustcDecodable, Debug)]
-pub struct CollectionCreated {
-    pub collection_id: u32,
-    pub object_id: String,
-    pub collection_name: String,
-    pub username: String,
-    pub acl: CollectionAcl,
+pub struct DeletedResult {
+    pub deleted: u64,
 }
 
 /// Response when deleting a new collection
 #[derive(RustcDecodable, Debug)]
 pub struct CollectionDeleted {
-    pub unknown: String,
+    // Omitting deleted.number and error.number for now
+    pub result: DeletedResult,
 }
 
+#[derive(RustcDecodable, RustcEncodable, Debug)]
+pub struct DataFolder {
+    pub name: String,
+    pub acl: Option<DataAcl>,
+}
+
+#[derive(RustcDecodable, Debug)]
+pub struct DataFile {
+    pub filename: String,
+    pub last_modified: DateTime<UTC>,
+    pub size: u64,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Debug)]
+pub struct DataAcl {
+    pub read: Vec<String>
+}
 
 /// Response when querying an existing collection
 #[derive(RustcDecodable, Debug)]
 pub struct CollectionShow {
-    pub username: String,
-    pub collection_name: String,
-    pub files: Vec<String>,
+    pub folders: Option<Vec<DataFolder>>,
+    pub files: Option<Vec<DataFile>>,
+    pub marker: Option<String>,
+    pub acl: Option<DataAcl>,
 }
 
 /// Response when adding a file to a collection
@@ -136,7 +146,7 @@ impl<'a> Collection<'a> {
     /// let service = Service::new("111112222233333444445555566");
     /// let my_dir = service.collection("my_user/my_dir");
     /// match my_dir.show() {
-    ///   Ok(dir) => println!("Files: {}", dir.files.connect(", ")),
+    ///   Ok(dir) => println!("Files: {}", dir.files.unwrap().iter().map(|f| f.filename.clone()).collect::<Vec<_>>().connect(", ")),
     ///   Err(e) => println!("ERROR: {:?}", e),
     /// };
     /// ```
@@ -151,7 +161,7 @@ impl<'a> Collection<'a> {
         match json::decode::<CollectionShow>(&res_json) {
             Ok(result) => Ok(result),
             Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
-                Ok(api_error) => Err(AlgorithmiaError::ApiError(api_error.error)),
+                Ok(err_res) => Err(AlgorithmiaError::AlgorithmiaApiError(err_res.error)),
                 Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
             }
         }
@@ -174,17 +184,29 @@ impl<'a> Collection<'a> {
         let url_string = format!("{}/{}/{}", Service::get_api(), COLLECTION_BASE_PATH, self.parent());
         let url = Url::parse(&url_string).unwrap();
 
+        let input_data = DataFolder {
+            name: self.basename().to_string(),
+            acl: Some(DataAcl { read: vec![] }),
+        };
+        let raw_input = try!(json::encode(&input_data));
+
         // POST request
         let ref mut api_client = self.service.api_client();
-        let req = api_client.post(url).body(self.basename());
+        let req = api_client.post(url)
+            .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
+            .body(&raw_input);
 
         // Parse response
         let mut res = try!(req.send());
-        let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
 
-
-        Service::decode_to_result::<CollectionCreated>(res_json)
+        match res.status {
+            StatusCode::Ok | StatusCode::Created => Ok(()),
+            _ => {
+                let mut res_json = String::new();
+                try!(res.read_to_string(&mut res_json));
+                Err(Service::decode_to_error(res_json))
+            }
+        }
     }
 
 
@@ -311,7 +333,7 @@ impl<'a> Collection<'a> {
 #[test]
 fn test_to_url() {
     let collection = Collection { path: "anowell/foo", service: Service::new("")};
-    assert_eq!(collection.to_url().serialize(), format!("{}/data/anowell/foo", Service::get_api()));
+    assert_eq!(collection.to_url().serialize(), format!("{}/v1/data/anowell/foo", Service::get_api()));
 }
 
 #[test]

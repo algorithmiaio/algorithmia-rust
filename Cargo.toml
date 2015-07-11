@@ -8,3 +8,4 @@ authors = ["Anthony Nowell <anowell@gmail.com>"]
 hyper = "0.3.*"
 mime = "*"
 rustc-serialize = "*"
+chrono = { version = "0.2.*", features = ["rustc-serialize"] }
