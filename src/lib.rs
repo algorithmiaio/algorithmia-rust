@@ -4,16 +4,16 @@
 //!
 //! ```no_run
 //! use algorithmia::Service;
-//! use algorithmia::algorithm::{Algorithm, PipeOutput, Version};
+//! use algorithmia::algo::{Algorithm, AlgoOutput, Version};
 //!
 //! // Initialize with an API key
 //! let service = Service::new("111112222233333444445555566");
-//! let moving_avg = service.algorithm("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
+//! let moving_avg = service.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let output: PipeOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
+//! let output: AlgoOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
 //! println!("Completed in {} seconds with result: {:?}", output.metadata.duration, output.result);
 //! ```
 
@@ -23,11 +23,11 @@ extern crate hyper;
 extern crate mime;
 extern crate rustc_serialize;
 
-pub mod algorithm;
-pub mod collection;
+pub mod algo;
+pub mod data;
 
-use algorithm::{Algorithm, Version};
-use collection::{Collection};
+use algo::{Algorithm, Version};
+use data::{DataDir, DataFile};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
@@ -107,11 +107,11 @@ impl<'a, 'c> Service {
     ///
     /// ```
     /// use algorithmia::Service;
-    /// use algorithmia::algorithm::{Algorithm, Version};
+    /// use algorithmia::algo::{Algorithm, Version};
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algorithm("anowell", "Dijkstra", Version::Latest);
+    /// let factor = service.algo("anowell", "Dijkstra", Version::Latest);
     /// ```
-    pub fn algorithm(self, user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
+    pub fn algo(self, user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
         Algorithm {
             service: self,
             user: user,
@@ -125,11 +125,11 @@ impl<'a, 'c> Service {
     /// # Examples
     /// ```
     /// use algorithmia::Service;
-    /// use algorithmia::algorithm::{Algorithm, Version};
+    /// use algorithmia::algo::{Algorithm, Version};
     /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algorithm_from_str("anowell/Dijkstra/0.1");
+    /// let factor = service.algo_from_str("anowell/Dijkstra/0.1");
     /// ```
-    pub fn algorithm_from_str(self, algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
+    pub fn algo_from_str(self, algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
         // TODO: test that this works for stripping algo:// prefix
         // let stripped = match algo_uri.rsplitn(2, "//").nth(0) {
         //     Some(path) => path,
@@ -158,21 +158,30 @@ impl<'a, 'c> Service {
         }
     }
 
-    /// Instantiate a `CollectionService` from this `Service`
+    /// Instantiate a `DataDirectory` from this `Service`
     ///
     /// # Examples
     ///
     /// ```
     /// use algorithmia::Service;
-    /// use algorithmia::collection::Collection;
     /// let service = Service::new("111112222233333444445555566");
-    /// let rustfoo = service.collection("anowell/rustfoo");
+    /// let rustfoo = service.dir("data://.my/rustfoo");
     /// ```
-    pub fn collection(self, path: &'a str) -> Collection<'a> {
-        Collection {
-            service: self,
-            path: path,
-        }
+    pub fn dir(self, path: &'a str) -> DataDir {
+        DataDir::new(self, path)
+    }
+
+    /// Instantiate a `DataDirectory` from this `Service`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use algorithmia::Service;
+    /// let service = Service::new("111112222233333444445555566");
+    /// let rustfoo = service.file("data://.my/rustfoo");
+    /// ```
+    pub fn file(self, path: &'a str) -> DataFile {
+        DataFile::new(self, path)
     }
 
     /// Helper to standardize decoding to a specific Algorithmia Result type

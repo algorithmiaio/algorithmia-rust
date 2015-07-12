@@ -2,7 +2,7 @@ extern crate algorithmia;
 extern crate rustc_serialize;
 
 use algorithmia::Service;
-use algorithmia::algorithm::{PipeOutput, Version};
+use algorithmia::algo::{AlgoOutput, Version};
 use std::collections::HashMap;
 use std::env;
 use rustc_serialize::{json};
@@ -29,13 +29,13 @@ struct RouteMap<'a> {
 }
 
 impl<'a> RouteMap<'a> {
-    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> PipeOutput<Route> {
+    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgoOutput<Route> {
         let api_key = match env::var("ALGORITHMIA_API_KEY") {
             Ok(key) => key,
             Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
         };
         let service = Service::new(&*api_key);
-        let dijkstra = service.algorithm("anowell", "Dijkstra", Version::Latest);
+        let dijkstra = service.algo("anowell", "Dijkstra", Version::Latest);
 
         println!("Making request to: {}", dijkstra.to_url());
 
@@ -44,7 +44,7 @@ impl<'a> RouteMap<'a> {
         // println!("Input: {:?}", input_data);
         println!("Input:\n{}", json::as_pretty_json(&input_data));
 
-        let output: PipeOutput<Route> = match dijkstra.pipe(&input_data) {
+        let output: AlgoOutput<Route> = match dijkstra.pipe(&input_data) {
             Ok(out) => out,
             Err(why) => panic!("{:?}", why),
         };
