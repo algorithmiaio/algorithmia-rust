@@ -3,12 +3,12 @@
 //! # Examples
 //!
 //! ```no_run
-//! use algorithmia::Service;
+//! use algorithmia::Algorithmia;
 //! use algorithmia::algo::{Algorithm, AlgoOutput, Version};
 //!
 //! // Initialize with an API key
-//! let service = Service::new("111112222233333444445555566");
-//! let moving_avg = service.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
+//! let client = Algorithmia::client("111112222233333444445555566");
+//! let moving_avg = client.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -20,7 +20,6 @@
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
 extern crate hyper;
-extern crate mime;
 extern crate rustc_serialize;
 
 pub mod algo;
@@ -36,18 +35,21 @@ use hyper::method::Method;
 use rustc_serialize::{json, Decodable};
 use self::AlgorithmiaError::*;
 use std::{io, env};
+use std::rc::Rc;
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
-/// The top-level struct for instantiating Algorithmia service endpoints
-pub struct Service{
+/// The top-level struct for instantiating Algorithmia client endpoints
+pub struct Algorithmia {
     pub api_key: String,
+    pub base_url: String,
+    client: Rc<Client>,
 }
 
-/// Internal ApiClient to manage connection and requests: wraps `hyper` client
-pub struct ApiClient{
+/// Internal HttpClient to build requests: wraps `hyper` client
+struct HttpClient<'a>{
     api_key: String,
-    client: Client,
+    client: &'a Client,
     user_agent: String,
 }
 
@@ -57,7 +59,7 @@ pub enum AlgorithmiaError {
     /// Errors returned by the Algorithmia API, Optional Stacktrace
     AlgorithmiaApiError(ApiError),
     /// HTTP errors encountered by the hyper client
-    HttpError(hyper::HttpError),
+    HttpError(hyper::error::Error),
     /// Errors decoding response json
     DecoderError(json::DecoderError),
     /// Errors decoding response json with additional debugging context
@@ -80,15 +82,17 @@ pub struct ApiErrorResponse {
     pub error: ApiError,
 }
 
-impl<'a, 'c> Service {
-    /// Instantiate a new Service
-    pub fn new(api_key: &str) -> Service {
-        Service {
+impl<'a, 'c> Algorithmia {
+    /// Instantiate a new client
+    pub fn client(api_key: &str) -> Algorithmia {
+        Algorithmia {
             api_key: api_key.to_string(),
+            base_url: Self::get_base_url(),
+            client: Rc::new(Client::new()),
         }
     }
 
-    pub fn get_api() -> String {
+    fn get_base_url() -> String {
         // TODO: memoize
         match env::var("ALGORITHMIA_API") {
             Ok(url) => url,
@@ -97,37 +101,37 @@ impl<'a, 'c> Service {
     }
 
     /// Instantiate a new hyper client - used internally by instantiating new api_client for every request
-    pub fn api_client(&self) -> ApiClient {
-        ApiClient::new(self.api_key.to_string())
+    fn http_client(&self) -> HttpClient {
+        HttpClient::new(self.api_key.clone(), &self.client)
     }
 
-    /// Instantiate an `AlgorithmService` from this `Service`
+    /// Instantiate an `Algorithm` from this client
     ///
     /// # Examples
     ///
     /// ```
-    /// use algorithmia::Service;
-    /// use algorithmia::algo::{Algorithm, Version};
-    /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algo("anowell", "Dijkstra", Version::Latest);
+    /// use algorithmia::Algorithmia;
+    /// use algorithmia::algo::Version;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let factor = client.algo("anowell", "Dijkstra", Version::Latest);
     /// ```
     pub fn algo(self, user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
         Algorithm {
-            service: self,
+            client: self,
             user: user,
             repo: repo,
             version: version
         }
     }
 
-    /// Instantiate an algorithm from the algorithm's URI
+    /// Instantiate an `Algorithm` from this client using the algorithm's URI
     ///
     /// # Examples
     /// ```
-    /// use algorithmia::Service;
-    /// use algorithmia::algo::{Algorithm, Version};
-    /// let service = Service::new("111112222233333444445555566");
-    /// let factor = service.algo_from_str("anowell/Dijkstra/0.1");
+    /// use algorithmia::Algorithmia;
+    /// use algorithmia::algo::Version;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let factor = client.algo_from_str("anowell/Dijkstra/0.1");
     /// ```
     pub fn algo_from_str(self, algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
         // TODO: test that this works for stripping algo:// prefix
@@ -140,7 +144,7 @@ impl<'a, 'c> Service {
         match parts.len() {
             3 => Ok(
                 Algorithm {
-                    service: self,
+                    client: self,
                     user: parts[0],
                     repo: parts[1],
                     version: Version::from_str(parts[2])
@@ -148,7 +152,7 @@ impl<'a, 'c> Service {
             ),
             2 => Ok(
                 Algorithm {
-                    service: self,
+                    client: self,
                     user: parts[0],
                     repo: parts[1],
                     version: Version::Latest
@@ -158,27 +162,27 @@ impl<'a, 'c> Service {
         }
     }
 
-    /// Instantiate a `DataDirectory` from this `Service`
+    /// Instantiate a `DataDirectory` from this client
     ///
     /// # Examples
     ///
     /// ```
-    /// use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let rustfoo = service.dir("data://.my/rustfoo");
+    /// use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let rustfoo = client.dir("data://.my/rustfoo");
     /// ```
     pub fn dir(self, path: &'a str) -> DataDir {
         DataDir::new(self, path)
     }
 
-    /// Instantiate a `DataDirectory` from this `Service`
+    /// Instantiate a `DataDirectory` from this client
     ///
     /// # Examples
     ///
     /// ```
-    /// use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let rustfoo = service.file("data://.my/rustfoo");
+    /// use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let rustfoo = client.file("data://.my/rustfoo");
     /// ```
     pub fn file(self, path: &'a str) -> DataFile {
         DataFile::new(self, path)
@@ -204,38 +208,38 @@ impl<'a, 'c> Service {
 
 }
 
-impl ApiClient {
-    /// Instantiate an ApiClient - creates a new `hyper` client
-    pub fn new(api_key: String) -> ApiClient {
-        ApiClient {
+impl <'a> HttpClient<'a> {
+    /// Instantiate an HttpClient - creates a new `hyper` client
+    fn new(api_key: String, client: &'a Client) -> HttpClient {
+        HttpClient {
             api_key: api_key,
-            client: Client::new(),
+            client: client,
             user_agent: format!("rust/{} algorithmia.rs/{}", option_env!("CFG_RELEASE").unwrap_or("unknown"), option_env!("CARGO_PKG_VERSION").unwrap_or("unknown")),
         }
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn get(&mut self, url: Url) -> RequestBuilder<Url> {
+    fn get(&self, url: Url) -> RequestBuilder<Url> {
         self.build_request(Method::Get, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn post(&mut self, url: Url) -> RequestBuilder<Url> {
+    fn post(&self, url: Url) -> RequestBuilder<Url> {
         self.build_request(Method::Post, url)
     }
 
     /// Helper to make Algorithmia PUT requests with the API key
-    pub fn put(&mut self, url: Url) -> RequestBuilder<Url> {
+    fn put(&self, url: Url) -> RequestBuilder<Url> {
         self.build_request(Method::Put, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn delete(&mut self, url: Url) -> RequestBuilder<Url> {
+    fn delete(&self, url: Url) -> RequestBuilder<Url> {
         self.build_request(Method::Delete, url)
     }
 
 
-    fn build_request(&mut self, verb: Method, url: Url) -> RequestBuilder<Url> {
+    fn build_request(&self, verb: Method, url: Url) -> RequestBuilder<Url> {
         let req = self.client.request(verb, url);
 
         // TODO: Support Secure Auth
@@ -248,11 +252,13 @@ impl ApiClient {
 /*
 * Trait implementations
 */
-/// Allow cloning a service in order to reuse the API key for multiple connections
-impl std::clone::Clone for Service {
-    fn clone(&self) -> Service {
-        Service {
+/// Allow cloning a client in order to reuse the API key for multiple connections
+impl std::clone::Clone for Algorithmia {
+    fn clone(&self) -> Algorithmia {
+        Algorithmia {
             api_key: self.api_key.clone(),
+            base_url: self.base_url.clone(),
+            client: self.client.clone(),
         }
     }
 }
@@ -263,8 +269,8 @@ impl From<io::Error> for AlgorithmiaError {
     }
 }
 
-impl From<hyper::HttpError> for AlgorithmiaError {
-    fn from(err: hyper::HttpError) -> AlgorithmiaError {
+impl From<hyper::error::Error> for AlgorithmiaError {
+    fn from(err: hyper::error::Error) -> AlgorithmiaError {
         HttpError(err)
     }
 }

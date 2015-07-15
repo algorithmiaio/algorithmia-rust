@@ -1,7 +1,7 @@
 extern crate algorithmia;
 extern crate rustc_serialize;
 
-use algorithmia::Service;
+use algorithmia::Algorithmia;
 use algorithmia::algo::{AlgoOutput, Version};
 use std::collections::HashMap;
 use std::env;
@@ -34,8 +34,8 @@ impl<'a> RouteMap<'a> {
             Ok(key) => key,
             Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
         };
-        let service = Service::new(&*api_key);
-        let dijkstra = service.algo("anowell", "Dijkstra", Version::Latest);
+        let client = Algorithmia::client(&*api_key);
+        let dijkstra = client.algo("anowell", "Dijkstra", Version::Latest);
 
         println!("Making request to: {}", dijkstra.to_url());
 

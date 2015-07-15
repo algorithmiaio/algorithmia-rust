@@ -1,10 +1,8 @@
 extern crate algorithmia;
 extern crate rustc_serialize;
 
-use algorithmia::Service;
+use algorithmia::Algorithmia;
 use std::env;
-// use rustc_serialize::{json};
-
 
 
 fn main() {
@@ -20,13 +18,13 @@ fn main() {
         Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
     };
 
-    let service = Service::new(&*api_key);
-    match service.clone().dir(&*path).create() {
+    let client = Algorithmia::client(&*api_key);
+    match client.clone().dir(&*path).create() {
         Ok(_) => println!("Successfully created collection {}", path),
         Err(e) => println!("ERROR creating collection: {:?}", e),
     }
 
-    match service.clone().dir(&*path).delete() {
+    match client.clone().dir(&*path).delete() {
         Ok(_) => println!("Successfully deleted collection {}", path),
         Err(e) => println!("ERROR deleting collection: {:?}", e),
     }

@@ -3,15 +3,15 @@
 //! # Examples
 //!
 //! ```no_run
-//! use algorithmia::Service;
+//! use algorithmia::Algorithmia;
 //!
-//! let service = Service::new("111112222233333444445555566");
-//! let my_file = service.file(".my/my_dir/some_filename");
+//! let client = Algorithmia::client("111112222233333444445555566");
+//! let my_file = client.file(".my/my_dir/some_filename");
 //!
 //! my_file.put_bytes("file_contents".as_bytes());
 //! ```
 
-use {Service, AlgorithmiaError};
+use {Algorithmia, AlgorithmiaError};
 use super::{DataObject};
 use std::io::Read;
 use std::ops::Deref;
@@ -44,9 +44,9 @@ impl Deref for DataFile {
 }
 
 impl DataFile {
-    pub fn new(service: Service, data_uri: &str) -> DataFile {
+    pub fn new(client: Algorithmia, data_uri: &str) -> DataFile {
         DataFile {
-            data_object: DataObject::new(service, data_uri),
+            data_object: DataObject::new(client, data_uri),
         }
     }
 
@@ -55,9 +55,9 @@ impl DataFile {
     ///
     /// # Examples
     /// ```no_run
-    /// # use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let my_file = service.file(".my/my_dir/sample.txt");
+    /// # use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
     /// match my_file.put_bytes("file_contents".as_bytes()) {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
@@ -67,14 +67,14 @@ impl DataFile {
     pub fn put_bytes(&self, input_data: &[u8]) -> FileAddedResult {
         let url = self.to_url();
 
-        let ref mut api_client = self.service.api_client();
-        let req = api_client.post(url).body(input_data);
+        let http_client = self.client.http_client();
+        let req = http_client.post(url).body(input_data);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Service::decode_to_result::<FileAdded>(res_json)
+        Algorithmia::decode_to_result::<FileAdded>(res_json)
     }
 
 
@@ -84,9 +84,9 @@ impl DataFile {
     ///
     /// # Examples
     /// ```no_run
-    /// # use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let my_file = service.file(".my/my_dir/sample.txt");
+    /// # use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
     /// match my_file.delete() {
     ///   Ok(_) => println!("Successfully deleted file"),
@@ -96,14 +96,14 @@ impl DataFile {
     pub fn delete(&self) -> FileDeletedResult {
         let url = self.to_url();
 
-        let ref mut api_client = self.service.api_client();
-        let req = api_client.delete(url);
+        let http_client = self.client.http_client();
+        let req = http_client.delete(url);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Service::decode_to_result::<FileDeleted>(res_json)
+        Algorithmia::decode_to_result::<FileDeleted>(res_json)
     }
 
 }

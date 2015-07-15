@@ -3,11 +3,11 @@
 //! # Examples
 //!
 //! ```no_run
-//! use algorithmia::Service;
+//! use algorithmia::Algorithmia;
 //! use std::fs::File;
 //!
-//! let service = Service::new("111112222233333444445555566");
-//! let my_dir = service.dir(".my/my_dir");
+//! let client = Algorithmia::client("111112222233333444445555566");
+//! let my_dir = client.dir(".my/my_dir");
 //!
 //! my_dir.create();
 //! my_dir.put_file("/path/to/file");
@@ -16,7 +16,7 @@
 extern crate hyper;
 extern crate chrono;
 
-use {Service, AlgorithmiaError, ApiErrorResponse};
+use {Algorithmia, AlgorithmiaError, ApiErrorResponse};
 use hyper::Url;
 use hyper::status::StatusCode;
 use rustc_serialize::{json, Decoder};
@@ -24,7 +24,7 @@ use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use hyper::header::ContentType;
-use mime::{Mime, TopLevel, SubLevel};
+use hyper::mime::{Mime, TopLevel, SubLevel};
 use self::chrono::{DateTime, UTC};
 use super::{DataObject, FileAddedResult, FileAdded};
 use std::ops::Deref;
@@ -90,9 +90,9 @@ pub struct DirectoryShow {
 
 
 impl DataDir {
-    pub fn new(service: Service, data_uri: &str) -> DataDir {
+    pub fn new(client: Algorithmia, data_uri: &str) -> DataDir {
         DataDir {
-            data_object: DataObject::new(service, data_uri),
+            data_object: DataObject::new(client, data_uri),
         }
     }
 
@@ -101,17 +101,17 @@ impl DataDir {
     ///
     /// # Examples
     /// ```no_run
-    /// # use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let my_dir = service.dir(".my/my_dir");
+    /// # use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.show() {
     ///   Ok(dir) => println!("Files: {}", dir.files.unwrap().iter().map(|f| f.filename.clone()).collect::<Vec<_>>().connect(", ")),
     ///   Err(e) => println!("ERROR: {:?}", e),
     /// };
     /// ```
     pub fn show(&self) -> DirectoryShowResult {
-        let ref mut api_client = self.service.api_client();
-        let req = api_client.get(self.to_url());
+        let http_client = self.client.http_client();
+        let req = http_client.get(self.to_url());
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -130,17 +130,15 @@ impl DataDir {
     ///
     /// # Examples
     /// ```no_run
-    /// # use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let my_dir = service.dir(".my/my_dir");
+    /// # use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.create() {
     ///   Ok(_) => println!("Successfully created Directory"),
     ///   Err(e) => println!("ERROR creating Directory: {:?}", e),
     /// };
     /// ```
     pub fn create(&self) -> DirectoryCreatedResult {
-        // Construct URL
-        // let url_string = format!("{}/{}/{}", Service::get_api(), Directory_BASE_PATH, self.parent());
         let url = self.parent().unwrap().to_url(); //TODO: don't unwrap this
 
         let input_data = DataFolder {
@@ -150,8 +148,8 @@ impl DataDir {
         let raw_input = try!(json::encode(&input_data));
 
         // POST request
-        let ref mut api_client = self.service.api_client();
-        let req = api_client.post(url)
+        let http_client = self.client.http_client();
+        let req = http_client.post(url)
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .body(&raw_input);
 
@@ -163,7 +161,7 @@ impl DataDir {
             _ => {
                 let mut res_json = String::new();
                 try!(res.read_to_string(&mut res_json));
-                Err(Service::decode_to_error(res_json))
+                Err(Algorithmia::decode_to_error(res_json))
             }
         }
     }
@@ -173,9 +171,9 @@ impl DataDir {
     ///
     /// # Examples
     /// ```no_run
-    /// # use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let my_dir = service.dir(".my/my_dir");
+    /// # use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.delete() {
     ///   Ok(_) => println!("Successfully deleted Directory"),
     ///   Err(e) => println!("ERROR deleting Directory: {:?}", e),
@@ -183,15 +181,15 @@ impl DataDir {
     /// ```
     pub fn delete(&self) -> DirectoryDeletedResult {
         // DELETE request
-        let ref mut api_client = self.service.api_client();
-        let req = api_client.delete(self.to_url());
+        let http_client = self.client.http_client();
+        let req = http_client.delete(self.to_url());
 
         // Parse response
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Service::decode_to_result::<DirectoryDeleted>(res_json)
+        Algorithmia::decode_to_result::<DirectoryDeleted>(res_json)
     }
 
 
@@ -199,9 +197,9 @@ impl DataDir {
     ///
     /// # Examples
     /// ```no_run
-    /// # use algorithmia::Service;
-    /// let service = Service::new("111112222233333444445555566");
-    /// let my_dir = service.dir(".my/my_dir");
+    /// # use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_dir = client.dir(".my/my_dir");
     ///
     /// match my_dir.put_file("/path/to/file") {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
@@ -218,14 +216,14 @@ impl DataDir {
         let url = Url::parse(&url_string).unwrap();
 
         let mut file = File::open(path_ref).unwrap();
-        let ref mut api_client = self.service.api_client();
-        let req = api_client.post(url).body(&mut file);
+        let http_client = self.client.http_client();
+        let req = http_client.post(url).body(&mut file);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Service::decode_to_result::<FileAdded>(res_json)
+        Algorithmia::decode_to_result::<FileAdded>(res_json)
     }
 
 }
@@ -234,27 +232,27 @@ impl DataDir {
 #[cfg(test)]
 mod tests {
     use super::*;
-    // use super::super::DataPath;
-    use Service;
+    use Algorithmia;
 
-    fn mock_service() -> Service { Service::new("") }
+    fn mock_client() -> Algorithmia { Algorithmia::client("") }
 
     #[test]
     fn test_to_url() {
-        let dir = DataDir::new(mock_service(), "data://anowell/foo");
-        assert_eq!(dir.to_url().serialize(), format!("{}/v1/data/anowell/foo", Service::get_api()));
+        let mock_client = mock_client();
+        let dir = DataDir::new(mock_client, "data://anowell/foo");
+        assert_eq!(dir.to_url().serialize(), format!("{}/v1/data/anowell/foo", dir.client.base_url));
     }
 
     #[test]
     fn test_to_data_uri() {
-        let dir = DataDir::new(mock_service(), "/anowell/foo");
+        let dir = DataDir::new(mock_client(), "/anowell/foo");
         assert_eq!(dir.to_data_uri(), "data://anowell/foo".to_string());
     }
 
     #[test]
     fn test_parent() {
-        let dir = DataDir::new(mock_service(), "data://anowell/foo");
-        let expected = DataDir::new(mock_service(), "data://anowell");
+        let dir = DataDir::new(mock_client(), "data://anowell/foo");
+        let expected = DataDir::new(mock_client(), "data://anowell");
         assert_eq!(dir.parent().unwrap().path, expected.path);
     }
 }
