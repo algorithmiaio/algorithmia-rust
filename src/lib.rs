@@ -115,13 +115,13 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let factor = client.algo("anowell", "Dijkstra", Version::Latest);
     /// ```
-    pub fn algo(self, user: &'a str, repo: &'a str, version: Version<'a>) -> Algorithm<'a> {
-        Algorithm {
-            client: self,
-            user: user,
-            repo: repo,
-            version: version
-        }
+    pub fn algo(self, user: &str, algoname: &str, version: Version<'a>) -> Algorithm {
+        let algo_uri = match version {
+            Version::Latest => format!("{}/{}", user, algoname),
+            ref ver => format!("{}/{}/{}", user, algoname, ver),
+        };
+
+        Algorithm::new(self, &*algo_uri)
     }
 
     /// Instantiate an `Algorithm` from this client using the algorithm's URI
@@ -133,33 +133,8 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let factor = client.algo_from_str("anowell/Dijkstra/0.1");
     /// ```
-    pub fn algo_from_str(self, algo_uri: &'a str) -> Result<Algorithm<'a>, &'a str> {
-        // TODO: test that this works for stripping algo:// prefix
-        // let stripped = match algo_uri.rsplitn(2, "//").nth(0) {
-        //     Some(path) => path,
-        //     None => return Err("Invalid algorithm URI"),
-        // };
-
-        let parts: Vec<_> = algo_uri.split("/").collect();
-        match parts.len() {
-            3 => Ok(
-                Algorithm {
-                    client: self,
-                    user: parts[0],
-                    repo: parts[1],
-                    version: Version::from_str(parts[2])
-                }
-            ),
-            2 => Ok(
-                Algorithm {
-                    client: self,
-                    user: parts[0],
-                    repo: parts[1],
-                    version: Version::Latest
-                }
-            ),
-            _ => Err("Invalid algorithm URI")
-        }
+    pub fn algo_from_str(self, algo_uri: &str) -> Algorithm {
+        Algorithm::new(self, algo_uri)
     }
 
     /// Instantiate a `DataDirectory` from this client

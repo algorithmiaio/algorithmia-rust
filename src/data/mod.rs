@@ -11,7 +11,7 @@ static COLLECTION_BASE_PATH: &'static str = "v1/data";
 
 pub struct DataObject {
     pub path: String,
-    pub client: Algorithmia,
+    client: Algorithmia,
 }
 
 impl DataObject {

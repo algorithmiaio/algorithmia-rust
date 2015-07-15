@@ -25,27 +25,39 @@ use rustc_serialize::{json, Decodable, Encodable};
 use std::io::Read;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
-use super::version::Version;
 use super::result::{AlgoResult, JsonResult, AlgoOutput};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
 /// Algorithmia algorithm
-pub struct Algorithm<'a> {
-    pub client: Algorithmia,
-    pub user: &'a str,
-    pub repo: &'a str,
-    pub version: Version<'a>,
+pub struct Algorithm {
+    pub path: String,
+    client: Algorithmia,
 }
 
-impl<'a> Algorithm<'a> {
-    /// Get the API Endpoint URL for a particular algorithm
-    pub fn to_url(&self) -> Url {
-        let url_string = match self.version {
-            Version::Latest => format!("{}/{}/{}/{}", self.client.base_url, ALGORITHM_BASE_PATH, self.user, self.repo),
-            ref version => format!("{}/{}/{}/{}/{}", self.client.base_url, ALGORITHM_BASE_PATH, self.user, self.repo, version),
+impl Algorithm {
+    pub fn new(client: Algorithmia, algo_uri: &str) -> Algorithm {
+        let path = match algo_uri {
+            p if p.starts_with("algo://") => &p[7..],
+            p if p.starts_with("/") => &p[1..],
+            p => p,
         };
+
+        Algorithm {
+            client: client,
+            path: path.to_string(),
+        }
+    }
+
+    /// Get the API Endpoint URL for this Algorithm
+    pub fn to_url(&self) -> Url {
+        let url_string = format!("{}/{}/{}", self.client.base_url, ALGORITHM_BASE_PATH, self.path);
         Url::parse(&url_string).unwrap()
+    }
+
+    /// Get the Algorithmia algo URI for this Algorithm
+    pub fn to_algo_uri(&self) -> String {
+        format!("algo://{}", self.path)
     }
 
     /// Execute an algorithm with typed JSON response decoding
@@ -75,7 +87,7 @@ impl<'a> Algorithm<'a> {
     ///     Err(e) => println!("ERROR: {:?}", e),
     /// };
     /// ```
-    pub fn pipe<D, E>(&'a self, input_data: &E) -> AlgoResult<D>
+    pub fn pipe<D, E>(&self, input_data: &E) -> AlgoResult<D>
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
@@ -103,7 +115,7 @@ impl<'a> Algorithm<'a> {
     ///    Ok(result) => result,
     ///    Err(why) => panic!("{:?}", why),
     /// };
-    pub fn pipe_json(&'a self, input_data: &str, content_type: Mime) -> JsonResult {
+    pub fn pipe_json(&self, input_data: &str, content_type: Mime) -> JsonResult {
         let http_client = self.client.http_client();
         let req = http_client.post(self.to_url())
             .header(ContentType(content_type))
@@ -120,37 +132,36 @@ impl<'a> Algorithm<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use Algorithmia;
     use algo::version::Version;
 
     fn mock_client() -> Algorithmia { Algorithmia::client("") }
 
     #[test]
-    fn test_latest_to_url() {
+    fn test_algo_without_version_to_url() {
         let mock_client = mock_client();
-        let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Latest, client: mock_client};
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor", algorithm.client.base_url));
+        let algorithm = mock_client.algo_from_str("/anowell/Pinky");
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky", algorithm.client.base_url));
     }
 
     #[test]
-    fn test_revision_to_url() {
+    fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
-        let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Revision(0,1,0), client: mock_client};
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor/0.1.0", algorithm.client.base_url));
+        let algorithm = mock_client.algo_from_str("anowell/Pinky/0.1.0");
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/0.1.0", algorithm.client.base_url));
     }
 
     #[test]
-    fn test_minor_to_url() {
+    fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
-        let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Minor(0,1), client: mock_client};
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor/0.1", algorithm.client.base_url));
+        let algorithm = mock_client.algo_from_str("algo://anowell/Pinky/0.1");
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/0.1", algorithm.client.base_url));
     }
 
     #[test]
-    fn test_hash_to_url() {
+    fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
-        let algorithm = Algorithm {user: "kenny", repo: "Factor", version: Version::Hash("abcdef123456"), client: mock_client};
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/kenny/Factor/abcdef123456", algorithm.client.base_url));
+        let algorithm = mock_client.algo("anowell", "Pinky", Version::Hash("abcdef123456"));
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/abcdef123456", algorithm.client.base_url));
     }
 }
