@@ -35,7 +35,7 @@ use hyper::method::Method;
 use rustc_serialize::{json, Decodable};
 use self::AlgorithmiaError::*;
 use std::{io, env};
-use std::rc::Rc;
+use std::sync::Arc;
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
@@ -43,7 +43,7 @@ static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 pub struct Algorithmia {
     pub api_key: String,
     pub base_url: String,
-    client: Rc<Client>,
+    client: Arc<Client>, // Arc to ensure Algorithmia is still marked Send + Sync
 }
 
 /// Internal HttpClient to build requests: wraps `hyper` client
@@ -88,7 +88,7 @@ impl<'a, 'c> Algorithmia {
         Algorithmia {
             api_key: api_key.to_string(),
             base_url: Self::get_base_url(),
-            client: Rc::new(Client::new()),
+            client: Arc::new(Client::new()),
         }
     }
 
