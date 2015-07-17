@@ -61,13 +61,13 @@ pub struct DirectoryDeleted {
 }
 
 #[derive(RustcDecodable, RustcEncodable, Debug)]
-pub struct DataFolder {
+pub struct FolderListing {
     pub name: String,
     pub acl: Option<DataAcl>,
 }
 
 #[derive(RustcDecodable, Debug)]
-pub struct DataFile {
+pub struct FileListing {
     pub filename: String,
     pub last_modified: DateTime<UTC>,
     pub size: u64,
@@ -81,8 +81,8 @@ pub struct DataAcl {
 /// Response when querying an existing Directory
 #[derive(RustcDecodable, Debug)]
 pub struct DirectoryShow {
-    pub folders: Option<Vec<DataFolder>>,
-    pub files: Option<Vec<DataFile>>,
+    pub folders: Option<Vec<FolderListing>>,
+    pub files: Option<Vec<FileListing>>,
     pub marker: Option<String>,
     pub acl: Option<DataAcl>,
 }
@@ -141,7 +141,8 @@ impl DataDir {
     pub fn create(&self) -> DirectoryCreatedResult {
         let url = self.parent().unwrap().to_url(); //TODO: don't unwrap this
 
-        let input_data = DataFolder {
+        // TODO: complete abuse of this structure
+        let input_data = FolderListing {
             name: self.basename().unwrap().to_string(), //TODO: don't unwrap this
             acl: Some(DataAcl { read: vec![] }),
         };
