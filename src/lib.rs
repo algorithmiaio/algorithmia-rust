@@ -24,6 +24,7 @@ extern crate rustc_serialize;
 
 pub mod algo;
 pub mod data;
+pub use hyper::mime;
 
 use algo::{Algorithm, Version};
 use data::{DataDir, DataFile};
