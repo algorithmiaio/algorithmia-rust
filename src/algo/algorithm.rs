@@ -91,7 +91,7 @@ impl Algorithm {
             where D: Decodable,
                   E: Encodable {
         let raw_input = try!(json::encode(input_data));
-        let res_json = try!(self.pipe_json(&raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
+        let res_json = try!(self.pipe_raw(&raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
 
         Algorithmia::decode_to_result::<AlgoOutput<D>>(res_json)
     }
@@ -111,11 +111,11 @@ impl Algorithm {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let minmax  = client.algo("codeb34v3r", "FindMinMax", Version::Minor(0,1));
     ///
-    /// let output = match minmax.pipe_json("[2,3,4]", "application/json".parse().unwrap()) {
+    /// let output = match minmax.pipe_raw("[2,3,4]", "application/json".parse().unwrap()) {
     ///    Ok(result) => result,
     ///    Err(why) => panic!("{:?}", why),
     /// };
-    pub fn pipe_json(&self, input_data: &str, content_type: Mime) -> JsonResult {
+    pub fn pipe_raw(&self, input_data: &str, content_type: Mime) -> JsonResult {
         let http_client = self.client.http_client();
         let req = http_client.post(self.to_url())
             .header(ContentType(content_type))
