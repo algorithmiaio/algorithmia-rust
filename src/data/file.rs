@@ -12,7 +12,7 @@
 //! ```
 
 use {Algorithmia, AlgorithmiaError};
-use super::{DataObject, DeletedResult};
+use super::{DataObject, DeletedResult, XDataType};
 use std::io::Read;
 use std::ops::Deref;
 
@@ -106,6 +106,12 @@ impl DataFile {
         let req = http_client.get(url);
 
         let res = try!(req.send());
+
+        if let Some(data_type) = res.headers.get::<XDataType>() {
+            if "file" != data_type.to_string() {
+                return Err(AlgorithmiaError::OtherError(format!("Expected file, Received {}", data_type)));
+            }
+        }
 
         Ok(DataResponse{
             data: Box::new(res),

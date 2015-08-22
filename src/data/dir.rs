@@ -26,7 +26,7 @@ use std::path::Path;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use self::chrono::{DateTime, UTC};
-use super::{DataObject, FileAddedResult, FileAdded, DeletedResult};
+use super::{DataObject, FileAddedResult, FileAdded, DeletedResult, XDataType};
 use std::error::Error;
 use std::ops::Deref;
 
@@ -130,6 +130,13 @@ impl DataDir {
         let req = http_client.get(self.to_url());
 
         let mut res = try!(req.send());
+
+        if let Some(data_type) = res.headers.get::<XDataType>() {
+            if "directory" != data_type.to_string() {
+                return Err(AlgorithmiaError::OtherError(format!("Expected directory, Received {}", data_type)));
+            }
+        }
+
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 

@@ -9,6 +9,10 @@ mod file;
 
 static COLLECTION_BASE_PATH: &'static str = "v1/data";
 
+header! {
+    (XDataType, "X-Data-Type") => [String]
+}
+
 // Shared by results for deleting both files and directories
 #[derive(RustcDecodable, Debug)]
 pub struct DeletedResult {

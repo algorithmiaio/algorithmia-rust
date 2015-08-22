@@ -19,6 +19,7 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
+#[macro_use]
 extern crate hyper;
 extern crate rustc_serialize;
 
@@ -69,6 +70,8 @@ pub enum AlgorithmiaError {
     EncoderError(json::EncoderError),
     /// General IO errors
     IoError(io::Error),
+    /// Other Errors
+    OtherError(String),
 }
 
 #[derive(RustcDecodable, Debug)]
