@@ -198,7 +198,7 @@ impl DataDir {
     /// # use algorithmia::Algorithmia;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let my_dir = client.dir(".my/my_dir");
-    /// match my_dir.delete() {
+    /// match my_dir.delete(false) {
     ///   Ok(_) => println!("Successfully deleted Directory"),
     ///   Err(e) => println!("ERROR deleting Directory: {:?}", e),
     /// };

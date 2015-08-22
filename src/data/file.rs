@@ -13,7 +13,7 @@
 
 use {Algorithmia, AlgorithmiaError};
 use super::{DataObject, DeletedResult, XDataType};
-use std::io::Read;
+use std::io::{self, Read};
 use std::ops::Deref;
 
 
@@ -36,7 +36,14 @@ pub struct FileDeleted {
 
 pub struct DataResponse {
     // pub meta: Metadata,
-    pub data: Box<Read>,
+    data: Box<Read>,
+}
+
+impl Read for DataResponse {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.data.read(buf)
+    }
 }
 
 /// Algorithmia data collection
@@ -91,11 +98,18 @@ impl DataFile {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
+    /// # use std::io::Read;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
     /// match my_file.get() {
-    ///   Ok(response) => println!("{}", response.read_to_string()),
+    ///   Ok(mut response) => {
+    ///     let mut data = String::new();
+    ///     match response.read_to_string(&mut data) {
+    ///       Ok(_) => println!("{}", data),
+    ///       Err(e) => println!("IOError: {}", e),
+    ///     }
+    ///   },
     ///   Err(e) => println!("ERROR downloading file: {:?}", e),
     /// };
     /// ```

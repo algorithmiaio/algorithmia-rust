@@ -24,7 +24,7 @@ fn main() {
         Err(e) => println!("ERROR creating collection: {:?}", e),
     }
 
-    match client.clone().dir(&*path).delete() {
+    match client.clone().dir(&*path).delete(true) {
         Ok(_) => println!("Successfully deleted collection {}", path),
         Err(e) => println!("ERROR deleting collection: {:?}", e),
     }
