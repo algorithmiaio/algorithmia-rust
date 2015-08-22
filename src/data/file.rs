@@ -12,7 +12,7 @@
 //! ```
 
 use {Algorithmia, AlgorithmiaError};
-use super::{DataObject};
+use super::{DataObject, DeletedResult};
 use std::io::Read;
 use std::ops::Deref;
 
@@ -27,10 +27,16 @@ pub struct FileAdded {
     pub result: String
 }
 
+
 /// Response when deleting a file from the Data API
 #[derive(RustcDecodable, Debug)]
 pub struct FileDeleted {
-    pub result: String
+    pub result: DeletedResult
+}
+
+pub struct DataResponse {
+    // pub meta: Metadata,
+    pub data: Box<Read>,
 }
 
 /// Algorithmia data collection
@@ -51,7 +57,7 @@ impl DataFile {
     }
 
 
-    /// Write a file (raw bytes) directly to a data collection
+    /// Write a file (raw bytes) directly to the Algorithmia Data API
     ///
     /// # Examples
     /// ```no_run
@@ -64,11 +70,12 @@ impl DataFile {
     ///   Err(e) => println!("ERROR uploading file: {:?}", e),
     /// };
     /// ```
+    // TODO: just use .put and whatever input_data type is used by .body
     pub fn put_bytes(&self, input_data: &[u8]) -> FileAddedResult {
         let url = self.to_url();
 
         let http_client = self.client.http_client();
-        let req = http_client.post(url).body(input_data);
+        let req = http_client.put(url).body(input_data);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -78,6 +85,32 @@ impl DataFile {
     }
 
 
+
+    /// Get a file from the Algorithmia Data API
+    ///
+    /// # Examples
+    /// ```no_run
+    /// # use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_file = client.file(".my/my_dir/sample.txt");
+    ///
+    /// match my_file.get() {
+    ///   Ok(response) => println!("{}", response.read_to_string()),
+    ///   Err(e) => println!("ERROR downloading file: {:?}", e),
+    /// };
+    /// ```
+    pub fn get(&self) -> Result<DataResponse, AlgorithmiaError>  {
+        let url = self.to_url();
+
+        let http_client = self.client.http_client();
+        let req = http_client.get(url);
+
+        let res = try!(req.send());
+
+        Ok(DataResponse{
+            data: Box::new(res),
+        })
+    }
 
 
     /// Delete a file from a data collection

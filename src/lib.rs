@@ -190,7 +190,7 @@ impl <'a> HttpClient<'a> {
         HttpClient {
             api_key: api_key,
             client: client,
-            user_agent: format!("rust/{} algorithmia.rs/{}", option_env!("CFG_RELEASE").unwrap_or("unknown"), option_env!("CARGO_PKG_VERSION").unwrap_or("unknown")),
+            user_agent: format!("algorithmia-rust/{} (Rust {}", option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"), option_env!("CFG_RELEASE").unwrap_or("unknown")),
         }
     }
 

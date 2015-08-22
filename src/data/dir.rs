@@ -19,14 +19,15 @@ extern crate chrono;
 use {Algorithmia, AlgorithmiaError, ApiErrorResponse};
 use hyper::Url;
 use hyper::status::StatusCode;
-use rustc_serialize::{json, Decoder};
+use rustc_serialize::{json, Decoder, Decodable};
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use self::chrono::{DateTime, UTC};
-use super::{DataObject, FileAddedResult, FileAdded};
+use super::{DataObject, FileAddedResult, FileAdded, DeletedResult};
+use std::error::Error;
 use std::ops::Deref;
 
 /// Algorithmia Data Directory
@@ -48,10 +49,6 @@ pub struct DirectoryUpdated {
     pub acl: Option<DataAcl>,
 }
 
-#[derive(RustcDecodable, Debug)]
-pub struct DeletedResult {
-    pub deleted: u64,
-}
 
 /// Response when deleting a new Directory
 #[derive(RustcDecodable, Debug)]
@@ -61,17 +58,36 @@ pub struct DirectoryDeleted {
 }
 
 #[derive(RustcDecodable, RustcEncodable, Debug)]
-pub struct FolderListing {
+pub struct FolderEntry {
     pub name: String,
     pub acl: Option<DataAcl>,
 }
 
-#[derive(RustcDecodable, Debug)]
-pub struct FileListing {
+#[derive(Debug)]
+pub struct FileEntry {
     pub filename: String,
-    pub last_modified: DateTime<UTC>,
     pub size: u64,
+    pub last_modified: DateTime<UTC>,
 }
+
+impl Decodable for FileEntry {
+    fn decode<D: Decoder>(d: &mut D) -> Result<FileEntry, D::Error> {
+        d.read_struct("root", 0, |d| {
+            Ok(FileEntry{
+                filename: try!(d.read_struct_field("filename", 0, |d| Decodable::decode(d))),
+                size: try!(d.read_struct_field("size", 0, |d| Decodable::decode(d))),
+                last_modified: {
+                    let json_str: String = try!(d.read_struct_field("last_modified", 0, |d| Decodable::decode(d)));
+                    match json_str.parse() {
+                        Ok(datetime) => datetime,
+                        Err(err) => return Err(d.error(err.description())),
+                    }
+                },
+            })
+        })
+    }
+}
+
 
 #[derive(RustcDecodable, RustcEncodable, Debug)]
 pub struct DataAcl {
@@ -81,8 +97,8 @@ pub struct DataAcl {
 /// Response when querying an existing Directory
 #[derive(RustcDecodable, Debug)]
 pub struct DirectoryShow {
-    pub folders: Option<Vec<FolderListing>>,
-    pub files: Option<Vec<FileListing>>,
+    pub folders: Option<Vec<FolderEntry>>,
+    pub files: Option<Vec<FileEntry>>,
     pub marker: Option<String>,
     pub acl: Option<DataAcl>,
 }
@@ -142,7 +158,7 @@ impl DataDir {
         let url = self.parent().unwrap().to_url(); //TODO: don't unwrap this
 
         // TODO: complete abuse of this structure
-        let input_data = FolderListing {
+        let input_data = FolderEntry {
             name: self.basename().unwrap().to_string(), //TODO: don't unwrap this
             acl: Some(DataAcl { read: vec![] }),
         };
@@ -180,10 +196,12 @@ impl DataDir {
     ///   Err(e) => println!("ERROR deleting Directory: {:?}", e),
     /// };
     /// ```
-    pub fn delete(&self) -> DirectoryDeletedResult {
+    pub fn delete(&self, force: bool) -> DirectoryDeletedResult {
         // DELETE request
         let http_client = self.client.http_client();
-        let req = http_client.delete(self.to_url());
+        let url_string = format!("{}?force={}", self.to_url(), force.to_string());
+        let url = Url::parse(&url_string).unwrap();
+        let req = http_client.delete(url);
 
         // Parse response
         let mut res = try!(req.send());
@@ -218,7 +236,7 @@ impl DataDir {
 
         let mut file = File::open(path_ref).unwrap();
         let http_client = self.client.http_client();
-        let req = http_client.post(url).body(&mut file);
+        let req = http_client.put(url).body(&mut file);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();

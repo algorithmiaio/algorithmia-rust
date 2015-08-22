@@ -9,6 +9,12 @@ mod file;
 
 static COLLECTION_BASE_PATH: &'static str = "v1/data";
 
+// Shared by results for deleting both files and directories
+#[derive(RustcDecodable, Debug)]
+pub struct DeletedResult {
+    pub deleted: u64,
+}
+
 pub struct DataObject {
     pub path: String,
     client: Algorithmia,
