@@ -43,15 +43,14 @@ static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia client endpoints
 pub struct Algorithmia {
-    pub api_key: String,
     pub base_url: String,
-    client: Arc<Client>, // Arc to ensure Algorithmia is still marked Send + Sync
+    pub http_client: HttpClient,
 }
 
 /// Internal HttpClient to build requests: wraps `hyper` client
-struct HttpClient<'a>{
+pub struct HttpClient{
     api_key: String,
-    client: &'a Client,
+    hyper_client: Arc<Client>,
     user_agent: String,
 }
 
@@ -90,13 +89,12 @@ impl<'a, 'c> Algorithmia {
     /// Instantiate a new client
     pub fn client(api_key: &str) -> Algorithmia {
         Algorithmia {
-            api_key: api_key.to_string(),
             base_url: Self::get_base_url(),
-            client: Arc::new(Client::new()),
+            http_client: HttpClient::new(api_key.to_string()),
         }
     }
 
-    fn get_base_url() -> String {
+    pub fn get_base_url() -> String {
         // TODO: memoize
         match env::var("ALGORITHMIA_API") {
             Ok(url) => url,
@@ -105,9 +103,9 @@ impl<'a, 'c> Algorithmia {
     }
 
     /// Instantiate a new hyper client - used internally by instantiating new api_client for every request
-    fn http_client(&self) -> HttpClient {
-        HttpClient::new(self.api_key.clone(), &self.client)
-    }
+    // fn http_client(&self) -> HttpClient {
+    //     HttpClient::new(self.api_key.clone(), &self.client)
+    // }
 
     /// Instantiate an `Algorithm` from this client
     ///
@@ -125,7 +123,7 @@ impl<'a, 'c> Algorithmia {
             ref ver => format!("{}/{}/{}", user, algoname, ver),
         };
 
-        Algorithm::new(self, &*algo_uri)
+        Algorithm::new(self.http_client.clone(), &*algo_uri)
     }
 
     /// Instantiate an `Algorithm` from this client using the algorithm's URI
@@ -138,7 +136,7 @@ impl<'a, 'c> Algorithmia {
     /// let factor = client.algo_from_str("anowell/Dijkstra/0.1");
     /// ```
     pub fn algo_from_str(self, algo_uri: &str) -> Algorithm {
-        Algorithm::new(self, algo_uri)
+        Algorithm::new(self.http_client.clone(), algo_uri)
     }
 
     /// Instantiate a `DataDirectory` from this client
@@ -151,7 +149,7 @@ impl<'a, 'c> Algorithmia {
     /// let rustfoo = client.dir("data://.my/rustfoo");
     /// ```
     pub fn dir(self, path: &'a str) -> DataDir {
-        DataDir::new(self, path)
+        DataDir::new(self.http_client.clone(), path)
     }
 
     /// Instantiate a `DataDirectory` from this client
@@ -164,7 +162,7 @@ impl<'a, 'c> Algorithmia {
     /// let rustfoo = client.file("data://.my/rustfoo");
     /// ```
     pub fn file(self, path: &'a str) -> DataFile {
-        DataFile::new(self, path)
+        DataFile::new(self.http_client.clone(), path)
     }
 
     /// Helper to standardize decoding to a specific Algorithmia Result type
@@ -184,15 +182,14 @@ impl<'a, 'c> Algorithmia {
             Err(why) => AlgorithmiaError::DecoderErrorWithContext(why, res_json),
         }
     }
-
 }
 
-impl <'a> HttpClient<'a> {
+impl HttpClient {
     /// Instantiate an HttpClient - creates a new `hyper` client
-    fn new(api_key: String, client: &'a Client) -> HttpClient {
+    fn new(api_key: String) -> HttpClient {
         HttpClient {
             api_key: api_key,
-            client: client,
+            hyper_client: Arc::new(Client::new()),
             user_agent: format!("algorithmia-rust/{} (Rust {}", option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"), option_env!("CFG_RELEASE").unwrap_or("unknown")),
         }
     }
@@ -224,7 +221,7 @@ impl <'a> HttpClient<'a> {
 
 
     fn build_request(&self, verb: Method, url: Url) -> RequestBuilder<Url> {
-        let req = self.client.request(verb, url);
+        let req = self.hyper_client.request(verb, url);
 
         // TODO: Support Secure Auth
         req.header(UserAgent(self.user_agent.clone()))
@@ -240,12 +237,22 @@ impl <'a> HttpClient<'a> {
 impl std::clone::Clone for Algorithmia {
     fn clone(&self) -> Algorithmia {
         Algorithmia {
-            api_key: self.api_key.clone(),
             base_url: self.base_url.clone(),
-            client: self.client.clone(),
+            http_client: self.http_client.clone(),
         }
     }
 }
+
+impl std::clone::Clone for HttpClient {
+    fn clone(&self) -> HttpClient {
+        HttpClient {
+            api_key: self.api_key.clone(),
+            hyper_client: self.hyper_client.clone(),
+            user_agent: self.user_agent.clone(),
+        }
+    }
+}
+
 
 impl From<io::Error> for AlgorithmiaError {
     fn from(err: io::Error) -> AlgorithmiaError {

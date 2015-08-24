@@ -1,9 +1,9 @@
 pub use self::dir::DataDir;
 pub use self::file::{DataFile, FileAddedResult, FileAdded};
-use {AlgorithmiaError, ApiError};
+pub use hyper::client::Body;
+use {Algorithmia, HttpClient, AlgorithmiaError, ApiError};
 use hyper::Url;
 use hyper::status::StatusCode;
-use Algorithmia;
 
 mod dir;
 mod file;
@@ -34,11 +34,11 @@ pub struct DeletedResult {
 
 pub struct DataObject {
     pub path: String,
-    client: Algorithmia,
+    client: HttpClient,
 }
 
 impl DataObject {
-    fn new(client: Algorithmia, data_uri: &str) -> DataObject {
+    fn new(client: HttpClient, data_uri: &str) -> DataObject {
         let path = match data_uri {
             p if p.starts_with("data://") => p[7..].to_string(),
             p if p.starts_with("/") => p[1..].to_string(),
@@ -53,7 +53,7 @@ impl DataObject {
 
     /// Get the API Endpoint URL for a particular data URI
     pub fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}", self.client.base_url, COLLECTION_BASE_PATH, self.path);
+        let url_string = format!("{}/{}/{}", Algorithmia::get_base_url(), COLLECTION_BASE_PATH, self.path);
         Url::parse(&url_string).unwrap()
     }
 
@@ -101,8 +101,7 @@ impl DataObject {
 
 
     pub fn get_type(&self) -> Result<DataType, AlgorithmiaError> {
-        let http_client = self.client.http_client();
-        let req = http_client.head(self.to_url());
+        let req = self.client.head(self.to_url());
 
         let res = try!(req.send());
         match res.status {
@@ -124,8 +123,7 @@ impl DataObject {
     }
 
     pub fn exists(&self) -> Result<bool, AlgorithmiaError> {
-        let http_client = self.client.http_client();
-        let req = http_client.head(self.to_url());
+        let req = self.client.head(self.to_url());
 
         let res = try!(req.send());
         match res.status {

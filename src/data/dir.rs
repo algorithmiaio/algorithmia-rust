@@ -16,7 +16,7 @@
 extern crate hyper;
 extern crate chrono;
 
-use {Algorithmia, AlgorithmiaError, ApiErrorResponse};
+use {Algorithmia, AlgorithmiaError, ApiErrorResponse, HttpClient};
 use hyper::Url;
 use hyper::status::StatusCode;
 use rustc_serialize::{json, Decoder, Decodable};
@@ -107,7 +107,7 @@ pub struct DirectoryShow {
 
 
 impl DataDir {
-    pub fn new(client: Algorithmia, data_uri: &str) -> DataDir {
+    pub fn new(client: HttpClient, data_uri: &str) -> DataDir {
         DataDir {
             data_object: DataObject::new(client, data_uri),
         }
@@ -127,8 +127,7 @@ impl DataDir {
     /// };
     /// ```
     pub fn show(&self) -> DirectoryShowResult {
-        let http_client = self.client.http_client();
-        let req = http_client.get(self.to_url());
+        let req = self.client.get(self.to_url());
 
         let mut res = try!(req.send());
 
@@ -173,8 +172,7 @@ impl DataDir {
         let raw_input = try!(json::encode(&input_data));
 
         // POST request
-        let http_client = self.client.http_client();
-        let req = http_client.post(url)
+        let req = self.client.post(url)
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .body(&raw_input);
 
@@ -206,10 +204,9 @@ impl DataDir {
     /// ```
     pub fn delete(&self, force: bool) -> DirectoryDeletedResult {
         // DELETE request
-        let http_client = self.client.http_client();
         let url_string = format!("{}?force={}", self.to_url(), force.to_string());
         let url = Url::parse(&url_string).unwrap();
-        let req = http_client.delete(url);
+        let req = self.client.delete(url);
 
         // Parse response
         let mut res = try!(req.send());
@@ -243,8 +240,7 @@ impl DataDir {
         let url = Url::parse(&url_string).unwrap();
 
         let mut file = File::open(path_ref).unwrap();
-        let http_client = self.client.http_client();
-        let req = http_client.put(url).body(&mut file);
+        let req = self.client.put(url).body(&mut file);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -265,21 +261,20 @@ mod tests {
 
     #[test]
     fn test_to_url() {
-        let mock_client = mock_client();
-        let dir = DataDir::new(mock_client, "data://anowell/foo");
-        assert_eq!(dir.to_url().serialize(), format!("{}/v1/data/anowell/foo", dir.client.base_url));
+        let dir = DataDir::new(mock_client().http_client, "data://anowell/foo");
+        assert_eq!(dir.to_url().serialize(), format!("{}/v1/data/anowell/foo", Algorithmia::get_base_url()));
     }
 
     #[test]
     fn test_to_data_uri() {
-        let dir = DataDir::new(mock_client(), "/anowell/foo");
+        let dir = DataDir::new(mock_client().http_client, "/anowell/foo");
         assert_eq!(dir.to_data_uri(), "data://anowell/foo".to_string());
     }
 
     #[test]
     fn test_parent() {
-        let dir = DataDir::new(mock_client(), "data://anowell/foo");
-        let expected = DataDir::new(mock_client(), "data://anowell");
+        let dir = DataDir::new(mock_client().http_client, "data://anowell/foo");
+        let expected = DataDir::new(mock_client().http_client, "data://anowell");
         assert_eq!(dir.parent().unwrap().path, expected.path);
     }
 }

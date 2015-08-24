@@ -8,11 +8,11 @@
 //! let client = Algorithmia::client("111112222233333444445555566");
 //! let my_file = client.file(".my/my_dir/some_filename");
 //!
-//! my_file.put_bytes("file_contents".as_bytes());
+//! my_file.put("file_contents");
 //! ```
 
-use {Algorithmia, AlgorithmiaError};
-use super::{DataObject, DeletedResult, XDataType};
+use {Algorithmia, AlgorithmiaError, HttpClient};
+use super::{DataObject, DeletedResult, XDataType, Body};
 use std::io::{self, Read};
 use std::ops::Deref;
 
@@ -56,33 +56,33 @@ impl Deref for DataFile {
     fn deref(&self) -> &DataObject {&self.data_object}
 }
 
-impl <'a> DataFile  {
-    pub fn new(client: Algorithmia, data_uri: &str) -> DataFile {
+impl DataFile  {
+    pub fn new(client: HttpClient, data_uri: &str) -> DataFile {
         DataFile {
             data_object: DataObject::new(client, data_uri),
         }
     }
 
 
-    /// Write a file (raw bytes) directly to the Algorithmia Data API
+    /// Write to the Algorithmia Data API
     ///
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
+    /// # use std::io::{self, Read};
     /// let client = Algorithmia::client("111112222233333444445555566");
-    /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
-    /// match my_file.put_bytes("file_contents".as_bytes()) {
-    ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
-    ///   Err(e) => println!("ERROR uploading file: {:?}", e),
-    /// };
+    /// client.clone().file(".my/my_dir/string.txt").put("file_contents");
+    /// client.clone().file(".my/my_dir/bytes.txt").put("file_contents".as_bytes());
+    ///
+    /// let mut stdin = io::stdin();
+    /// let data_file = client.clone().file(".my/my_dir/stdin.txt");
+    /// data_file.put(&mut stdin);
     /// ```
-    // TODO: just use .put and whatever input_data type is used by .body
-    pub fn put_bytes(&'a self, input_data: &'a [u8]) -> FileAddedResult {
+    pub fn put<'a, B: Into<Body<'a>>>(&'a self, body: B) -> FileAddedResult {
         let url = self.to_url();
 
-        let http_client = self.client.http_client();
-        let req = http_client.put(url).body(input_data);
+        let req = self.client.put(url).body(body);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -115,8 +115,7 @@ impl <'a> DataFile  {
     pub fn get(&self) -> Result<DataResponse, AlgorithmiaError>  {
         let url = self.to_url();
 
-        let http_client = self.client.http_client();
-        let req = http_client.get(url);
+        let req = self.client.get(url);
 
         let res = try!(req.send());
 
@@ -148,8 +147,7 @@ impl <'a> DataFile  {
     pub fn delete(&self) -> FileDeletedResult {
         let url = self.to_url();
 
-        let http_client = self.client.http_client();
-        let req = http_client.delete(url);
+        let req = self.client.delete(url);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();

@@ -19,7 +19,7 @@
 
 extern crate hyper;
 
-use Algorithmia;
+use {Algorithmia, HttpClient};
 use hyper::Url;
 use rustc_serialize::{json, Decodable, Encodable};
 use std::io::Read;
@@ -32,11 +32,11 @@ static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 /// Algorithmia algorithm
 pub struct Algorithm {
     pub path: String,
-    client: Algorithmia,
+    client: HttpClient,
 }
 
 impl Algorithm {
-    pub fn new(client: Algorithmia, algo_uri: &str) -> Algorithm {
+    pub fn new(client: HttpClient, algo_uri: &str) -> Algorithm {
         let path = match algo_uri {
             p if p.starts_with("algo://") => &p[7..],
             p if p.starts_with("/") => &p[1..],
@@ -51,7 +51,7 @@ impl Algorithm {
 
     /// Get the API Endpoint URL for this Algorithm
     pub fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}", self.client.base_url, ALGORITHM_BASE_PATH, self.path);
+        let url_string = format!("{}/{}/{}", Algorithmia::get_base_url(), ALGORITHM_BASE_PATH, self.path);
         Url::parse(&url_string).unwrap()
     }
 
@@ -116,8 +116,7 @@ impl Algorithm {
     ///    Err(why) => panic!("{:?}", why),
     /// };
     pub fn pipe_raw(&self, input_data: &str, content_type: Mime) -> JsonResult {
-        let http_client = self.client.http_client();
-        let req = http_client.post(self.to_url())
+        let req = self.client.post(self.to_url())
             .header(ContentType(content_type))
             .body(input_data);
 
@@ -141,27 +140,27 @@ mod tests {
     fn test_algo_without_version_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo_from_str("/anowell/Pinky");
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky", algorithm.client.base_url));
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky", Algorithmia::get_base_url()));
     }
 
     #[test]
     fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo_from_str("anowell/Pinky/0.1.0");
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/0.1.0", algorithm.client.base_url));
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/0.1.0", Algorithmia::get_base_url()));
     }
 
     #[test]
     fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo_from_str("algo://anowell/Pinky/0.1");
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/0.1", algorithm.client.base_url));
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/0.1", Algorithmia::get_base_url()));
     }
 
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("anowell", "Pinky", Version::Hash("abcdef123456"));
-        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/abcdef123456", algorithm.client.base_url));
+        assert_eq!(algorithm.to_url().serialize(), format!("{}/v1/algo/anowell/Pinky/abcdef123456", Algorithmia::get_base_url()));
     }
 }
