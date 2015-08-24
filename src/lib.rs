@@ -60,6 +60,8 @@ struct HttpClient<'a>{
 pub enum AlgorithmiaError {
     /// Errors returned by the Algorithmia API, Optional Stacktrace
     AlgorithmiaApiError(ApiError),
+    /// Errors for mixing up data types (file vs directory)
+    DataTypeError(String),
     /// HTTP errors encountered by the hyper client
     HttpError(hyper::error::Error),
     /// Errors decoding response json
@@ -70,8 +72,6 @@ pub enum AlgorithmiaError {
     EncoderError(json::EncoderError),
     /// General IO errors
     IoError(io::Error),
-    /// Other Errors
-    OtherError(String),
 }
 
 #[derive(RustcDecodable, Debug)]
@@ -200,6 +200,11 @@ impl <'a> HttpClient<'a> {
     /// Helper to make Algorithmia GET requests with the API key
     fn get(&self, url: Url) -> RequestBuilder<Url> {
         self.build_request(Method::Get, url)
+    }
+
+    /// Helper to make Algorithmia GET requests with the API key
+    fn head(&self, url: Url) -> RequestBuilder<Url> {
+        self.build_request(Method::Head, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key

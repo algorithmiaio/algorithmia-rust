@@ -56,7 +56,7 @@ impl Deref for DataFile {
     fn deref(&self) -> &DataObject {&self.data_object}
 }
 
-impl DataFile {
+impl <'a> DataFile  {
     pub fn new(client: Algorithmia, data_uri: &str) -> DataFile {
         DataFile {
             data_object: DataObject::new(client, data_uri),
@@ -78,7 +78,7 @@ impl DataFile {
     /// };
     /// ```
     // TODO: just use .put and whatever input_data type is used by .body
-    pub fn put_bytes(&self, input_data: &[u8]) -> FileAddedResult {
+    pub fn put_bytes(&'a self, input_data: &'a [u8]) -> FileAddedResult {
         let url = self.to_url();
 
         let http_client = self.client.http_client();
@@ -90,7 +90,6 @@ impl DataFile {
 
         Algorithmia::decode_to_result::<FileAdded>(res_json)
     }
-
 
 
     /// Get a file from the Algorithmia Data API
@@ -123,7 +122,7 @@ impl DataFile {
 
         if let Some(data_type) = res.headers.get::<XDataType>() {
             if "file" != data_type.to_string() {
-                return Err(AlgorithmiaError::OtherError(format!("Expected file, Received {}", data_type)));
+                return Err(AlgorithmiaError::DataTypeError(format!("Expected file, Received {}", data_type)));
             }
         }
 

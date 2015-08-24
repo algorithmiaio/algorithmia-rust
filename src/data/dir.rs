@@ -70,6 +70,7 @@ pub struct FileEntry {
     pub last_modified: DateTime<UTC>,
 }
 
+// Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
 impl Decodable for FileEntry {
     fn decode<D: Decoder>(d: &mut D) -> Result<FileEntry, D::Error> {
         d.read_struct("root", 0, |d| {
@@ -133,7 +134,7 @@ impl DataDir {
 
         if let Some(data_type) = res.headers.get::<XDataType>() {
             if "directory" != data_type.to_string() {
-                return Err(AlgorithmiaError::OtherError(format!("Expected directory, Received {}", data_type)));
+                return Err(AlgorithmiaError::DataTypeError(format!("Expected directory, Received {}", data_type)));
             }
         }
 

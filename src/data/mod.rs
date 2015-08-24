@@ -1,6 +1,8 @@
 pub use self::dir::DataDir;
 pub use self::file::{DataFile, FileAddedResult, FileAdded};
+use {AlgorithmiaError, ApiError};
 use hyper::Url;
+use hyper::status::StatusCode;
 use Algorithmia;
 
 mod dir;
@@ -11,6 +13,17 @@ static COLLECTION_BASE_PATH: &'static str = "v1/data";
 
 header! {
     (XDataType, "X-Data-Type") => [String]
+}
+
+header! {
+    (XErrorMessage, "X-Error-Message") => [String]
+}
+
+#[derive(Debug)]
+pub enum DataType {
+    File,
+    Directory,
+    UnknownDataType(String),
 }
 
 // Shared by results for deleting both files and directories
@@ -85,4 +98,64 @@ impl DataObject {
             None => None
         }
     }
+
+
+    pub fn get_type(&self) -> Result<DataType, AlgorithmiaError> {
+        let http_client = self.client.http_client();
+        let req = http_client.head(self.to_url());
+
+        let res = try!(req.send());
+        match res.status {
+            StatusCode::Ok => match res.headers.get::<XDataType>() {
+                Some(dt) if &*dt.to_string() == "directory" => Ok(DataType::Directory),
+                Some(dt) if &*dt.to_string() == "file"  => Ok(DataType::File),
+                Some(dt) => Ok(DataType::UnknownDataType(dt.to_string())),
+                None => Err(AlgorithmiaError::DataTypeError("Unspecified DataType".to_string())),
+            },
+            status => {
+                let msg = match res.headers.get::<XErrorMessage>()  {
+                    Some(err_header) => format!("{}: {}", status, err_header),
+                    None => format!("{}", status),
+                };
+
+                Err(AlgorithmiaError::AlgorithmiaApiError(ApiError{message: msg, stacktrace: None}))
+            },
+        }
+    }
+
+    pub fn exists(&self) -> Result<bool, AlgorithmiaError> {
+        let http_client = self.client.http_client();
+        let req = http_client.head(self.to_url());
+
+        let res = try!(req.send());
+        match res.status {
+            StatusCode::Ok => Ok(true),
+            StatusCode::NotFound => Ok(false),
+            status => {
+                let msg = match res.headers.get::<XErrorMessage>()  {
+                    Some(err_header) => format!("{}: {}", status, err_header),
+                    None => format!("{}", status),
+                };
+
+                Err(AlgorithmiaError::AlgorithmiaApiError(ApiError{message: msg, stacktrace: None}))
+            },
+        }
+
+    }
+
+    pub fn is_dir(&self) -> Result<bool, AlgorithmiaError> {
+        match self.get_type() {
+            Ok(DataType::Directory) => Ok(true),
+            Ok(_) => Ok(false),
+            Err(err) => Err(err),
+        }
+    }
+    pub fn is_file(&self) -> Result<bool, AlgorithmiaError> {
+        match self.get_type() {
+            Ok(DataType::File) => Ok(true),
+            Ok(_) => Ok(false),
+            Err(err) => Err(err),
+        }
+    }
+
 }
