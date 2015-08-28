@@ -28,7 +28,7 @@ pub mod data;
 pub use hyper::mime;
 
 use algo::{Algorithm, Version};
-use data::{DataDir, DataFile};
+use data::{DataDir, DataFile, DataPath, HasDataPath};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
@@ -163,6 +163,10 @@ impl<'a, 'c> Algorithmia {
     /// ```
     pub fn file(self, path: &'a str) -> DataFile {
         DataFile::new(self.http_client.clone(), path)
+    }
+
+    pub fn data(self, path: &'a str) -> DataPath {
+        DataPath::new(self.http_client.clone(), path)
     }
 
     /// Helper to standardize decoding to a specific Algorithmia Result type

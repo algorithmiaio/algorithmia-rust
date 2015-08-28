@@ -12,9 +12,8 @@
 //! ```
 
 use {Algorithmia, AlgorithmiaError, HttpClient};
-use super::{DataObject, DeletedResult, XDataType, Body};
+use super::{parse_data_uri, HasDataPath, DeletedResult, XDataType, Body};
 use std::io::{self, Read};
-use std::ops::Deref;
 
 
 pub type FileAddedResult = Result<FileAdded, AlgorithmiaError>;
@@ -48,22 +47,17 @@ impl Read for DataResponse {
 
 /// Algorithmia data collection
 pub struct DataFile {
-    data_object: DataObject,
+    path: String,
+    client: HttpClient,
 }
 
-impl Deref for DataFile {
-    type Target = DataObject;
-    fn deref(&self) -> &DataObject {&self.data_object}
+impl HasDataPath for DataFile {
+    fn new(client: HttpClient, path: &str) -> Self { DataFile { client: client, path: parse_data_uri(path).to_string() } }
+    fn path(&self) -> &str { &self.path }
+    fn client(&self) -> &HttpClient { &self.client }
 }
 
 impl DataFile  {
-    pub fn new(client: HttpClient, data_uri: &str) -> DataFile {
-        DataFile {
-            data_object: DataObject::new(client, data_uri),
-        }
-    }
-
-
     /// Write to the Algorithmia Data API
     ///
     /// # Examples

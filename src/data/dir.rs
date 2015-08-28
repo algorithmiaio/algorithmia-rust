@@ -26,19 +26,15 @@ use std::path::Path;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use self::chrono::{DateTime, UTC};
-use super::{DataObject, FileAddedResult, FileAdded, DeletedResult, XDataType};
+use super::{parse_data_uri, HasDataPath, FileAddedResult, FileAdded, DeletedResult, XDataType};
 use std::error::Error;
-use std::ops::Deref;
 
 /// Algorithmia Data Directory
 pub struct DataDir {
-    data_object: DataObject,
+    path: String,
+    client: HttpClient,
 }
 
-impl Deref for DataDir {
-    type Target = DataObject;
-    fn deref(&self) -> &DataObject {&self.data_object}
-}
 
 pub type DirectoryShowResult = Result<DirectoryShow, AlgorithmiaError>;
 pub type DirectoryCreatedResult = Result<(), AlgorithmiaError>;
@@ -98,21 +94,52 @@ pub struct DataAcl {
 /// Response when querying an existing Directory
 #[derive(RustcDecodable, Debug)]
 pub struct DirectoryShow {
+    pub acl: Option<DataAcl>,
     pub folders: Option<Vec<FolderEntry>>,
     pub files: Option<Vec<FileEntry>>,
     pub marker: Option<String>,
-    pub acl: Option<DataAcl>,
 }
 
+fn get_directory(dir: &DataDir, marker: Option<String>) -> DirectoryShowResult {
+    let url = match marker {
+        Some(m) => Url::parse(&format!("{}?marker={}", dir.to_url(), m)).unwrap(),
+        None => dir.to_url(),
+    };
 
+    let req = dir.client.get(url);
 
-impl DataDir {
-    pub fn new(client: HttpClient, data_uri: &str) -> DataDir {
-        DataDir {
-            data_object: DataObject::new(client, data_uri),
+    let mut res = try!(req.send());
+
+    if let Some(data_type) = res.headers.get::<XDataType>() {
+        if "directory" != data_type.to_string() {
+            return Err(AlgorithmiaError::DataTypeError(format!("Expected directory, Received {}", data_type)));
         }
     }
 
+    let mut res_json = String::new();
+    try!(res.read_to_string(&mut res_json));
+
+    match json::decode::<DirectoryShow>(&res_json) {
+        Ok(result) => Ok(result),
+        Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
+            Ok(err_res) => Err(AlgorithmiaError::AlgorithmiaApiError(err_res.error)),
+            Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
+        }
+    }
+
+}
+
+impl HasDataPath for DataDir {
+    fn new(client: HttpClient, path: &str) -> Self { DataDir { client: client, path: parse_data_uri(path).to_string() } }
+    fn path(&self) -> &str { &self.path }
+    fn client(&self) -> &HttpClient { &self.client }
+}
+
+impl DataDir {
+
+    pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
+        T::new(self.client.clone(), &format!("{}/{}", self.to_data_uri(), filename))
+    }
 
     /// Display Directory details if it exists
     ///
@@ -127,27 +154,13 @@ impl DataDir {
     /// };
     /// ```
     pub fn show(&self) -> DirectoryShowResult {
-        let req = self.client.get(self.to_url());
-
-        let mut res = try!(req.send());
-
-        if let Some(data_type) = res.headers.get::<XDataType>() {
-            if "directory" != data_type.to_string() {
-                return Err(AlgorithmiaError::DataTypeError(format!("Expected directory, Received {}", data_type)));
-            }
-        }
-
-        let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
-
-        match json::decode::<DirectoryShow>(&res_json) {
-            Ok(result) => Ok(result),
-            Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
-                Ok(err_res) => Err(AlgorithmiaError::AlgorithmiaApiError(err_res.error)),
-                Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
-            }
-        }
+        get_directory(&self, None)
     }
+
+
+    // pub fn list(&self) -> DirectoryListing {
+
+    // }
 
     /// Create a Directory
     ///
@@ -255,6 +268,7 @@ impl DataDir {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use data::HasDataPath;
     use Algorithmia;
 
     fn mock_client() -> Algorithmia { Algorithmia::client("") }
