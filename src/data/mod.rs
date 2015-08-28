@@ -1,4 +1,4 @@
-pub use self::dir::DataDir;
+pub use self::dir::{DataDir, DirEntry};
 pub use self::file::{DataFile, FileAddedResult, FileAdded};
 pub use hyper::client::Body;
 use {Algorithmia, HttpClient, AlgorithmiaError, ApiError};

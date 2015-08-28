@@ -23,11 +23,13 @@ use rustc_serialize::{json, Decoder, Decodable};
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
+use std::vec::IntoIter;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use self::chrono::{DateTime, UTC};
-use super::{parse_data_uri, HasDataPath, FileAddedResult, FileAdded, DeletedResult, XDataType};
+use super::{parse_data_uri, HasDataPath, DataFile, FileAddedResult, FileAdded, DeletedResult, XDataType};
 use std::error::Error;
+use std::ops::Deref;
 
 /// Algorithmia Data Directory
 pub struct DataDir {
@@ -36,7 +38,6 @@ pub struct DataDir {
 }
 
 
-pub type DirectoryShowResult = Result<DirectoryShow, AlgorithmiaError>;
 pub type DirectoryCreatedResult = Result<(), AlgorithmiaError>;
 pub type DirectoryDeletedResult = Result<DirectoryDeleted, AlgorithmiaError>;
 
@@ -93,21 +94,88 @@ pub struct DataAcl {
 
 /// Response when querying an existing Directory
 #[derive(RustcDecodable, Debug)]
-pub struct DirectoryShow {
+struct DirectoryShow {
     pub acl: Option<DataAcl>,
     pub folders: Option<Vec<FolderEntry>>,
     pub files: Option<Vec<FileEntry>>,
     pub marker: Option<String>,
 }
 
-fn get_directory(dir: &DataDir, marker: Option<String>) -> DirectoryShowResult {
+
+pub struct DirectoryListing<'a> {
+    pub acl: Option<DataAcl>,
+    dir: &'a DataDir,
+    folders: IntoIter<FolderEntry>,
+    files: IntoIter<FileEntry>,
+    marker: Option<String>,
+}
+
+impl <'a> DirectoryListing<'a> {
+    fn new(dir: &'a DataDir) -> DirectoryListing<'a> {
+        DirectoryListing {
+            acl: None,
+            dir: dir,
+            folders: Vec::new().into_iter(),
+            files: Vec::new().into_iter(),
+            marker: None,
+        }
+    }
+}
+
+pub struct DataFileEntry {
+    pub size: u64,
+    pub last_modified: DateTime<UTC>,
+    file: DataFile,
+}
+
+impl Deref for DataFileEntry {
+    type Target = DataFile;
+    fn deref(&self) -> &DataFile {&self.file}
+}
+
+pub enum DirEntry {
+    File(DataFileEntry),
+    Dir(DataDir),
+}
+
+impl <'a> Iterator for DirectoryListing<'a> {
+    type Item = Result<DirEntry, AlgorithmiaError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.folders.next() {
+            Some(d) => Some(Ok(DirEntry::Dir(self.dir.child(&d.name)))),
+            None => match self.files.next() {
+                Some(f) => Some(Ok(DirEntry::File(
+                    DataFileEntry{
+                        size: f.size,
+                        last_modified: f.last_modified,
+                        file: self.dir.child(&f.filename),
+                    }
+                ))),
+                None => match self.marker.clone() {
+                    Some(m) => match get_directory(self.dir, Some(m)) {
+                        Ok(ds) => {
+                            self.folders = ds.folders.unwrap_or(Vec::new()).into_iter();
+                            self.files = ds.files.unwrap_or(Vec::new()).into_iter();
+                            self.marker = ds.marker;
+                            self.next()
+                        }
+                        Err(err) => Some(Err(err)),
+                    },
+                    None => None,
+                }
+            }
+        }
+    }
+}
+
+fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, AlgorithmiaError> {
     let url = match marker {
         Some(m) => Url::parse(&format!("{}?marker={}", dir.to_url(), m)).unwrap(),
         None => dir.to_url(),
     };
 
     let req = dir.client.get(url);
-
     let mut res = try!(req.send());
 
     if let Some(data_type) = res.headers.get::<XDataType>() {
@@ -126,7 +194,6 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> DirectoryShowResult {
             Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
         }
     }
-
 }
 
 impl HasDataPath for DataDir {
@@ -136,31 +203,26 @@ impl HasDataPath for DataDir {
 }
 
 impl DataDir {
-
-    pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
-        T::new(self.client.clone(), &format!("{}/{}", self.to_data_uri(), filename))
-    }
-
     /// Display Directory details if it exists
     ///
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
+    /// # use algorithmia::data::{DirEntry, HasDataPath};
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let my_dir = client.dir(".my/my_dir");
-    /// match my_dir.show() {
-    ///   Ok(dir) => println!("Files: {}", dir.files.unwrap().iter().map(|f| f.filename.clone()).collect::<Vec<_>>().connect(", ")),
-    ///   Err(e) => println!("ERROR: {:?}", e),
+    /// let dir_list = my_dir.list();
+    /// for entry in dir_list {
+    ///     match entry {
+    ///         Ok(DirEntry::File(f)) => println!("File: {}", f.to_data_uri()),
+    ///         Ok(DirEntry::Dir(d)) => println!("Dir: {}", d.to_data_uri()),
+    ///         Err(err) => { println!("Error: {:?}", err); break; },
+    ///     }
     /// };
     /// ```
-    pub fn show(&self) -> DirectoryShowResult {
-        get_directory(&self, None)
+    pub fn list(&self) -> DirectoryListing {
+        DirectoryListing::new(self)
     }
-
-
-    // pub fn list(&self) -> DirectoryListing {
-
-    // }
 
     /// Create a Directory
     ///
@@ -262,6 +324,9 @@ impl DataDir {
         Algorithmia::decode_to_result::<FileAdded>(res_json)
     }
 
+    pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
+        T::new(self.client.clone(), &format!("{}/{}", self.to_data_uri(), filename))
+    }
 }
 
 
