@@ -1,6 +1,4 @@
-
 use std::fmt;
-
 
 /// Version of an algorithm
 pub enum Version<'a> {

@@ -13,23 +13,28 @@
 //! my_dir.put_file("/path/to/file");
 //! ```
 
-extern crate hyper;
 extern crate chrono;
 
 use {Algorithmia, HttpClient};
 use error::*;
-use hyper::Url;
-use rustc_serialize::{json, Decoder, Decodable};
+
+use data::{self, DataFile, DeletedResult, XDataType};
+use data::file::FileAdded;
+use data::HasDataPath;
+
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use std::vec::IntoIter;
-use hyper::header::ContentType;
-use hyper::mime::{Mime, TopLevel, SubLevel};
-use self::chrono::{DateTime, UTC};
-use super::{parse_data_uri, HasDataPath, DataFile, FileAdded, DeletedResult, XDataType};
 use std::ops::Deref;
 use std::error::Error as StdError;
+
+use hyper::header::ContentType;
+use hyper::mime::{Mime, TopLevel, SubLevel};
+use hyper::Url;
+use rustc_serialize::{json, Decoder, Decodable};
+use self::chrono::{DateTime, UTC};
+
 
 /// Algorithmia Data Directory
 pub struct DataDir {
@@ -202,7 +207,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 }
 
 impl HasDataPath for DataDir {
-    fn new(client: HttpClient, path: &str) -> Self { DataDir { client: client, path: parse_data_uri(path).to_string() } }
+    fn new(client: HttpClient, path: &str) -> Self { DataDir { client: client, path: data::parse_data_uri(path).to_string() } }
     fn path(&self) -> &str { &self.path }
     fn client(&self) -> &HttpClient { &self.client }
 }

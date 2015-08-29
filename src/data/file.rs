@@ -12,10 +12,9 @@
 //! ```
 
 use {Algorithmia, HttpClient};
-use super::{parse_data_uri, HasDataPath, DeletedResult, XDataType, XErrorMessage, Body};
+use data::{self, HasDataPath, DeletedResult, XDataType, XErrorMessage, Body};
 use std::io::{self, Read};
 use error::{Error, ApiError};
-
 
 
 /// Response when creating a file via the Data API
@@ -49,7 +48,7 @@ pub struct DataFile {
 }
 
 impl HasDataPath for DataFile {
-    fn new(client: HttpClient, path: &str) -> Self { DataFile { client: client, path: parse_data_uri(path).to_string() } }
+    fn new(client: HttpClient, path: &str) -> Self { DataFile { client: client, path: data::parse_data_uri(path).to_string() } }
     fn path(&self) -> &str { &self.path }
     fn client(&self) -> &HttpClient { &self.client }
 }

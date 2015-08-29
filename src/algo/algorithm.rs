@@ -17,16 +17,17 @@
 //! println!("Completed in {} seconds with result: {:?}", output.metadata.duration, output.result);
 //! ```
 
-extern crate hyper;
-
 use {Algorithmia, HttpClient};
+use error::{Error, ApiErrorResponse};
+use algo::result::{AlgoResult, JsonResult, AlgoOutput};
+
 use hyper::Url;
 use rustc_serialize::{json, Decodable, Encodable};
-use std::io::Read;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
-use super::result::{AlgoResult, JsonResult, AlgoOutput};
-use error::{Error, ApiErrorResponse};
+
+use std::io::Read;
+
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 

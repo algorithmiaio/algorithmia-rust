@@ -1,6 +1,6 @@
-pub use self::algorithm::{Algorithm};
-pub use self::result::{AlgoResult, JsonResult, AlgoOutput, AlgoMetadata};
-pub use self::version::Version;
+pub use self::algorithm::*;
+pub use self::result::*;
+pub use self::version::*;
 
 mod algorithm;
 mod result;

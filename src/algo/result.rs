@@ -1,5 +1,3 @@
-extern crate hyper;
-
 use error::Error;
 
 /// Result type for generic `AlgoOutput` when calling `pipe`

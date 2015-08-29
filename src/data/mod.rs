@@ -1,13 +1,14 @@
-pub use self::dir::{DataDir, DirEntry};
-pub use self::file::{DataFile, FileAdded};
+pub use data::dir::DataDir;
+pub use data::file::DataFile;
 pub use hyper::client::Body;
+
 use {Algorithmia, HttpClient};
 use error::*;
 use hyper::Url;
 use hyper::status::StatusCode;
 
-mod dir;
-mod file;
+pub mod dir;
+pub mod file;
 
 
 static COLLECTION_BASE_PATH: &'static str = "v1/data";

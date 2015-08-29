@@ -23,14 +23,9 @@
 extern crate hyper;
 extern crate rustc_serialize;
 
-pub mod algo;
-pub mod data;
-pub mod error;
-pub use hyper::mime;
-
 use algo::{Algorithm, Version};
 use data::{DataDir, DataFile, DataPath, HasDataPath};
-use error::*;
+use error::{Error, ApiErrorResponse};
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
@@ -39,6 +34,11 @@ use hyper::method::Method;
 use rustc_serialize::{json, Decodable};
 use std::env;
 use std::sync::Arc;
+
+pub mod algo;
+pub mod data;
+pub mod error;
+pub use hyper::mime;
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
