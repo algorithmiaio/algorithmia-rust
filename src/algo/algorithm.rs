@@ -74,7 +74,7 @@ impl Algorithm {
     /// # Examples
     ///
     /// ```no_run
-    /// # use algorithmia::{Algorithmia, AlgorithmiaError};
+    /// # use algorithmia::Algorithmia;
     /// # use algorithmia::algo::{Algorithm, AlgoOutput, Version};
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let moving_avg = client.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
@@ -84,7 +84,7 @@ impl Algorithm {
     ///         let myVal: AlgoOutput<Vec<f64>> = out;
     ///         println!("{:?}", myVal.result);
     ///     },
-    ///     Err(e) => println!("ERROR: {:?}", e),
+    ///     Err(err) => println!("ERROR: {}", err),
     /// };
     /// ```
     pub fn pipe<D, E>(&self, input_data: &E) -> AlgoResult<D>
@@ -113,7 +113,7 @@ impl Algorithm {
     ///
     /// let output = match minmax.pipe_raw("[2,3,4]", "application/json".parse().unwrap()) {
     ///    Ok(result) => result,
-    ///    Err(why) => panic!("{:?}", why),
+    ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_raw(&self, input_data: &str, content_type: Mime) -> JsonResult {
         let req = self.client.post(self.to_url())

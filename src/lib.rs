@@ -25,18 +25,19 @@ extern crate rustc_serialize;
 
 pub mod algo;
 pub mod data;
+pub mod error;
 pub use hyper::mime;
 
 use algo::{Algorithm, Version};
 use data::{DataDir, DataFile, DataPath, HasDataPath};
+use error::*;
 
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
 use hyper::header::{Authorization, UserAgent};
 use hyper::method::Method;
 use rustc_serialize::{json, Decodable};
-use self::AlgorithmiaError::*;
-use std::{io, env};
+use std::env;
 use std::sync::Arc;
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
@@ -54,36 +55,8 @@ pub struct HttpClient{
     user_agent: String,
 }
 
-/// Errors that may be returned by this library
-#[derive(Debug)]
-pub enum AlgorithmiaError {
-    /// Errors returned by the Algorithmia API, Optional Stacktrace
-    AlgorithmiaApiError(ApiError),
-    /// Errors for mixing up data types (file vs directory)
-    DataTypeError(String),
-    /// HTTP errors encountered by the hyper client
-    HttpError(hyper::error::Error),
-    /// Errors decoding response json
-    DecoderError(json::DecoderError),
-    /// Errors decoding response json with additional debugging context
-    DecoderErrorWithContext(json::DecoderError, String),
-    /// Errors encoding the request
-    EncoderError(json::EncoderError),
-    /// General IO errors
-    IoError(io::Error),
-}
 
-#[derive(RustcDecodable, Debug)]
-pub struct ApiError {
-    pub message: String,
-    pub stacktrace: Option<String>,
-}
 
-/// Struct for decoding Algorithmia API error responses
-#[derive(RustcDecodable, Debug)]
-pub struct ApiErrorResponse {
-    pub error: ApiError,
-}
 
 impl<'a, 'c> Algorithmia {
     /// Instantiate a new client
@@ -170,20 +143,20 @@ impl<'a, 'c> Algorithmia {
     }
 
     /// Helper to standardize decoding to a specific Algorithmia Result type
-    pub fn decode_to_result<T: Decodable>(res_json: String) -> Result<T, AlgorithmiaError> {
+    pub fn decode_to_result<T: Decodable>(res_json: String) -> Result<T, Error> {
         match json::decode::<T>(&res_json) {
             Ok(result) => Ok(result),
-            Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
-                Ok(err_res) => Err(AlgorithmiaError::AlgorithmiaApiError(err_res.error)),
-                Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
+            Err(err) => match json::decode::<ApiErrorResponse>(&res_json) {
+                Ok(err_res) => Err(err_res.error.into()),
+                Err(_) => Err(Error::DecoderErrorWithContext(err, res_json)),
             }
         }
     }
 
-    pub fn decode_to_error(res_json: String) -> AlgorithmiaError {
+    pub fn decode_to_error(res_json: String) -> Error {
         match json::decode::<ApiErrorResponse>(&res_json) {
-            Ok(err_res) => AlgorithmiaError::AlgorithmiaApiError(err_res.error),
-            Err(why) => AlgorithmiaError::DecoderErrorWithContext(why, res_json),
+            Ok(err_res) => err_res.error.into(),
+            Err(err) => Error::DecoderErrorWithContext(err, res_json),
         }
     }
 }
@@ -257,27 +230,3 @@ impl std::clone::Clone for HttpClient {
     }
 }
 
-
-impl From<io::Error> for AlgorithmiaError {
-    fn from(err: io::Error) -> AlgorithmiaError {
-        IoError(err)
-    }
-}
-
-impl From<hyper::error::Error> for AlgorithmiaError {
-    fn from(err: hyper::error::Error) -> AlgorithmiaError {
-        HttpError(err)
-    }
-}
-
-impl From<json::DecoderError> for AlgorithmiaError {
-    fn from(err: json::DecoderError) -> AlgorithmiaError {
-        DecoderError(err)
-    }
-}
-
-impl From<json::EncoderError> for AlgorithmiaError {
-    fn from(err: json::EncoderError) -> AlgorithmiaError {
-        EncoderError(err)
-    }
-}

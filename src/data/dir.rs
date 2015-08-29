@@ -16,7 +16,8 @@
 extern crate hyper;
 extern crate chrono;
 
-use {Algorithmia, AlgorithmiaError, ApiErrorResponse, HttpClient};
+use {Algorithmia, HttpClient};
+use error::*;
 use hyper::Url;
 use hyper::status::StatusCode;
 use rustc_serialize::{json, Decoder, Decodable};
@@ -27,9 +28,9 @@ use std::vec::IntoIter;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use self::chrono::{DateTime, UTC};
-use super::{parse_data_uri, HasDataPath, DataFile, FileAddedResult, FileAdded, DeletedResult, XDataType};
-use std::error::Error;
+use super::{parse_data_uri, HasDataPath, DataFile, FileAdded, DeletedResult, XDataType};
 use std::ops::Deref;
+use std::error::Error as StdError;
 
 /// Algorithmia Data Directory
 pub struct DataDir {
@@ -37,9 +38,6 @@ pub struct DataDir {
     client: HttpClient,
 }
 
-
-pub type DirectoryCreatedResult = Result<(), AlgorithmiaError>;
-pub type DirectoryDeletedResult = Result<DirectoryDeleted, AlgorithmiaError>;
 
 #[derive(RustcDecodable, Debug)]
 pub struct DirectoryUpdated {
@@ -141,7 +139,7 @@ pub enum DirEntry {
 }
 
 impl <'a> Iterator for DirectoryListing<'a> {
-    type Item = Result<DirEntry, AlgorithmiaError>;
+    type Item = Result<DirEntry, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
@@ -178,7 +176,7 @@ impl <'a> Iterator for DirectoryListing<'a> {
     }
 }
 
-fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, AlgorithmiaError> {
+fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, Error> {
     let url = match marker {
         Some(m) => Url::parse(&format!("{}?marker={}", dir.to_url(), m)).unwrap(),
         None => dir.to_url(),
@@ -189,7 +187,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 
     if let Some(data_type) = res.headers.get::<XDataType>() {
         if "directory" != data_type.to_string() {
-            return Err(AlgorithmiaError::DataTypeError(format!("Expected directory, Received {}", data_type)));
+            return Err(Error::DataTypeError(format!("Expected directory, Received {}", data_type)));
         }
     }
 
@@ -198,9 +196,9 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 
     match json::decode::<DirectoryShow>(&res_json) {
         Ok(result) => Ok(result),
-        Err(why) => match json::decode::<ApiErrorResponse>(&res_json) {
-            Ok(err_res) => Err(AlgorithmiaError::AlgorithmiaApiError(err_res.error)),
-            Err(_) => Err(AlgorithmiaError::DecoderErrorWithContext(why, res_json)),
+        Err(err) => match json::decode::<ApiErrorResponse>(&res_json) {
+            Ok(err_res) => Err(err_res.error.into()),
+            Err(_) => Err(Error::DecoderErrorWithContext(err, res_json)),
         }
     }
 }
@@ -225,7 +223,7 @@ impl DataDir {
     ///     match entry {
     ///         Ok(DirEntry::File(f)) => println!("File: {}", f.to_data_uri()),
     ///         Ok(DirEntry::Dir(d)) => println!("Dir: {}", d.to_data_uri()),
-    ///         Err(err) => { println!("Error: {:?}", err); break; },
+    ///         Err(err) => { println!("Error: {}", err); break; },
     ///     }
     /// };
     /// ```
@@ -242,15 +240,16 @@ impl DataDir {
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.create() {
     ///   Ok(_) => println!("Successfully created Directory"),
-    ///   Err(e) => println!("ERROR creating Directory: {:?}", e),
+    ///   Err(e) => println!("Error created directory: {}", e),
     /// };
     /// ```
-    pub fn create(&self) -> DirectoryCreatedResult {
-        let url = self.parent().unwrap().to_url(); //TODO: don't unwrap this
+    pub fn create(&self) -> Result<(), Error> {
+        let parent = try!(self.parent().ok_or(Error::DataPathError("has no parent".into())));
+        let url = parent.to_url();
 
-        // TODO: complete abuse of this structure
+        // TODO: address complete abuse of this structure
         let input_data = FolderEntry {
-            name: self.basename().unwrap().to_string(), //TODO: don't unwrap this
+            name: try!(self.basename().ok_or(Error::DataPathError("has no basename".into()))).into(),
             acl: Some(DataAcl { read: vec![] }),
         };
         let raw_input = try!(json::encode(&input_data));
@@ -283,10 +282,10 @@ impl DataDir {
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.delete(false) {
     ///   Ok(_) => println!("Successfully deleted Directory"),
-    ///   Err(e) => println!("ERROR deleting Directory: {:?}", e),
+    ///   Err(err) => println!("Error deleting directory: {}", err),
     /// };
     /// ```
-    pub fn delete(&self, force: bool) -> DirectoryDeletedResult {
+    pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
         // DELETE request
         let url_string = format!("{}?force={}", self.to_url(), force.to_string());
         let url = Url::parse(&url_string).unwrap();
@@ -311,10 +310,10 @@ impl DataDir {
     ///
     /// match my_dir.put_file("/path/to/file") {
     ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
-    ///   Err(e) => println!("ERROR uploading file: {:?}", e),
+    ///   Err(err) => println!("Error uploading file: {}", err),
     /// };
     /// ```
-    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> FileAddedResult {
+    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<FileAdded, Error> {
         // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
         let url_string = format!("{}/{}",

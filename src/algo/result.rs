@@ -1,9 +1,9 @@
 extern crate hyper;
 
-use AlgorithmiaError;
+use error::Error;
 
 /// Result type for generic `AlgoOutput` when calling `pipe`
-pub type AlgoResult<T> = Result<AlgoOutput<T>, AlgorithmiaError>;
+pub type AlgoResult<T> = Result<AlgoOutput<T>, Error>;
 
 /// Result type for the raw JSON returned by calling `pipe_raw`
 pub type JsonResult = Result<String, hyper::error::Error>;

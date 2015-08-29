@@ -15,18 +15,18 @@ fn main() {
 
     let api_key = match env::var("ALGORITHMIA_API_KEY") {
         Ok(key) => key,
-        Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
+        Err(e) => { panic!("Error getting ALGORITHMIA_API_KEY: {}", e); }
     };
 
     let client = Algorithmia::client(&*api_key);
     match client.clone().dir(&*path).create() {
         Ok(_) => println!("Successfully created collection {}", path),
-        Err(e) => println!("ERROR creating collection: {:?}", e),
+        Err(e) => println!("Error creating collection: {}", e),
     }
 
     match client.clone().dir(&*path).delete(true) {
         Ok(_) => println!("Successfully deleted collection {}", path),
-        Err(e) => println!("ERROR deleting collection: {:?}", e),
+        Err(e) => println!("Error deleting collection: {}", e),
     }
 
 

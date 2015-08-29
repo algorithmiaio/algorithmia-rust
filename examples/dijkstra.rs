@@ -32,7 +32,7 @@ impl<'a> RouteMap<'a> {
     pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgoOutput<Route> {
         let api_key = match env::var("ALGORITHMIA_API_KEY") {
             Ok(key) => key,
-            Err(e) => { panic!("ERROR: unable to get ALGORITHMIA_API_KEY: {}", e); }
+            Err(e) => { panic!("Error getting ALGORITHMIA_API_KEY: {}", e); }
         };
         let client = Algorithmia::client(&*api_key);
         let dijkstra = client.algo("anowell", "Dijkstra", Version::Latest);
@@ -46,7 +46,7 @@ impl<'a> RouteMap<'a> {
 
         let output: AlgoOutput<Route> = match dijkstra.pipe(&input_data) {
             Ok(out) => out,
-            Err(why) => panic!("{:?}", why),
+            Err(err) => panic!("{}", err),
         };
         output
     }
@@ -68,5 +68,6 @@ fn main() {
     };
 
     let output = input_map.get_dijkstra_route(&start, &end);
-    println!("Shortest route: {:?}\nCompleted in {} seconds.", output.result, output.metadata.duration);
+    println!("Shortest route: {}", output.result.join("->"));
+    println!("Completed in {} seconds.", output.metadata.duration);
 }

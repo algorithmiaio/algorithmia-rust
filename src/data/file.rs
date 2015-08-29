@@ -11,13 +11,11 @@
 //! my_file.put("file_contents");
 //! ```
 
-use {Algorithmia, AlgorithmiaError, HttpClient};
+use {Algorithmia, HttpClient};
 use super::{parse_data_uri, HasDataPath, DeletedResult, XDataType, Body};
 use std::io::{self, Read};
+use error::Error;
 
-
-pub type FileAddedResult = Result<FileAdded, AlgorithmiaError>;
-pub type FileDeletedResult = Result<FileDeleted, AlgorithmiaError>;
 
 
 /// Response when creating a file via the Data API
@@ -25,7 +23,6 @@ pub type FileDeletedResult = Result<FileDeleted, AlgorithmiaError>;
 pub struct FileAdded {
     pub result: String
 }
-
 
 /// Response when deleting a file from the Data API
 #[derive(RustcDecodable, Debug)]
@@ -73,7 +70,7 @@ impl DataFile  {
     /// let data_file = client.clone().file(".my/my_dir/stdin.txt");
     /// data_file.put(&mut stdin);
     /// ```
-    pub fn put<'a, B: Into<Body<'a>>>(&'a self, body: B) -> FileAddedResult {
+    pub fn put<'a, B: Into<Body<'a>>>(&'a self, body: B) -> Result<FileAdded, Error> {
         let url = self.to_url();
 
         let req = self.client.put(url).body(body);
@@ -100,13 +97,13 @@ impl DataFile  {
     ///     let mut data = String::new();
     ///     match response.read_to_string(&mut data) {
     ///       Ok(_) => println!("{}", data),
-    ///       Err(e) => println!("IOError: {}", e),
+    ///       Err(err) => println!("IOError: {}", err),
     ///     }
     ///   },
-    ///   Err(e) => println!("ERROR downloading file: {:?}", e),
+    ///   Err(err) => println!("Error downloading file: {}", err),
     /// };
     /// ```
-    pub fn get(&self) -> Result<DataResponse, AlgorithmiaError>  {
+    pub fn get(&self) -> Result<DataResponse, Error>  {
         let url = self.to_url();
 
         let req = self.client.get(url);
@@ -115,7 +112,7 @@ impl DataFile  {
 
         if let Some(data_type) = res.headers.get::<XDataType>() {
             if "file" != data_type.to_string() {
-                return Err(AlgorithmiaError::DataTypeError(format!("Expected file, Received {}", data_type)));
+                return Err(Error::DataTypeError(format!("Expected file, Received {}", data_type)));
             }
         }
 
@@ -135,10 +132,10 @@ impl DataFile  {
     ///
     /// match my_file.delete() {
     ///   Ok(_) => println!("Successfully deleted file"),
-    ///   Err(e) => println!("ERROR deleting file: {:?}", e),
+    ///   Err(err) => println!("Error deleting file: {}", err),
     /// };
     /// ```
-    pub fn delete(&self) -> FileDeletedResult {
+    pub fn delete(&self) -> Result<FileDeleted, Error> {
         let url = self.to_url();
 
         let req = self.client.delete(url);

@@ -1,7 +1,8 @@
 pub use self::dir::{DataDir, DirEntry};
-pub use self::file::{DataFile, FileAddedResult, FileAdded};
+pub use self::file::{DataFile, FileAdded};
 pub use hyper::client::Body;
-use {Algorithmia, HttpClient, AlgorithmiaError, ApiError};
+use {Algorithmia, HttpClient};
+use error::*;
 use hyper::Url;
 use hyper::status::StatusCode;
 
@@ -101,7 +102,7 @@ pub trait HasDataPath {
     /// let my_file = client.data("data://.my/my_dir/my_file");
     /// assert_eq!(my_file.exists().unwrap(), true);
     /// ```
-    fn exists(&self) -> Result<bool, AlgorithmiaError> {
+    fn exists(&self) -> Result<bool, Error> {
         let req = self.client().head(self.to_url());
 
         let res = try!(req.send());
@@ -114,7 +115,7 @@ pub trait HasDataPath {
                     None => format!("{}", status),
                 };
 
-                Err(AlgorithmiaError::AlgorithmiaApiError(ApiError{message: msg, stacktrace: None}))
+                Err(ApiError{message: msg, stacktrace: None}.into())
             },
         }
     }
@@ -154,7 +155,7 @@ impl DataPath {
     ///     DataType::Dir => println!("{} is a directory", my_obj.to_data_uri()),
     /// }
     /// ```
-    pub fn get_type(&self) -> Result<DataType, AlgorithmiaError> {
+    pub fn get_type(&self) -> Result<DataType, Error> {
         let req = self.client.head(self.to_url());
 
         let res = try!(req.send());
@@ -162,8 +163,8 @@ impl DataPath {
             StatusCode::Ok => match res.headers.get::<XDataType>() {
                 Some(dt) if &*dt.to_string() == "directory" => Ok(DataType::Dir),
                 Some(dt) if &*dt.to_string() == "file"  => Ok(DataType::File),
-                Some(dt) => Err(AlgorithmiaError::DataTypeError(format!("Unknown DataType: {}", dt.to_string()))),
-                None => Err(AlgorithmiaError::DataTypeError("Unspecified DataType".to_string())),
+                Some(dt) => Err(Error::DataTypeError(format!("Unknown DataType: {}", dt.to_string()))),
+                None => Err(Error::DataTypeError("Unspecified DataType".to_string())),
             },
             status => {
                 let msg = match res.headers.get::<XErrorMessage>()  {
@@ -171,13 +172,13 @@ impl DataPath {
                     None => format!("{}", status),
                 };
 
-                Err(AlgorithmiaError::AlgorithmiaApiError(ApiError{message: msg, stacktrace: None}))
+                Err(ApiError{message: msg, stacktrace: None}.into())
             },
         }
     }
 
 
-    pub fn into_type(&self) -> Result<DataObject, AlgorithmiaError> {
+    pub fn into_type(&self) -> Result<DataObject, Error> {
         match try!(self.get_type()) {
             DataType::Dir => Ok(DataObject::Dir(self.into())),
             DataType::File => Ok(DataObject::File(self.into())),
