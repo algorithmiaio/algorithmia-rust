@@ -108,6 +108,7 @@ pub struct DirectoryListing<'a> {
     folders: IntoIter<FolderEntry>,
     files: IntoIter<FileEntry>,
     marker: Option<String>,
+    query_count: u32,
 }
 
 impl <'a> DirectoryListing<'a> {
@@ -118,6 +119,7 @@ impl <'a> DirectoryListing<'a> {
             folders: Vec::new().into_iter(),
             files: Vec::new().into_iter(),
             marker: None,
+            query_count: 0,
         }
     }
 }
@@ -143,8 +145,10 @@ impl <'a> Iterator for DirectoryListing<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
+            // Return folders first
             Some(d) => Some(Ok(DirEntry::Dir(self.dir.child(&d.name)))),
             None => match self.files.next() {
+                // Return files second
                 Some(f) => Some(Ok(DirEntry::File(
                     DataFileEntry{
                         size: f.size,
@@ -152,17 +156,22 @@ impl <'a> Iterator for DirectoryListing<'a> {
                         file: self.dir.child(&f.filename),
                     }
                 ))),
-                None => match self.marker.clone() {
-                    Some(m) => match get_directory(self.dir, Some(m)) {
-                        Ok(ds) => {
-                            self.folders = ds.folders.unwrap_or(Vec::new()).into_iter();
-                            self.files = ds.files.unwrap_or(Vec::new()).into_iter();
-                            self.marker = ds.marker;
-                            self.next()
+                None => {
+                    // Query if there is another page of files/folders
+                    if self.query_count == 0 || self.marker.is_some() {
+                        match get_directory(self.dir, self.marker.clone()) {
+                            Ok(ds) => {
+                                self.query_count = self.query_count + 1;
+                                self.folders = ds.folders.unwrap_or(Vec::new()).into_iter();
+                                self.files = ds.files.unwrap_or(Vec::new()).into_iter();
+                                self.marker = ds.marker;
+                                self.next()
+                            }
+                            Err(err) => Some(Err(err)),
                         }
-                        Err(err) => Some(Err(err)),
-                    },
-                    None => None,
+                    } else {
+                        None
+                    }
                 }
             }
         }
