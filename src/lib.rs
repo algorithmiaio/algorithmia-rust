@@ -144,11 +144,11 @@ impl<'a, 'c> Algorithmia {
 
     /// Helper to standardize decoding to a specific Algorithmia Result type
     pub fn decode_to_result<T: Decodable>(res_json: String) -> Result<T, Error> {
-        match json::decode::<T>(&res_json) {
-            Ok(result) => Ok(result),
-            Err(err) => match json::decode::<ApiErrorResponse>(&res_json) {
-                Ok(err_res) => Err(err_res.error.into()),
-                Err(_) => Err(Error::DecoderErrorWithContext(err, res_json)),
+        match json::decode::<ApiErrorResponse>(&res_json) {
+            Ok(err_res) => Err(err_res.error.into()),
+            Err(_) => match json::decode::<T>(&res_json) {
+                Ok(result) => Ok(result),
+                Err(err) => Err(Error::DecoderErrorWithContext(err, res_json)),
             }
         }
     }

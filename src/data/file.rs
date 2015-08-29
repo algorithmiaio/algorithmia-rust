@@ -12,9 +12,9 @@
 //! ```
 
 use {Algorithmia, HttpClient};
-use super::{parse_data_uri, HasDataPath, DeletedResult, XDataType, Body};
+use super::{parse_data_uri, HasDataPath, DeletedResult, XDataType, XErrorMessage, Body};
 use std::io::{self, Read};
-use error::Error;
+use error::{Error, ApiError};
 
 
 
@@ -79,7 +79,10 @@ impl DataFile  {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Algorithmia::decode_to_result::<FileAdded>(res_json)
+        match res.status.is_success() {
+            true => Algorithmia::decode_to_result(res_json),
+            false => Err(Algorithmia::decode_to_error(res_json)),
+        }
     }
 
 
@@ -107,18 +110,26 @@ impl DataFile  {
         let url = self.to_url();
 
         let req = self.client.get(url);
-
         let res = try!(req.send());
 
-        if let Some(data_type) = res.headers.get::<XDataType>() {
-            if "file" != data_type.to_string() {
-                return Err(Error::DataTypeError(format!("Expected file, Received {}", data_type)));
+        if res.status.is_success() {
+            if let Some(data_type) = res.headers.get::<XDataType>() {
+                if "file" != data_type.to_string() {
+                    return Err(Error::DataTypeError(format!("Expected file, Received {}", data_type)));
+                }
             }
-        }
 
-        Ok(DataResponse{
-            data: Box::new(res),
-        })
+            Ok(DataResponse{
+                data: Box::new(res),
+            })
+        } else {
+            let msg = match res.headers.get::<XErrorMessage>()  {
+                Some(err_header) => format!("{}: {}", res.status, err_header),
+                None => format!("{}", res.status),
+            };
+
+            Err(ApiError{message: msg, stacktrace: None}.into())
+        }
     }
 
 
@@ -144,7 +155,10 @@ impl DataFile  {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Algorithmia::decode_to_result::<FileDeleted>(res_json)
+        match res.status.is_success() {
+            true => Algorithmia::decode_to_result(res_json),
+            false => Err(Algorithmia::decode_to_error(res_json)),
+        }
     }
 
 }

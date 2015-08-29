@@ -26,6 +26,7 @@ use std::io::Read;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use super::result::{AlgoResult, JsonResult, AlgoOutput};
+use error::{Error, ApiErrorResponse};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
@@ -93,7 +94,11 @@ impl Algorithm {
         let raw_input = try!(json::encode(input_data));
         let res_json = try!(self.pipe_raw(&raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
 
-        Algorithmia::decode_to_result::<AlgoOutput<D>>(res_json)
+        // pipe_raw has already attempted to decode into ApiErrorResponse, so we can skip that here
+        match json::decode::<AlgoOutput<D>>(&res_json) {
+            Ok(result) => Ok(result),
+            Err(err) => Err(Error::DecoderErrorWithContext(err, res_json)),
+        }
     }
 
 
@@ -121,9 +126,16 @@ impl Algorithm {
             .body(input_data);
 
         let mut res = try!(req.send());
-        let mut res_string = String::new();
-        try!(res.read_to_string(&mut res_string));
-        Ok(res_string)
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+
+        match res.status.is_success() {
+            true => match json::decode::<ApiErrorResponse>(&res_json) {
+                Ok(err_res) => Err(err_res.error.into()),
+                Err(_) => Ok(res_json),
+            },
+            false => Err(Algorithmia::decode_to_error(res_json)),
+        }
     }
 
 }

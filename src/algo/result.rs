@@ -6,7 +6,7 @@ use error::Error;
 pub type AlgoResult<T> = Result<AlgoOutput<T>, Error>;
 
 /// Result type for the raw JSON returned by calling `pipe_raw`
-pub type JsonResult = Result<String, hyper::error::Error>;
+pub type JsonResult = Result<String, Error>;
 
 #[derive(RustcDecodable, Debug)]
 pub struct AlgoMetadata {

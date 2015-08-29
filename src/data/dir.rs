@@ -19,7 +19,6 @@ extern crate chrono;
 use {Algorithmia, HttpClient};
 use error::*;
 use hyper::Url;
-use hyper::status::StatusCode;
 use rustc_serialize::{json, Decoder, Decodable};
 use std::io::Read;
 use std::fs::File;
@@ -185,21 +184,20 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     let req = dir.client.get(url);
     let mut res = try!(req.send());
 
-    if let Some(data_type) = res.headers.get::<XDataType>() {
-        if "directory" != data_type.to_string() {
-            return Err(Error::DataTypeError(format!("Expected directory, Received {}", data_type)));
+    if res.status.is_success() {
+        if let Some(data_type) = res.headers.get::<XDataType>() {
+            if "directory" != data_type.to_string() {
+                return Err(Error::DataTypeError(format!("Expected directory, Received {}", data_type)));
+            }
         }
     }
 
     let mut res_json = String::new();
     try!(res.read_to_string(&mut res_json));
 
-    match json::decode::<DirectoryShow>(&res_json) {
-        Ok(result) => Ok(result),
-        Err(err) => match json::decode::<ApiErrorResponse>(&res_json) {
-            Ok(err_res) => Err(err_res.error.into()),
-            Err(_) => Err(Error::DecoderErrorWithContext(err, res_json)),
-        }
+    match res.status.is_success() {
+        true => Algorithmia::decode_to_result(res_json),
+        false => Err(Algorithmia::decode_to_error(res_json)),
     }
 }
 
@@ -262,9 +260,9 @@ impl DataDir {
         // Parse response
         let mut res = try!(req.send());
 
-        match res.status {
-            StatusCode::Ok | StatusCode::Created => Ok(()),
-            _ => {
+        match res.status.is_success() {
+            true => Ok(()),
+            false => {
                 let mut res_json = String::new();
                 try!(res.read_to_string(&mut res_json));
                 Err(Algorithmia::decode_to_error(res_json))
@@ -296,7 +294,10 @@ impl DataDir {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Algorithmia::decode_to_result::<DirectoryDeleted>(res_json)
+        match res.status.is_success() {
+            true => Algorithmia::decode_to_result(res_json),
+            false => Err(Algorithmia::decode_to_error(res_json)),
+        }
     }
 
 
@@ -329,7 +330,10 @@ impl DataDir {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        Algorithmia::decode_to_result::<FileAdded>(res_json)
+        match res.status.is_success() {
+            true => Algorithmia::decode_to_result(res_json),
+            false => Err(Algorithmia::decode_to_error(res_json)),
+        }
     }
 
     pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
