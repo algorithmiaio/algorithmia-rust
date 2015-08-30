@@ -15,12 +15,12 @@
 
 extern crate chrono;
 
-use {Algorithmia, HttpClient};
+use client::HttpClient;
 use error::*;
-
 use data::{self, DataFile, DeletedResult, XDataType};
 use data::file::FileAdded;
 use data::HasDataPath;
+use json_helpers;
 
 use std::io::Read;
 use std::fs::File;
@@ -57,23 +57,23 @@ pub struct DirectoryDeleted {
 }
 
 #[derive(RustcDecodable, RustcEncodable, Debug)]
-pub struct FolderEntry {
+struct FolderItem {
     pub name: String,
     pub acl: Option<DataAcl>,
 }
 
 #[derive(Debug)]
-pub struct FileEntry {
+struct FileItem {
     pub filename: String,
     pub size: u64,
     pub last_modified: DateTime<UTC>,
 }
 
 // Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
-impl Decodable for FileEntry {
-    fn decode<D: Decoder>(d: &mut D) -> Result<FileEntry, D::Error> {
+impl Decodable for FileItem {
+    fn decode<D: Decoder>(d: &mut D) -> Result<FileItem, D::Error> {
         d.read_struct("root", 0, |d| {
-            Ok(FileEntry{
+            Ok(FileItem{
                 filename: try!(d.read_struct_field("filename", 0, |d| Decodable::decode(d))),
                 size: try!(d.read_struct_field("size", 0, |d| Decodable::decode(d))),
                 last_modified: {
@@ -98,8 +98,8 @@ pub struct DataAcl {
 #[derive(RustcDecodable, Debug)]
 struct DirectoryShow {
     pub acl: Option<DataAcl>,
-    pub folders: Option<Vec<FolderEntry>>,
-    pub files: Option<Vec<FileEntry>>,
+    pub folders: Option<Vec<FolderItem>>,
+    pub files: Option<Vec<FileItem>>,
     pub marker: Option<String>,
 }
 
@@ -107,8 +107,8 @@ struct DirectoryShow {
 pub struct DirectoryListing<'a> {
     pub acl: Option<DataAcl>,
     dir: &'a DataDir,
-    folders: IntoIter<FolderEntry>,
-    files: IntoIter<FileEntry>,
+    folders: IntoIter<FolderItem>,
+    files: IntoIter<FileItem>,
     marker: Option<String>,
     query_count: u32,
 }
@@ -201,8 +201,8 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     try!(res.read_to_string(&mut res_json));
 
     match res.status.is_success() {
-        true => Algorithmia::decode_to_result(res_json),
-        false => Err(Algorithmia::decode_to_error(res_json)),
+        true => json_helpers::decode_to_result(res_json),
+        false => Err(json_helpers::decode_to_error(res_json)),
     }
 }
 
@@ -251,7 +251,7 @@ impl DataDir {
         let url = parent.to_url();
 
         // TODO: address complete abuse of this structure
-        let input_data = FolderEntry {
+        let input_data = FolderItem {
             name: try!(self.basename().ok_or(Error::DataPathError("has no basename".into()))).into(),
             acl: Some(DataAcl { read: vec![] }),
         };
@@ -270,7 +270,7 @@ impl DataDir {
             false => {
                 let mut res_json = String::new();
                 try!(res.read_to_string(&mut res_json));
-                Err(Algorithmia::decode_to_error(res_json))
+                Err(json_helpers::decode_to_error(res_json))
             }
         }
     }
@@ -300,8 +300,8 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => Algorithmia::decode_to_result(res_json),
-            false => Err(Algorithmia::decode_to_error(res_json)),
+            true => json_helpers::decode_to_result(res_json),
+            false => Err(json_helpers::decode_to_error(res_json)),
         }
     }
 
@@ -336,8 +336,8 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => Algorithmia::decode_to_result(res_json),
-            false => Err(Algorithmia::decode_to_error(res_json)),
+            true => json_helpers::decode_to_result(res_json),
+            false => Err(json_helpers::decode_to_error(res_json)),
         }
     }
 
@@ -357,8 +357,9 @@ mod tests {
 
     #[test]
     fn test_to_url() {
-        let dir = DataDir::new(mock_client().http_client, "data://anowell/foo");
-        assert_eq!(dir.to_url().serialize(), format!("{}/v1/data/anowell/foo", Algorithmia::get_base_url()));
+        let mock_client = mock_client();
+        let dir = DataDir::new(mock_client.http_client, "data://anowell/foo");
+        assert_eq!(dir.to_url().serialize_path().unwrap(), "/v1/data/anowell/foo");
     }
 
     #[test]

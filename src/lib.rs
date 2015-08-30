@@ -25,60 +25,39 @@ extern crate rustc_serialize;
 
 use algo::{Algorithm, Version};
 use data::{DataDir, DataFile, DataPath, HasDataPath};
-use error::{Error, ApiErrorResponse};
+use client::HttpClient;
 
-use hyper::{Client, Url};
-use hyper::client::RequestBuilder;
-use hyper::header::{Authorization, UserAgent};
-use hyper::method::Method;
-use rustc_serialize::{json, Decodable};
-use std::env;
-use std::sync::Arc;
+use std::{clone, env};
 
 pub mod algo;
 pub mod data;
 pub mod error;
+pub mod client;
+pub mod json_helpers;
 pub use hyper::mime;
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia client endpoints
 pub struct Algorithmia {
-    pub base_url: String,
-    pub http_client: HttpClient,
+    http_client: HttpClient,
 }
-
-/// Internal HttpClient to build requests: wraps `hyper` client
-pub struct HttpClient{
-    api_key: String,
-    hyper_client: Arc<Client>,
-    user_agent: String,
-}
-
-
 
 
 impl<'a, 'c> Algorithmia {
     /// Instantiate a new client
     pub fn client(api_key: &str) -> Algorithmia {
         Algorithmia {
-            base_url: Self::get_base_url(),
-            http_client: HttpClient::new(api_key.to_string()),
+            http_client: HttpClient::new(api_key.to_string(), Self::get_base_url()),
         }
     }
 
-    pub fn get_base_url() -> String {
-        // TODO: memoize
+    fn get_base_url() -> String {
         match env::var("ALGORITHMIA_API") {
             Ok(url) => url,
             Err(_) => DEFAULT_API_BASE_URL.to_string(),
         }
     }
-
-    /// Instantiate a new hyper client - used internally by instantiating new api_client for every request
-    // fn http_client(&self) -> HttpClient {
-    //     HttpClient::new(self.api_key.clone(), &self.client)
-    // }
 
     /// Instantiate an `Algorithm` from this client
     ///
@@ -142,91 +121,14 @@ impl<'a, 'c> Algorithmia {
         DataPath::new(self.http_client.clone(), path)
     }
 
-    /// Helper to standardize decoding to a specific Algorithmia Result type
-    pub fn decode_to_result<T: Decodable>(res_json: String) -> Result<T, Error> {
-        match json::decode::<ApiErrorResponse>(&res_json) {
-            Ok(err_res) => Err(err_res.error.into()),
-            Err(_) => match json::decode::<T>(&res_json) {
-                Ok(result) => Ok(result),
-                Err(err) => Err(Error::DecoderErrorWithContext(err, res_json)),
-            }
-        }
-    }
-
-    pub fn decode_to_error(res_json: String) -> Error {
-        match json::decode::<ApiErrorResponse>(&res_json) {
-            Ok(err_res) => err_res.error.into(),
-            Err(err) => Error::DecoderErrorWithContext(err, res_json),
-        }
-    }
-}
-
-impl HttpClient {
-    /// Instantiate an HttpClient - creates a new `hyper` client
-    fn new(api_key: String) -> HttpClient {
-        HttpClient {
-            api_key: api_key,
-            hyper_client: Arc::new(Client::new()),
-            user_agent: format!("algorithmia-rust/{} (Rust {}", option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"), option_env!("CFG_RELEASE").unwrap_or("unknown")),
-        }
-    }
-
-    /// Helper to make Algorithmia GET requests with the API key
-    fn get(&self, url: Url) -> RequestBuilder<Url> {
-        self.build_request(Method::Get, url)
-    }
-
-    /// Helper to make Algorithmia GET requests with the API key
-    fn head(&self, url: Url) -> RequestBuilder<Url> {
-        self.build_request(Method::Head, url)
-    }
-
-    /// Helper to make Algorithmia POST requests with the API key
-    fn post(&self, url: Url) -> RequestBuilder<Url> {
-        self.build_request(Method::Post, url)
-    }
-
-    /// Helper to make Algorithmia PUT requests with the API key
-    fn put(&self, url: Url) -> RequestBuilder<Url> {
-        self.build_request(Method::Put, url)
-    }
-
-    /// Helper to make Algorithmia POST requests with the API key
-    fn delete(&self, url: Url) -> RequestBuilder<Url> {
-        self.build_request(Method::Delete, url)
-    }
-
-
-    fn build_request(&self, verb: Method, url: Url) -> RequestBuilder<Url> {
-        let req = self.hyper_client.request(verb, url);
-
-        // TODO: Support Secure Auth
-        req.header(UserAgent(self.user_agent.clone()))
-           .header(Authorization(format!("Simple {}", self.api_key)))
-    }
 }
 
 
-/*
-* Trait implementations
-*/
-/// Allow cloning a client in order to reuse the API key for multiple connections
-impl std::clone::Clone for Algorithmia {
+/// Allow cloning in order to reuse http client (and API key) for multiple connections
+impl clone::Clone for Algorithmia {
     fn clone(&self) -> Algorithmia {
         Algorithmia {
-            base_url: self.base_url.clone(),
             http_client: self.http_client.clone(),
         }
     }
 }
-
-impl std::clone::Clone for HttpClient {
-    fn clone(&self) -> HttpClient {
-        HttpClient {
-            api_key: self.api_key.clone(),
-            hyper_client: self.hyper_client.clone(),
-            user_agent: self.user_agent.clone(),
-        }
-    }
-}
-

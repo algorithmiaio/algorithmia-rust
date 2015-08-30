@@ -11,11 +11,13 @@
 //! my_file.put("file_contents");
 //! ```
 
-use {Algorithmia, HttpClient};
-use data::{self, HasDataPath, DeletedResult, XDataType, XErrorMessage, Body};
+use client::HttpClient;
+use data::{self, HasDataPath, DeletedResult, XDataType, XErrorMessage};
 use std::io::{self, Read};
 use error::{Error, ApiError};
+use json_helpers;
 
+pub use hyper::client::Body;
 
 /// Response when creating a file via the Data API
 #[derive(RustcDecodable, Debug)]
@@ -41,7 +43,7 @@ impl Read for DataResponse {
     }
 }
 
-/// Algorithmia data collection
+/// Algorithmia data file
 pub struct DataFile {
     path: String,
     client: HttpClient,
@@ -79,8 +81,8 @@ impl DataFile  {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => Algorithmia::decode_to_result(res_json),
-            false => Err(Algorithmia::decode_to_error(res_json)),
+            true => json_helpers::decode_to_result(res_json),
+            false => Err(json_helpers::decode_to_error(res_json)),
         }
     }
 
@@ -132,7 +134,7 @@ impl DataFile  {
     }
 
 
-    /// Delete a file from a data collection
+    /// Delete a file from from the Algorithmia Data API
     ///
     /// # Examples
     /// ```no_run
@@ -155,8 +157,8 @@ impl DataFile  {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => Algorithmia::decode_to_result(res_json),
-            false => Err(Algorithmia::decode_to_error(res_json)),
+            true => json_helpers::decode_to_result(res_json),
+            false => Err(json_helpers::decode_to_error(res_json)),
         }
     }
 
