@@ -69,7 +69,7 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let factor = client.algo("anowell", "Dijkstra", Version::Latest);
     /// ```
-    pub fn algo(self, user: &str, algoname: &str, version: Version<'a>) -> Algorithm {
+    pub fn algo(&self, user: &str, algoname: &str, version: Version<'a>) -> Algorithm {
         let algo_uri = match version {
             Version::Latest => format!("{}/{}", user, algoname),
             ref ver => format!("{}/{}/{}", user, algoname, ver),
@@ -87,7 +87,7 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let factor = client.algo_from_str("anowell/Dijkstra/0.1");
     /// ```
-    pub fn algo_from_str(self, algo_uri: &str) -> Algorithm {
+    pub fn algo_from_str(&self, algo_uri: &str) -> Algorithm {
         Algorithm::new(self.http_client.clone(), algo_uri)
     }
 
@@ -100,7 +100,7 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let rustfoo = client.dir("data://.my/rustfoo");
     /// ```
-    pub fn dir(self, path: &'a str) -> DataDir {
+    pub fn dir(&self, path: &'a str) -> DataDir {
         DataDir::new(self.http_client.clone(), path)
     }
 
@@ -113,11 +113,22 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let rustfoo = client.file("data://.my/rustfoo");
     /// ```
-    pub fn file(self, path: &'a str) -> DataFile {
+    pub fn file(&self, path: &'a str) -> DataFile {
         DataFile::new(self.http_client.clone(), path)
     }
 
-    pub fn data(self, path: &'a str) -> DataPath {
+    /// Instantiate a `DataPath` from this client
+    ///
+    /// Use this if you don't explicitly know if a Data URI is to a directory or file
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use algorithmia::Algorithmia;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let rustfoo = client.data("data://.my/rustfoo/what_am_i");
+    /// ```
+    pub fn data(&self, path: &'a str) -> DataPath {
         DataPath::new(self.http_client.clone(), path)
     }
 
