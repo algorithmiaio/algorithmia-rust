@@ -349,7 +349,6 @@ impl DataDir {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use data::HasDataPath;
     use Algorithmia;
 
@@ -357,21 +356,20 @@ mod tests {
 
     #[test]
     fn test_to_url() {
-        let mock_client = mock_client();
-        let dir = DataDir::new(mock_client.http_client, "data://anowell/foo");
+        let dir = mock_client().dir("data://anowell/foo");
         assert_eq!(dir.to_url().serialize_path().unwrap(), "/v1/data/anowell/foo");
     }
 
     #[test]
     fn test_to_data_uri() {
-        let dir = DataDir::new(mock_client().http_client, "/anowell/foo");
+        let dir = mock_client().dir("/anowell/foo");
         assert_eq!(dir.to_data_uri(), "data://anowell/foo".to_string());
     }
 
     #[test]
     fn test_parent() {
-        let dir = DataDir::new(mock_client().http_client, "data://anowell/foo");
-        let expected = DataDir::new(mock_client().http_client, "data://anowell");
+        let dir = mock_client().dir("data://anowell/foo");
+        let expected = mock_client().dir("data://anowell");
         assert_eq!(dir.parent().unwrap().path, expected.path);
     }
 }
