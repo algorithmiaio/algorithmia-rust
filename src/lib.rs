@@ -27,14 +27,14 @@ use algo::{Algorithm, Version};
 use data::{DataDir, DataFile, DataPath, HasDataPath};
 use client::HttpClient;
 
-use std::{clone, env};
+use std::clone;
 
 pub mod algo;
 pub mod data;
 pub mod error;
 pub mod client;
 pub mod json_helpers;
-pub use hyper::mime;
+pub use hyper::{mime, Url};
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
@@ -43,19 +43,18 @@ pub struct Algorithmia {
     http_client: HttpClient,
 }
 
-
 impl<'a, 'c> Algorithmia {
     /// Instantiate a new client
     pub fn client(api_key: &str) -> Algorithmia {
         Algorithmia {
-            http_client: HttpClient::new(api_key.to_string(), Self::get_base_url()),
+            http_client: HttpClient::new(api_key.to_string(), DEFAULT_API_BASE_URL.to_string()),
         }
     }
 
-    fn get_base_url() -> String {
-        match env::var("ALGORITHMIA_API") {
-            Ok(url) => url,
-            Err(_) => DEFAULT_API_BASE_URL.to_string(),
+    /// Instantiate a new client against alternate API servers
+    pub fn alt_client(base_url: Url, api_key: &str) -> Algorithmia {
+        Algorithmia {
+            http_client: HttpClient::new(api_key.to_string(), base_url.serialize()),
         }
     }
 
