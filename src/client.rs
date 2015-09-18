@@ -6,6 +6,8 @@ use hyper::method::Method;
 use std::sync::Arc;
 use std::clone;
 
+pub use hyper::client::Body;
+
 /// Internal HttpClient to build requests: wraps `hyper` client
 pub struct HttpClient{
     pub base_url: String,

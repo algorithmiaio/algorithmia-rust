@@ -1,6 +1,6 @@
 use std::error::Error as StdError;
 use std::{fmt, io};
-use rustc_serialize::json;
+use rustc_serialize::{json, base64};
 use hyper;
 
 
@@ -8,12 +8,14 @@ use hyper;
 #[derive(Debug)]
 pub enum Error {
     ApiError(ApiError),
+    ContentTypeError(String),
     DataTypeError(String),
     DataPathError(String),
     HttpError(hyper::error::Error),
     DecoderError(json::DecoderError),
     DecoderErrorWithContext(json::DecoderError, String),
     EncoderError(json::EncoderError),
+    FromBase64Error(base64::FromBase64Error),
     IoError(io::Error),
 }
 
@@ -44,12 +46,14 @@ impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
             Error::ApiError(ref e) => e.description(),
+            Error::ContentTypeError(ref msg) => &msg,
             Error::DataTypeError(ref msg) => &msg,
             Error::DataPathError(ref msg) => &msg,
             Error::HttpError(ref e) => e.description(),
             Error::DecoderError(ref e) => e.description(),
             Error::DecoderErrorWithContext(ref e, _) => e.description(),
             Error::EncoderError(ref e) => e.description(),
+            Error::FromBase64Error(ref e) => e.description(),
             Error::IoError(ref e) => e.description(),
         }
     }
@@ -60,6 +64,7 @@ impl StdError for Error {
             Error::DecoderError(ref e) => Some(e),
             Error::DecoderErrorWithContext(ref e, _) => Some(e),
             Error::EncoderError(ref e) => Some(e),
+            Error::FromBase64Error(ref e) => Some(e),
             Error::IoError(ref e) => Some(e),
             _ => None,
         }
@@ -115,5 +120,11 @@ impl From<json::DecoderError> for Error {
 impl From<json::EncoderError> for Error {
     fn from(err: json::EncoderError) -> Error {
         Error::EncoderError(err)
+    }
+}
+
+impl From<base64::FromBase64Error> for Error {
+    fn from(err: base64::FromBase64Error) -> Error {
+        Error::FromBase64Error(err)
     }
 }

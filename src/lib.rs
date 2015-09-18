@@ -13,8 +13,8 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let output: AlgoOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
-//! println!("Completed in {} seconds with result: {:?}", output.metadata.duration, output.result);
+//! let result: Vec<f64> = moving_avg.pipe(&input).unwrap().result().unwrap();
+//! println!("Completed with result: {:?}", result);
 //! ```
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]

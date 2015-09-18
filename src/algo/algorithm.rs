@@ -13,30 +13,68 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let output: AlgoOutput<Vec<f64>> = moving_avg.pipe(&input).unwrap();
-//! println!("Completed in {} seconds with result: {:?}", output.metadata.duration, output.result);
+//! let result: Vec<f64> = moving_avg.pipe(&input).unwrap().result().unwrap();
+//! println!("Completed with result: {:?}", result);
 //! ```
 
 use json_helpers;
-use client::HttpClient;
-use error::{ApiErrorResponse};
-use algo::result::{AlgoResult, JsonResult};
+use client::{Body, HttpClient};
+use error::{Error, ApiErrorResponse};
 
-use hyper::Url;
 use rustc_serialize::{json, Decodable, Encodable};
+use rustc_serialize::json::Json;
+use rustc_serialize::base64::FromBase64;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
+use hyper::Url;
 
-use std::io::Read;
+use std::io::{self, Read, Write};
+use std::fmt;
 
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
+
+enum AlgoInput<'a> {
+    Text(&'a str),
+    Binary(&'a [u8]),
+    Json(String)
+}
 
 /// Algorithmia algorithm
 pub struct Algorithm {
     pub path: String,
     client: HttpClient,
 }
+
+
+#[derive(RustcDecodable, Debug)]
+pub struct AlgoMetadata {
+    pub duration: f32,
+    pub stdout: Option<String>,
+    pub alerts: Option<Vec<String>>,
+    content_type: String,
+}
+
+/// Generic struct for decoding an algorithm response JSON
+#[derive(RustcDecodable, Debug)]
+pub struct AlgoOutput<T> {
+    pub metadata: AlgoMetadata,
+    pub result: T,
+}
+
+
+pub struct AlgoResponse {
+    pub metadata: AlgoMetadata,
+    result: AlgoResult,
+}
+
+enum AlgoResult {
+    Void,
+    Text(String),
+    Json(String),
+    Binary(Vec<u8>),
+}
+
 
 impl Algorithm {
     pub fn new(client: HttpClient, algo_uri: &str) -> Algorithm {
@@ -63,7 +101,7 @@ impl Algorithm {
         format!("algo://{}", self.path)
     }
 
-    /// Execute an algorithm with typed JSON response decoding
+    /// Execute an algorithm with automatic JSON encoding of input and decoding of response
     ///
     /// input_data must be JSON-encodable
     ///     use `#[derive(RustcEncodable)]` for complex input
@@ -83,25 +121,20 @@ impl Algorithm {
     /// let moving_avg = client.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
     /// match moving_avg.pipe(&input) {
-    ///     Ok(out) => {
-    ///         let myVal: AlgoOutput<Vec<f64>> = out;
-    ///         println!("{:?}", myVal.result);
-    ///     },
+    ///     Ok(response) => println!("{}", response.result_json().unwrap()),
     ///     Err(err) => println!("ERROR: {}", err),
     /// };
     /// ```
-    pub fn pipe<D, E>(&self, input_data: &E) -> AlgoResult<D>
-            where D: Decodable,
-                  E: Encodable {
-        let raw_input = try!(json::encode(input_data));
-        let res_json = try!(self.pipe_raw(&raw_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
-
-        // pipe_raw has already attempted to decode into ApiErrorResponse, so we can skip that here
-        json_helpers::decode_to_result(res_json)
+    pub fn pipe<'a, I: Into<AlgoInput<'a>>>(&'a self, input_data: I) -> Result<AlgoResponse, Error> {
+        match input_data.into() {
+            AlgoInput::Text(text) => self.pipe_as(text, Mime(TopLevel::Text, SubLevel::Plain, vec![])),
+            AlgoInput::Json(json) => self.pipe_json(&*json),
+            AlgoInput::Binary(bytes) => self.pipe_as(bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![])),
+        }
     }
 
-
-    /// pipeute an algorithm with with string input and receive the raw JSON response
+    /// Execute an algorithm with explicitly set content-type
+    ///
     ///
     /// `pipe` provides a JSON encoding/decoding wrapper around this method
     ///
@@ -113,11 +146,16 @@ impl Algorithm {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let minmax  = client.algo("codeb34v3r", "FindMinMax", Version::Minor(0,1));
     ///
-    /// let output = match minmax.pipe_raw("[2,3,4]", "application/json".parse().unwrap()) {
-    ///    Ok(result) => result,
+    /// let output = match minmax.pipe_json("[2,3,4]") {
+    ///    Ok(response) => response.result_json().unwrap().to_owned(),
     ///    Err(err) => panic!("{}", err),
     /// };
-    pub fn pipe_raw(&self, input_data: &str, content_type: Mime) -> JsonResult {
+    pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
+        self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![]))
+    }
+
+
+    fn pipe_as<'a, B: Into<Body<'a>>>(&'a self, input_data: B, content_type: Mime) -> Result<AlgoResponse, Error> {
         let req = self.client.post(self.to_url())
             .header(ContentType(content_type))
             .body(input_data);
@@ -129,19 +167,118 @@ impl Algorithm {
         match res.status.is_success() {
             true => match json::decode::<ApiErrorResponse>(&res_json) {
                 Ok(err_res) => Err(err_res.error.into()),
-                Err(_) => Ok(res_json),
+                Err(_) => decode_to_algo_response(&res_json),
             },
-            false => Err(json_helpers::decode_to_error(res_json)),
+            false => Err(json_helpers::decode_to_error(&res_json)),
+        }
+    }
+}
+
+impl AlgoResponse {
+    pub fn result_json(&self) -> Result<&str, Error> {
+        match self.result {
+            AlgoResult::Json(ref json) => Ok(&json),
+            _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
         }
     }
 
+    pub fn result_bytes(&self) -> Result<&[u8], Error> {
+        match self.result {
+            AlgoResult::Binary(ref bytes) => Ok(&bytes),
+            _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
+        }
+    }
+
+    pub fn result_str(&self) -> Result<&str, Error> {
+        match self.result {
+            AlgoResult::Text(ref text) => Ok(&text),
+            _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
+        }
+    }
+
+    pub fn result<D: Decodable>(&self) -> Result<D, Error> {
+        let res_json = try!(self.result_json());
+        json_helpers::decode::<D>(&res_json)
+    }
 }
+
+
+fn decode_to_algo_response(res_json: &str) -> Result<AlgoResponse, Error> {
+    let data = match Json::from_str(res_json) {
+        Ok(d) => d,
+        Err(err) => return Err(json::DecoderError::ParseError(err).into()),
+    };
+
+    let metadata = match data.search("metadata") {
+        Some(meta_json) => match json::decode::<AlgoMetadata>(&meta_json.to_string()) {
+            Ok(meta) => meta,
+            Err(err) => return Err(err.into()),
+        },
+        None => return Err(json::DecoderError::MissingFieldError("metadata".into()).into()),
+    };
+
+    let result = match (&*metadata.content_type, data.search("result")) {
+        ("void", _) => AlgoResult::Void,
+        ("text", Some(json)) => AlgoResult::Text(json.to_string()),
+        ("json", Some(json)) => AlgoResult::Json(json.to_string()),
+        ("binary", Some(json)) => AlgoResult::Binary(try!(json.to_string().from_base64())),
+        (_, None) => return Err(json::DecoderError::MissingFieldError("result".into()).into()),
+        (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
+    };
+
+    Ok(AlgoResponse{ metadata: metadata, result: result})
+}
+
+
+impl fmt::Display for AlgoResponse {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.result {
+            AlgoResult::Void => Err(fmt::Error),
+            AlgoResult::Text(ref s) | AlgoResult::Json(ref s) => f.write_str(s),
+            AlgoResult::Binary(ref bytes) => f.write_str(&String::from_utf8_lossy(bytes)),
+        }
+    }
+}
+
+impl Read for AlgoResponse {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        let mut out = buf; // why do I need this binding?
+        match self.result {
+            AlgoResult::Void => Err(io::Error::new(io::ErrorKind::Other, "cannot read void content type")),
+            AlgoResult::Text(ref s) | AlgoResult::Json(ref s) => out.write(s.as_bytes()),
+            AlgoResult::Binary(ref bytes) => out.write(bytes),
+        }
+    }
+}
+
+impl <'a> From<&'a str> for AlgoInput<'a> {
+    fn from(text: &'a str) -> Self {
+        AlgoInput::Text(text)
+    }
+}
+
+impl <'a> From<&'a [u8]> for AlgoInput<'a> {
+    fn from(bytes: &'a [u8]) -> Self {
+        AlgoInput::Binary(bytes)
+    }
+}
+
+impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
+    fn from(encodable: &'a E) -> Self {
+        // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
+        //       or store a result and let pipe() do error handling
+        AlgoInput::Json(json::encode(encodable).unwrap())
+    }
+}
+
 
 
 #[cfg(test)]
 mod tests {
     use Algorithmia;
     use algo::version::Version;
+    use super::*;
+    use json_helpers;
 
     fn mock_client() -> Algorithmia { Algorithmia::client("") }
 
@@ -171,5 +308,15 @@ mod tests {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("anowell", "Pinky", Version::Hash("abcdef123456"));
         assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/abcdef123456");
+    }
+
+
+    #[test]
+    fn test_json_decoding() {
+        let json_output = r#"{"metadata":{"duration":0.46739511,"content_type":"json"},"result":[5,41]}"#;
+        let expected = AlgoOutput{ metadata: AlgoMetadata { duration: 0.46739511f32, stdout: None, alerts: None, content_type: "json".into()} , result: [5, 41] };
+        let decoded: AlgoOutput<Vec<i32>> = json_helpers::decode(json_output.into()).unwrap();
+        assert_eq!(expected.metadata.duration, decoded.metadata.duration);
+        assert_eq!(expected.result, &*decoded.result);
     }
 }

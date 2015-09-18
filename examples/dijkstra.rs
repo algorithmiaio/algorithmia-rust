@@ -2,7 +2,7 @@ extern crate algorithmia;
 extern crate rustc_serialize;
 
 use algorithmia::Algorithmia;
-use algorithmia::algo::{AlgoOutput, Version};
+use algorithmia::algo::{AlgoResponse, Version};
 use std::collections::HashMap;
 use std::env;
 use rustc_serialize::{json};
@@ -29,7 +29,7 @@ struct RouteMap<'a> {
 }
 
 impl<'a> RouteMap<'a> {
-    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgoOutput<Route> {
+    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgoResponse {
         let api_key = match env::var("ALGORITHMIA_API_KEY") {
             Ok(key) => key,
             Err(e) => { panic!("Error getting ALGORITHMIA_API_KEY: {}", e); }
@@ -44,11 +44,10 @@ impl<'a> RouteMap<'a> {
         // println!("Input: {:?}", input_data);
         println!("Input:\n{}", json::as_pretty_json(&input_data));
 
-        let output: AlgoOutput<Route> = match dijkstra.pipe(&input_data) {
-            Ok(out) => out,
+        match dijkstra.pipe(&input_data) {
+            Ok(response) => response,
             Err(err) => panic!("{}", err),
-        };
-        output
+        }
     }
 }
 
@@ -68,6 +67,7 @@ fn main() {
     };
 
     let output = input_map.get_dijkstra_route(&start, &end);
-    println!("Shortest route: {}", output.result.connect("->"));
+    let result: Route = output.result().unwrap();
+    println!("Shortest route: {}", result.connect("->"));
     println!("Completed in {} seconds.", output.metadata.duration);
 }
