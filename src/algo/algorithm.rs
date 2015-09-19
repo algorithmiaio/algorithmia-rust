@@ -17,7 +17,6 @@
 //! println!("Completed with result: {:?}", result);
 //! ```
 
-use json_helpers;
 use client::{Body, HttpClient};
 use error::{Error, ApiErrorResponse};
 
@@ -26,9 +25,11 @@ use rustc_serialize::json::Json;
 use rustc_serialize::base64::FromBase64;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
-use hyper::Url;
+use hyper::{self, Url};
+use hyper::client::response::Response;
 
 use std::io::{self, Read, Write};
+use std::str::FromStr;
 use std::fmt;
 
 
@@ -61,7 +62,6 @@ pub struct AlgoOutput<T> {
     pub metadata: AlgoMetadata,
     pub result: T,
 }
-
 
 pub struct AlgoResponse {
     pub metadata: AlgoMetadata,
@@ -126,11 +126,15 @@ impl Algorithm {
     /// };
     /// ```
     pub fn pipe<'a, I: Into<AlgoInput<'a>>>(&'a self, input_data: I) -> Result<AlgoResponse, Error> {
-        match input_data.into() {
+        let mut res = try!(match input_data.into() {
             AlgoInput::Text(text) => self.pipe_as(text, Mime(TopLevel::Text, SubLevel::Plain, vec![])),
-            AlgoInput::Json(json) => self.pipe_json(&*json),
+            AlgoInput::Json(json) => self.pipe_as(&*json, Mime(TopLevel::Application, SubLevel::Json, vec![])),
             AlgoInput::Binary(bytes) => self.pipe_as(bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![])),
-        }
+        });
+
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+        res_json.parse()
     }
 
     /// Execute an algorithm with explicitly set content-type
@@ -151,26 +155,20 @@ impl Algorithm {
     ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
-        self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![]))
+        let mut res = try!(self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
+
+        let mut res_json = String::new();
+        try!(res.read_to_string(&mut res_json));
+        res_json.parse()
     }
 
 
-    fn pipe_as<'a, B: Into<Body<'a>>>(&'a self, input_data: B, content_type: Mime) -> Result<AlgoResponse, Error> {
+    pub fn pipe_as<'a, B: Into<Body<'a>>>(&'a self, input_data: B, content_type: Mime) -> Result<Response, hyper::error::Error> {
         let req = self.client.post(self.to_url())
             .header(ContentType(content_type))
             .body(input_data);
 
-        let mut res = try!(req.send());
-        let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
-
-        match res.status.is_success() {
-            true => match json::decode::<ApiErrorResponse>(&res_json) {
-                Ok(err_res) => Err(err_res.error.into()),
-                Err(_) => decode_to_algo_response(&res_json),
-            },
-            false => Err(json_helpers::decode_to_error(&res_json)),
-        }
+        req.send()
     }
 }
 
@@ -198,37 +196,48 @@ impl AlgoResponse {
 
     pub fn result<D: Decodable>(&self) -> Result<D, Error> {
         let res_json = try!(self.result_json());
-        json_helpers::decode::<D>(&res_json)
+        json::decode::<D>(&res_json).map_err(|err| err.into())
     }
 }
 
 
-fn decode_to_algo_response(res_json: &str) -> Result<AlgoResponse, Error> {
-    let data = match Json::from_str(res_json) {
-        Ok(d) => d,
-        Err(err) => return Err(json::DecoderError::ParseError(err).into()),
-    };
+impl FromStr for AlgoResponse {
+    type Err = Error;
+    fn from_str(json_str: &str) -> Result<Self, Self::Err> {
+        // Early return if the response decodes into ApiErrorResponse
+        if let Ok(err_res) = json::decode::<ApiErrorResponse>(json_str) {
+            return Err(err_res.error.into())
+        }
 
-    let metadata = match data.search("metadata") {
-        Some(meta_json) => match json::decode::<AlgoMetadata>(&meta_json.to_string()) {
-            Ok(meta) => meta,
-            Err(err) => return Err(err.into()),
-        },
-        None => return Err(json::DecoderError::MissingFieldError("metadata".into()).into()),
-    };
+        // Parse into Json object
+        let data = match Json::from_str(json_str) {
+            Ok(d) => d,
+            Err(err) => return Err(json::DecoderError::ParseError(err).into()),
+        };
 
-    let result = match (&*metadata.content_type, data.search("result")) {
-        ("void", _) => AlgoResult::Void,
-        ("text", Some(json)) => AlgoResult::Text(json.to_string()),
-        ("json", Some(json)) => AlgoResult::Json(json.to_string()),
-        ("binary", Some(json)) => AlgoResult::Binary(try!(json.to_string().from_base64())),
-        (_, None) => return Err(json::DecoderError::MissingFieldError("result".into()).into()),
-        (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
-    };
+        // Construct the AlgoMetadata object
+        let metadata = match data.search("metadata") {
+            Some(meta_json) => match json::decode::<AlgoMetadata>(&meta_json.to_string()) {
+                Ok(meta) => meta,
+                Err(err) => return Err(err.into()),
+            },
+            None => return Err(json::DecoderError::MissingFieldError("metadata".into()).into()),
+        };
 
-    Ok(AlgoResponse{ metadata: metadata, result: result})
+        // Construct the AlgoResult object
+        let result = match (&*metadata.content_type, data.search("result")) {
+            ("void", _) => AlgoResult::Void,
+            ("text", Some(json)) => AlgoResult::Text(json.to_string()),
+            ("json", Some(json)) => AlgoResult::Json(json.to_string()),
+            ("binary", Some(json)) => AlgoResult::Binary(try!(json.to_string().from_base64())),
+            (_, None) => return Err(json::DecoderError::MissingFieldError("result".into()).into()),
+            (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
+        };
+
+        // Construct the AlgoResponse object
+        Ok(AlgoResponse{ metadata: metadata, result: result})
+    }
 }
-
 
 impl fmt::Display for AlgoResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -278,7 +287,6 @@ mod tests {
     use Algorithmia;
     use algo::version::Version;
     use super::*;
-    use json_helpers;
 
     fn mock_client() -> Algorithmia { Algorithmia::client("") }
 
@@ -315,8 +323,8 @@ mod tests {
     fn test_json_decoding() {
         let json_output = r#"{"metadata":{"duration":0.46739511,"content_type":"json"},"result":[5,41]}"#;
         let expected = AlgoOutput{ metadata: AlgoMetadata { duration: 0.46739511f32, stdout: None, alerts: None, content_type: "json".into()} , result: [5, 41] };
-        let decoded: AlgoOutput<Vec<i32>> = json_helpers::decode(json_output.into()).unwrap();
+        let decoded = json_output.parse::<AlgoResponse>().unwrap();
         assert_eq!(expected.metadata.duration, decoded.metadata.duration);
-        assert_eq!(expected.result, &*decoded.result);
+        assert_eq!(expected.result, &*decoded.result::<Vec<i32>>().unwrap());
     }
 }

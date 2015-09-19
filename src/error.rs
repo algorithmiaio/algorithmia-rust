@@ -13,7 +13,6 @@ pub enum Error {
     DataPathError(String),
     HttpError(hyper::error::Error),
     DecoderError(json::DecoderError),
-    DecoderErrorWithContext(json::DecoderError, String),
     EncoderError(json::EncoderError),
     FromBase64Error(base64::FromBase64Error),
     IoError(io::Error),
@@ -32,9 +31,12 @@ pub struct ApiErrorResponse {
 }
 
 
-//
-// Implement std::error::Error trait
-//
+pub fn decode(json_str: &str) -> Error {
+    match json::decode::<ApiErrorResponse>(json_str) {
+        Ok(err_res) => err_res.error.into(),
+        Err(err) => Error::DecoderError(err),
+    }
+}
 
 impl StdError for ApiError {
     fn description(&self) -> &str {
@@ -51,7 +53,6 @@ impl StdError for Error {
             Error::DataPathError(ref msg) => &msg,
             Error::HttpError(ref e) => e.description(),
             Error::DecoderError(ref e) => e.description(),
-            Error::DecoderErrorWithContext(ref e, _) => e.description(),
             Error::EncoderError(ref e) => e.description(),
             Error::FromBase64Error(ref e) => e.description(),
             Error::IoError(ref e) => e.description(),
@@ -62,7 +63,6 @@ impl StdError for Error {
         match *self {
             Error::HttpError(ref e) => Some(e),
             Error::DecoderError(ref e) => Some(e),
-            Error::DecoderErrorWithContext(ref e, _) => Some(e),
             Error::EncoderError(ref e) => Some(e),
             Error::FromBase64Error(ref e) => Some(e),
             Error::IoError(ref e) => Some(e),

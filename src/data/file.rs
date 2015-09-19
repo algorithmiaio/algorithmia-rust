@@ -14,8 +14,8 @@
 use client::{Body, HttpClient};
 use data::{self, HasDataPath, DeletedResult, XDataType, XErrorMessage};
 use std::io::{self, Read};
-use error::{Error, ApiError};
-use json_helpers;
+use error::{self, Error, ApiError};
+use rustc_serialize::json;
 
 /// Response when creating a file via the Data API
 #[derive(RustcDecodable, Debug)]
@@ -79,8 +79,8 @@ impl DataFile  {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json_helpers::decode(&res_json),
-            false => Err(json_helpers::decode_to_error(&res_json)),
+            true => json::decode(&res_json).map_err(|err| err.into()),
+            false => Err(error::decode(&res_json)),
         }
     }
 
@@ -155,8 +155,8 @@ impl DataFile  {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json_helpers::decode(&res_json),
-            false => Err(json_helpers::decode_to_error(&res_json)),
+            true => json::decode(&res_json).map_err(|err| err.into()),
+            false => Err(error::decode(&res_json)),
         }
     }
 

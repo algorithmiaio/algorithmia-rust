@@ -16,11 +16,10 @@
 extern crate chrono;
 
 use client::HttpClient;
-use error::*;
+use error::{self, Error};
 use data::{self, DataFile, DeletedResult, XDataType};
 use data::file::FileAdded;
 use data::HasDataPath;
-use json_helpers;
 
 use std::io::Read;
 use std::fs::File;
@@ -201,8 +200,8 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     try!(res.read_to_string(&mut res_json));
 
     match res.status.is_success() {
-        true => json_helpers::decode(&res_json),
-        false => Err(json_helpers::decode_to_error(&res_json)),
+        true => json::decode(&res_json).map_err(|err| err.into()),
+        false => Err(error::decode(&res_json)),
     }
 }
 
@@ -270,7 +269,7 @@ impl DataDir {
             false => {
                 let mut res_json = String::new();
                 try!(res.read_to_string(&mut res_json));
-                Err(json_helpers::decode_to_error(&res_json))
+                Err(error::decode(&res_json))
             }
         }
     }
@@ -300,8 +299,8 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json_helpers::decode(&res_json),
-            false => Err(json_helpers::decode_to_error(&res_json)),
+            true => json::decode(&res_json).map_err(|err| err.into()),
+            false => Err(error::decode(&res_json)),
         }
     }
 
@@ -336,8 +335,8 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json_helpers::decode(&res_json),
-            false => Err(json_helpers::decode_to_error(&res_json)),
+            true => json::decode(&res_json).map_err(|err| err.into()),
+            false => Err(error::decode(&res_json)),
         }
     }
 
