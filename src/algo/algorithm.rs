@@ -53,7 +53,7 @@ pub struct AlgoMetadata {
     pub duration: f32,
     pub stdout: Option<String>,
     pub alerts: Option<Vec<String>>,
-    content_type: String,
+    pub content_type: String,
 }
 
 /// Generic struct for decoding an algorithm response JSON
@@ -227,8 +227,11 @@ impl FromStr for AlgoResponse {
         // Construct the AlgoResult object
         let result = match (&*metadata.content_type, data.search("result")) {
             ("void", _) => AlgoResult::Void,
-            ("text", Some(json)) => AlgoResult::Text(json.to_string()),
             ("json", Some(json)) => AlgoResult::Json(json.to_string()),
+            ("text", Some(json)) => match json.as_string() {
+                Some(text) => AlgoResult::Text(text.into()),
+                None => return Err(Error::ContentTypeError("invalid text".into())),
+            },
             ("binary", Some(json)) => AlgoResult::Binary(try!(json.to_string().from_base64())),
             (_, None) => return Err(json::DecoderError::MissingFieldError("result".into()).into()),
             (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
