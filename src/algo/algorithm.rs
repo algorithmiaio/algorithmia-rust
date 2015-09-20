@@ -232,7 +232,10 @@ impl FromStr for AlgoResponse {
                 Some(text) => AlgoResult::Text(text.into()),
                 None => return Err(Error::ContentTypeError("invalid text".into())),
             },
-            ("binary", Some(json)) => AlgoResult::Binary(try!(json.to_string().from_base64())),
+            ("binary", Some(json)) => match json.as_string() {
+                Some(text) => AlgoResult::Binary(try!(text.from_base64())),
+                None => return Err(Error::ContentTypeError("invalid text".into())),
+            },
             (_, None) => return Err(json::DecoderError::MissingFieldError("result".into()).into()),
             (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
         };
