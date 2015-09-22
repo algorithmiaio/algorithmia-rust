@@ -8,7 +8,7 @@
 //!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566");
-//! let moving_avg = client.algo(("timeseries/SimpleMovingAverage", Version::Minor(0,1)));
+//! let moving_avg = client.algo(("timeseries/SimpleMovingAverage", "0.1"));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers

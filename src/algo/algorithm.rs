@@ -8,7 +8,7 @@
 //!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566");
-//! let moving_avg = client.algo(("timeseries/SimpleMovingAverage", Version::Minor(0,1)));
+//! let moving_avg = client.algo(("timeseries/SimpleMovingAverage", "0.1"));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -114,7 +114,7 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::algo::{Algorithm, Version};
+    /// # use algorithmia::algo::Algorithm;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
@@ -144,7 +144,7 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::algo::{Algorithm, Version};
+    /// # use algorithmia::algo::Algorithm;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
@@ -270,10 +270,10 @@ impl <'a> From<&'a str> for AlgoRef {
     }
 }
 
-impl <'a> From<(&'a str, Version<'a>)> for AlgoRef {
-    fn from(path_parts: (&'a str, Version<'a>)) -> Self {
+impl <'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
+    fn from(path_parts: (&'a str, V)) -> Self {
         let (algo, version) = path_parts;
-        let path = match version {
+        let path = match version.into() {
             Version::Latest => format!("{}", algo),
             ref ver => format!("{}/{}", algo, ver),
         };
@@ -307,7 +307,6 @@ impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
 #[cfg(test)]
 mod tests {
     use Algorithmia;
-    use algo::version::Version;
     use super::*;
 
     fn mock_client() -> Algorithmia { Algorithmia::client("") }
@@ -336,7 +335,7 @@ mod tests {
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
-        let algorithm = mock_client.algo(("anowell/Pinky", Version::Hash("abcdef123456")));
+        let algorithm = mock_client.algo(("anowell/Pinky", "abcdef123456"));
         assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/abcdef123456");
     }
 
