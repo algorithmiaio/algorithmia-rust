@@ -4,11 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Algorithmia;
-//! use algorithmia::algo::{Algorithm, AlgoOutput, Version};
+//! use algorithmia::algo::{Algorithm, Version};
 //!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566");
-//! let moving_avg = client.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
+//! let moving_avg = client.algo(("timeseries/SimpleMovingAverage", Version::Minor(0,1)));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -19,6 +19,7 @@
 
 use client::{Body, HttpClient};
 use error::{Error, ApiErrorResponse};
+use super::version::Version;
 
 use rustc_serialize::{json, Decodable, Encodable};
 use rustc_serialize::json::Json;
@@ -41,12 +42,16 @@ enum AlgoInput<'a> {
     Json(String)
 }
 
+
 /// Algorithmia algorithm
 pub struct Algorithm {
     pub path: String,
     client: HttpClient,
 }
 
+pub struct AlgoRef {
+    pub path: String
+}
 
 #[derive(RustcDecodable, Debug)]
 pub struct AlgoMetadata {
@@ -54,13 +59,6 @@ pub struct AlgoMetadata {
     pub stdout: Option<String>,
     pub alerts: Option<Vec<String>>,
     pub content_type: String,
-}
-
-/// Generic struct for decoding an algorithm response JSON
-#[derive(RustcDecodable, Debug)]
-pub struct AlgoOutput<T> {
-    pub metadata: AlgoMetadata,
-    pub result: T,
 }
 
 pub struct AlgoResponse {
@@ -75,18 +73,16 @@ enum AlgoResult {
     Binary(Vec<u8>),
 }
 
-
 impl Algorithm {
-    pub fn new(client: HttpClient, algo_uri: &str) -> Algorithm {
-        let path = match algo_uri {
-            p if p.starts_with("algo://") => &p[7..],
-            p if p.starts_with("/") => &p[1..],
+    pub fn new(client: HttpClient, algo_ref: AlgoRef) -> Algorithm {
+        let path: String = match algo_ref.path {
+            ref p if p.starts_with("algo://") => p[7..].into(),
+            ref p if p.starts_with("/") => p[1..].into(),
             p => p,
         };
-
         Algorithm {
             client: client,
-            path: path.to_string(),
+            path: path,
         }
     }
 
@@ -101,24 +97,26 @@ impl Algorithm {
         format!("algo://{}", self.path)
     }
 
-    /// Execute an algorithm with automatic JSON encoding of input and decoding of response
+    /// Execute an algorithm with
     ///
-    /// input_data must be JSON-encodable
-    ///     use `#[derive(RustcEncodable)]` for complex input
+    /// Content-type is determined by the type of input_data
+    ///   String => plain/text
+    ///   Encodable => application/json
+    ///   Byte slice => application/octet-stream
     ///
-    /// You must explicitly specify the output type `T`
-    ///     `pipe` will attempt to decode the response into AlgoOutput<T>
+    /// To create encodable objects for complex input,
+    ///     use `#[derive(RustcEncodable)]` on your struct
     ///
-    /// If decoding fails, it will attempt to decode into `ApiError`
-    ///     and if that fails, it will error with `DecoderErrorWithContext`
+    /// If you want a string to be sent as application/json,
+    ///    use `pipe_json(...)` instead
     ///
     /// # Examples
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::algo::{Algorithm, AlgoOutput, Version};
+    /// # use algorithmia::algo::{Algorithm, Version};
     /// let client = Algorithmia::client("111112222233333444445555566");
-    /// let moving_avg = client.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
+    /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
     /// match moving_avg.pipe(&input) {
     ///     Ok(response) => println!("{}", response.result_json().unwrap()),
@@ -148,7 +146,7 @@ impl Algorithm {
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::algo::{Algorithm, Version};
     /// let client = Algorithmia::client("111112222233333444445555566");
-    /// let minmax  = client.algo("codeb34v3r", "FindMinMax", Version::Minor(0,1));
+    /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
     /// let output = match minmax.pipe_json("[2,3,4]") {
     ///    Ok(response) => response.result_json().unwrap().to_owned(),
@@ -266,6 +264,24 @@ impl Read for AlgoResponse {
     }
 }
 
+impl <'a> From<&'a str> for AlgoRef {
+    fn from(path: &'a str) -> Self {
+        AlgoRef{ path:path.into() }
+    }
+}
+
+impl <'a> From<(&'a str, Version<'a>)> for AlgoRef {
+    fn from(path_parts: (&'a str, Version<'a>)) -> Self {
+        let (algo, version) = path_parts;
+        let path = match version {
+            Version::Latest => format!("{}", algo),
+            ref ver => format!("{}/{}", algo, ver),
+        };
+
+        AlgoRef{ path:path }
+    }
+}
+
 impl <'a> From<&'a str> for AlgoInput<'a> {
     fn from(text: &'a str) -> Self {
         AlgoInput::Text(text)
@@ -299,28 +315,28 @@ mod tests {
     #[test]
     fn test_algo_without_version_to_url() {
         let mock_client = mock_client();
-        let algorithm = mock_client.algo_from_str("/anowell/Pinky");
+        let algorithm = mock_client.algo("/anowell/Pinky");
         assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky");
     }
 
     #[test]
     fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
-        let algorithm = mock_client.algo_from_str("anowell/Pinky/0.1.0");
+        let algorithm = mock_client.algo("anowell/Pinky/0.1.0");
         assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/0.1.0");
     }
 
     #[test]
     fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
-        let algorithm = mock_client.algo_from_str("algo://anowell/Pinky/0.1");
+        let algorithm = mock_client.algo("algo://anowell/Pinky/0.1");
         assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/0.1");
     }
 
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
-        let algorithm = mock_client.algo("anowell", "Pinky", Version::Hash("abcdef123456"));
+        let algorithm = mock_client.algo(("anowell/Pinky", Version::Hash("abcdef123456")));
         assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/abcdef123456");
     }
 
@@ -328,9 +344,10 @@ mod tests {
     #[test]
     fn test_json_decoding() {
         let json_output = r#"{"metadata":{"duration":0.46739511,"content_type":"json"},"result":[5,41]}"#;
-        let expected = AlgoOutput{ metadata: AlgoMetadata { duration: 0.46739511f32, stdout: None, alerts: None, content_type: "json".into()} , result: [5, 41] };
+        let expected_meta = AlgoMetadata { duration: 0.46739511f32, stdout: None, alerts: None, content_type: "json".into()};
+        let expected_result = [5, 41];
         let decoded = json_output.parse::<AlgoResponse>().unwrap();
-        assert_eq!(expected.metadata.duration, decoded.metadata.duration);
-        assert_eq!(expected.result, &*decoded.result::<Vec<i32>>().unwrap());
+        assert_eq!(expected_meta.duration, decoded.metadata.duration);
+        assert_eq!(expected_result, &*decoded.result::<Vec<i32>>().unwrap());
     }
 }

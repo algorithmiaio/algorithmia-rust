@@ -4,11 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Algorithmia;
-//! use algorithmia::algo::{Algorithm, AlgoOutput, Version};
+//! use algorithmia::algo::{Algorithm, Version};
 //!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566");
-//! let moving_avg = client.algo("timeseries", "SimpleMovingAverage", Version::Minor(0,1));
+//! let moving_avg = client.algo(("timeseries/SimpleMovingAverage", Version::Minor(0,1)));
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -23,7 +23,7 @@
 extern crate hyper;
 extern crate rustc_serialize;
 
-use algo::{Algorithm, Version};
+use algo::{Algorithm, AlgoRef};
 use data::{DataDir, DataFile, DataPath, HasDataPath};
 use client::HttpClient;
 
@@ -43,6 +43,7 @@ pub struct Algorithmia {
     http_client: HttpClient,
 }
 
+
 impl<'a, 'c> Algorithmia {
     /// Instantiate a new client
     pub fn client(api_key: &str) -> Algorithmia {
@@ -60,34 +61,18 @@ impl<'a, 'c> Algorithmia {
 
     /// Instantiate an `Algorithm` from this client
     ///
+    /// By using In
     /// # Examples
     ///
     /// ```
     /// use algorithmia::Algorithmia;
     /// use algorithmia::algo::Version;
     /// let client = Algorithmia::client("111112222233333444445555566");
-    /// let factor = client.algo("anowell", "Dijkstra", Version::Latest);
+    /// let factor = client.algo("anowell/Dijkstra/0.1");
+    /// let factor = client.algo(("anowell/Dijkstra", Version::Latest));
     /// ```
-    pub fn algo(&self, user: &str, algoname: &str, version: Version<'a>) -> Algorithm {
-        let algo_uri = match version {
-            Version::Latest => format!("{}/{}", user, algoname),
-            ref ver => format!("{}/{}/{}", user, algoname, ver),
-        };
-
-        Algorithm::new(self.http_client.clone(), &*algo_uri)
-    }
-
-    /// Instantiate an `Algorithm` from this client using the algorithm's URI
-    ///
-    /// # Examples
-    /// ```
-    /// use algorithmia::Algorithmia;
-    /// use algorithmia::algo::Version;
-    /// let client = Algorithmia::client("111112222233333444445555566");
-    /// let factor = client.algo_from_str("anowell/Dijkstra/0.1");
-    /// ```
-    pub fn algo_from_str(&self, algo_uri: &str) -> Algorithm {
-        Algorithm::new(self.http_client.clone(), algo_uri)
+    pub fn algo<A: Into<AlgoRef>>(&self, algorithm: A) -> Algorithm {
+        Algorithm::new(self.http_client.clone(), algorithm.into())
     }
 
     /// Instantiate a `DataDirectory` from this client

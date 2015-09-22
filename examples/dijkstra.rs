@@ -35,7 +35,7 @@ impl<'a> RouteMap<'a> {
             Err(e) => { panic!("Error getting ALGORITHMIA_API_KEY: {}", e); }
         };
         let client = Algorithmia::client(&*api_key);
-        let dijkstra = client.algo("anowell", "Dijkstra", Version::Latest);
+        let dijkstra = client.algo(("anowell/Dijkstra", Version::Latest));
 
         println!("Making request to: {}", dijkstra.to_url());
 
