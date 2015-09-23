@@ -1,3 +1,4 @@
+pub use hyper::client::response::Response;
 use hyper::{Client, Url};
 use hyper::client::RequestBuilder;
 use hyper::header::{Authorization, UserAgent};
