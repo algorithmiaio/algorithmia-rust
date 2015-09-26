@@ -13,7 +13,7 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let result: Vec<f64> = moving_avg.pipe(&input).unwrap().result().unwrap();
+//! let result: Vec<f64> = moving_avg.pipe(&input, None).unwrap().result().unwrap();
 //! println!("Completed with result: {:?}", result);
 //! ```
 
@@ -32,7 +32,8 @@ use hyper::client::response::Response;
 use std::io::{self, Read, Write};
 use std::str::FromStr;
 use std::fmt;
-
+use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
@@ -47,6 +48,11 @@ enum AlgoInput<'a> {
 pub struct Algorithm {
     pub path: String,
     client: HttpClient,
+}
+
+
+pub struct AlgoOptions {
+    opts: HashMap<String, String>
 }
 
 pub struct AlgoRef {
@@ -118,16 +124,19 @@ impl Algorithm {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-    /// match moving_avg.pipe(&input) {
+    /// match moving_avg.pipe(&input, None) {
     ///     Ok(response) => println!("{}", response.result_json().unwrap()),
     ///     Err(err) => println!("ERROR: {}", err),
     /// };
     /// ```
-    pub fn pipe<'a, I: Into<AlgoInput<'a>>>(&'a self, input_data: I) -> Result<AlgoResponse, Error> {
+    pub fn pipe<'a, I>(&'a self, input_data: I, options: Option<&'a AlgoOptions>)
+                       -> Result<AlgoResponse, Error> where
+        I: Into<AlgoInput<'a>>
+    {
         let mut res = try!(match input_data.into() {
-            AlgoInput::Text(text) => self.pipe_as(text, Mime(TopLevel::Text, SubLevel::Plain, vec![])),
-            AlgoInput::Json(json) => self.pipe_as(&*json, Mime(TopLevel::Application, SubLevel::Json, vec![])),
-            AlgoInput::Binary(bytes) => self.pipe_as(bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![])),
+            AlgoInput::Text(text) => self.pipe_as(text, Mime(TopLevel::Text, SubLevel::Plain, vec![]), options),
+            AlgoInput::Json(json) => self.pipe_as(&*json, Mime(TopLevel::Application, SubLevel::Json, vec![]), options),
+            AlgoInput::Binary(bytes) => self.pipe_as(bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![]), options),
         });
 
         let mut res_json = String::new();
@@ -148,12 +157,12 @@ impl Algorithm {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
-    /// let output = match minmax.pipe_json("[2,3,4]") {
+    /// let output = match minmax.pipe_json("[2,3,4]", None) {
     ///    Ok(response) => response.result_json().unwrap().to_owned(),
     ///    Err(err) => panic!("{}", err),
     /// };
-    pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
-        let mut res = try!(self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
+    pub fn pipe_json(&self, json_input: &str, options: Option<&AlgoOptions>) -> Result<AlgoResponse, Error> {
+        let mut res = try!(self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![]), options));
 
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
@@ -161,14 +170,54 @@ impl Algorithm {
     }
 
 
-    pub fn pipe_as<'a, B: Into<Body<'a>>>(&'a self, input_data: B, content_type: Mime) -> Result<Response, hyper::error::Error> {
-        let req = self.client.post(self.to_url())
+    pub fn pipe_as<'a, B>(&'a self, input_data: B, content_type: Mime, options: Option<&'a AlgoOptions>)
+                          -> Result<Response, hyper::error::Error>
+        where B: Into<Body<'a>>
+    {
+
+        // Combine any existing paramaters with any
+        let mut url = self.to_url();
+        let original_params = url.query_pairs();
+        let mut final_params: HashMap<&str, &str> = HashMap::new();
+
+        if let Some(ref pairs) = original_params {
+            for pair in pairs {
+                final_params.insert(&*pair.0, &*pair.1);
+            }
+        }
+        if let Some(ref opts) = options {
+            for (k,v) in opts.iter() {
+                final_params.insert(&*k, &*v);
+            }
+            // update query since AlgoOptions were provided
+            url.set_query_from_pairs(final_params.iter().map(|(k,v)|(*k,*v)));
+        }
+
+        let req = self.client.post(url)
             .header(ContentType(content_type))
             .body(input_data);
 
         req.send()
     }
 }
+
+
+
+impl AlgoOptions {
+    pub fn new() -> AlgoOptions {
+        AlgoOptions { opts: HashMap::new() }
+    }
+
+    pub fn timeout(&mut self, timeout: u32) {
+        self.opts.insert("timeout".into(), timeout.to_string());
+    }
+
+    pub fn stdout(&mut self, stdout: bool) {
+        self.opts.insert("stdout".into(), stdout.to_string());
+    }
+}
+
+
 
 impl AlgoResponse {
     pub fn result_json(&self) -> Result<&str, Error> {
@@ -292,6 +341,15 @@ impl <'a> From<&'a [u8]> for AlgoInput<'a> {
     fn from(bytes: &'a [u8]) -> Self {
         AlgoInput::Binary(bytes)
     }
+}
+
+impl Deref for AlgoOptions {
+    type Target = HashMap<String, String>;
+    fn deref(&self) -> &HashMap<String, String> { &self.opts }
+}
+
+impl DerefMut for AlgoOptions {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.opts }
 }
 
 impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
