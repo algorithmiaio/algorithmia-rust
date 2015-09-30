@@ -2,7 +2,13 @@
 name = "algorithmia"
 version = "0.7.0"
 license = "MIT"
-authors = ["Anthony Nowell <anowell@gmail.com>"]
+authors = ["Anthony Nowell <anthony@algorithmia.com>"]
+
+description = "Client for calling algorithms hosted on   the Algorithmia marketplace"
+documentation = "http://algorithmiaio.github.io/algorithmia-rust/algorithmia/"
+repository = "https://github.com/algorithmiaio/algorithmia-rust"
+readme = "README.md"
+keywords = ["algorithmia", "algorithm", "client"]
 
 [dependencies]
 hyper = "0.6.*"
