@@ -34,7 +34,7 @@
             <div class="search-container">
                 <input class="search-input" name="search"
                        autocomplete="off"
-                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
                        type="search">
             </div>
         </form>
@@ -169,382 +169,134 @@
 <span id="127">127</span>
 <span id="128">128</span>
 <span id="129">129</span>
-<span id="130">130</span>
-<span id="131">131</span>
-<span id="132">132</span>
-<span id="133">133</span>
-<span id="134">134</span>
-<span id="135">135</span>
-<span id="136">136</span>
-<span id="137">137</span>
-<span id="138">138</span>
-<span id="139">139</span>
-<span id="140">140</span>
-<span id="141">141</span>
-<span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
-<span id="161">161</span>
-<span id="162">162</span>
-<span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
-<span id="174">174</span>
-<span id="175">175</span>
-<span id="176">176</span>
-<span id="177">177</span>
-<span id="178">178</span>
-<span id="179">179</span>
-<span id="180">180</span>
-<span id="181">181</span>
-<span id="182">182</span>
-<span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-<span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
-<span id="234">234</span>
-<span id="235">235</span>
-<span id="236">236</span>
-<span id="237">237</span>
-<span id="238">238</span>
-<span id="239">239</span>
-<span id="240">240</span>
-<span id="241">241</span>
-<span id="242">242</span>
-<span id="243">243</span>
-<span id="244">244</span>
-<span id="245">245</span>
-<span id="246">246</span>
-<span id="247">247</span>
-<span id="248">248</span>
-<span id="249">249</span>
-<span id="250">250</span>
-<span id="251">251</span>
-<span id="252">252</span>
-<span id="253">253</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Algorithmia client library</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! # Examples</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! ```no_run</span>
-<span class='doccomment'>//! use algorithmia::Service;</span>
-<span class='doccomment'>//! use algorithmia::algorithm::{Algorithm, AlgorithmOutput, Version};</span>
+<span class='doccomment'>//! use algorithmia::Algorithmia;</span>
+<span class='doccomment'>//! use algorithmia::algo::{Algorithm, Version};</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! // Initialize with an API key</span>
-<span class='doccomment'>//! let service = Service::new(&quot;111112222233333444445555566&quot;);</span>
-<span class='doccomment'>//! let factor = service.algorithm(&quot;kenny&quot;, &quot;Factor&quot;, Version::Revision(0,1,0));</span>
+<span class='doccomment'>//! let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
+<span class='doccomment'>//! let moving_avg = client.algo((&quot;timeseries/SimpleMovingAverage&quot;, &quot;0.1&quot;));</span>
 <span class='doccomment'>//!</span>
 <span class='doccomment'>//! // Run the algorithm using a type safe decoding of the output to Vec&lt;int&gt;</span>
 <span class='doccomment'>//! //   since this algorithm outputs results as a JSON array of integers</span>
-<span class='doccomment'>//! let input = &quot;19635&quot;.to_string();</span>
-<span class='doccomment'>//! let output: AlgorithmOutput&lt;Vec&lt;i64&gt;&gt; = factor.pipe(&amp;input).unwrap();</span>
-<span class='doccomment'>//! println!(&quot;Completed in {} seconds with result: {:?}&quot;, output.duration, output.result);</span>
+<span class='doccomment'>//! let input = (vec![0,1,2,3,15,4,5,6,7], 3);</span>
+<span class='doccomment'>//! let result: Vec&lt;f64&gt; = moving_avg.pipe(&amp;input, None).unwrap().result().unwrap();</span>
+<span class='doccomment'>//! println!(&quot;Completed with result: {:?}&quot;, result);</span>
 <span class='doccomment'>//! ```</span>
 
 <span class='attribute'>#<span class='op'>!</span>[<span class='ident'>doc</span>(<span class='ident'>html_logo_url</span> <span class='op'>=</span> <span class='string'>&quot;https://algorithmia.com/assets/images/apple-touch-icon.png&quot;</span>)]</span>
 
+<span class='attribute'>#[<span class='ident'>macro_use</span>]</span>
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>hyper</span>;
-<span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>mime</span>;
 <span class='kw'>extern</span> <span class='kw'>crate</span> <span class='ident'>rustc_serialize</span>;
 
-<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>algorithm</span>;
-<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>collection</span>;
+<span class='kw'>use</span> <span class='ident'>algo</span>::{<span class='ident'>Algorithm</span>, <span class='ident'>AlgoRef</span>};
+<span class='kw'>use</span> <span class='ident'>data</span>::{<span class='ident'>DataDir</span>, <span class='ident'>DataFile</span>, <span class='ident'>DataPath</span>, <span class='ident'>HasDataPath</span>};
+<span class='kw'>use</span> <span class='ident'>client</span>::<span class='ident'>HttpClient</span>;
 
-<span class='kw'>use</span> <span class='ident'>algorithm</span>::{<span class='ident'>Algorithm</span>, <span class='ident'>Version</span>};
-<span class='kw'>use</span> <span class='ident'>collection</span>::{<span class='ident'>Collection</span>};
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>clone</span>;
 
-<span class='kw'>use</span> <span class='ident'>hyper</span>::{<span class='ident'>Client</span>, <span class='ident'>Url</span>};
-<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>client</span>::<span class='ident'>RequestBuilder</span>;
-<span class='kw'>use</span> <span class='ident'>hyper</span>::<span class='ident'>header</span>::{<span class='ident'>Accept</span>, <span class='ident'>Authorization</span>, <span class='ident'>ContentType</span>, <span class='ident'>UserAgent</span>, <span class='ident'>qitem</span>};
-<span class='kw'>use</span> <span class='ident'>mime</span>::{<span class='ident'>Mime</span>, <span class='ident'>TopLevel</span>, <span class='ident'>SubLevel</span>};
-<span class='kw'>use</span> <span class='ident'>rustc_serialize</span>::{<span class='ident'>json</span>, <span class='ident'>Decodable</span>};
-<span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>AlgorithmiaError</span>::<span class='op'>*</span>;
-<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>io</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>algo</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>data</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>error</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>client</span>;
+<span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>json_helpers</span>;
+<span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>hyper</span>::{<span class='ident'>mime</span>, <span class='ident'>Url</span>};
 
-<span class='kw'>pub</span> <span class='kw'>static</span> <span class='ident'>API_BASE_URL</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span> <span class='op'>=</span> <span class='string'>&quot;https://api.algorithmia.com&quot;</span>;
+<span class='kw'>static</span> <span class='ident'>DEFAULT_API_BASE_URL</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span> <span class='op'>=</span> <span class='string'>&quot;https://api.algorithmia.com&quot;</span>;
 
-<span class='doccomment'>/// The top-level struct for instantiating Algorithmia service endpoints</span>
-<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Service</span>{
-    <span class='kw'>pub</span> <span class='ident'>api_key</span>: <span class='ident'>String</span>,
-}
-
-<span class='doccomment'>/// Internal ApiClient to manage connection and requests: wraps `hyper` client</span>
-<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>ApiClient</span>{
-    <span class='ident'>api_key</span>: <span class='ident'>String</span>,
-    <span class='ident'>client</span>: <span class='ident'>Client</span>,
-    <span class='ident'>user_agent</span>: <span class='ident'>String</span>,
-}
-
-<span class='doccomment'>/// Errors that may be returned by this library</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Debug</span>)]</span>
-<span class='kw'>pub</span> <span class='kw'>enum</span> <span class='ident'>AlgorithmiaError</span> {
-    <span class='doccomment'>/// Errors returned by the Algorithmia API</span>
-    <span class='ident'>ApiError</span>(<span class='ident'>String</span>), <span class='comment'>//TODO: add the optional stacktrace or use ApiErrorResponse directly</span>
-    <span class='doccomment'>/// HTTP errors encountered by the hyper client</span>
-    <span class='ident'>HttpError</span>(<span class='ident'>hyper</span>::<span class='ident'>HttpError</span>),
-    <span class='doccomment'>/// Errors decoding response json</span>
-    <span class='ident'>DecoderError</span>(<span class='ident'>json</span>::<span class='ident'>DecoderError</span>),
-    <span class='doccomment'>/// Errors decoding response json with additional debugging context</span>
-    <span class='ident'>DecoderErrorWithContext</span>(<span class='ident'>json</span>::<span class='ident'>DecoderError</span>, <span class='ident'>String</span>),
-    <span class='doccomment'>/// Errors encoding the request</span>
-    <span class='ident'>EncoderError</span>(<span class='ident'>json</span>::<span class='ident'>EncoderError</span>),
-    <span class='doccomment'>/// General IO errors</span>
-    <span class='ident'>IoError</span>(<span class='ident'>io</span>::<span class='ident'>Error</span>),
-}
-
-<span class='doccomment'>/// Struct for decoding Algorithmia API error responses</span>
-<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>RustcDecodable</span>, <span class='ident'>Debug</span>)]</span>
-<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>ApiErrorResponse</span> {
-    <span class='kw'>pub</span> <span class='ident'>error</span>: <span class='ident'>String</span>,
-    <span class='kw'>pub</span> <span class='ident'>stacktrace</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>String</span><span class='op'>&gt;</span>,
+<span class='doccomment'>/// The top-level struct for instantiating Algorithmia client endpoints</span>
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Algorithmia</span> {
+    <span class='ident'>http_client</span>: <span class='ident'>HttpClient</span>,
 }
 
 
-<span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='lifetime'>&#39;c</span><span class='op'>&gt;</span> <span class='ident'>Service</span> {
-    <span class='doccomment'>/// Instantiate a new Service</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>(<span class='ident'>api_key</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>Service</span> {
-        <span class='ident'>Service</span> {
-            <span class='ident'>api_key</span>: <span class='ident'>api_key</span>.<span class='ident'>to_string</span>(),
+<span class='kw'>impl</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='lifetime'>&#39;c</span><span class='op'>&gt;</span> <span class='ident'>Algorithmia</span> {
+    <span class='doccomment'>/// Instantiate a new client</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>client</span>(<span class='ident'>api_key</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>Algorithmia</span> {
+        <span class='ident'>Algorithmia</span> {
+            <span class='ident'>http_client</span>: <span class='ident'>HttpClient</span>::<span class='ident'>new</span>(<span class='ident'>api_key</span>.<span class='ident'>to_string</span>(), <span class='ident'>DEFAULT_API_BASE_URL</span>.<span class='ident'>to_string</span>()),
         }
     }
 
-    <span class='doccomment'>/// Instantiate a new hyper client - used internally by instantiating new api_client for every request</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>api_client</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>ApiClient</span> {
-        <span class='ident'>ApiClient</span>::<span class='ident'>new</span>(<span class='self'>self</span>.<span class='ident'>api_key</span>.<span class='ident'>to_string</span>())
+    <span class='doccomment'>/// Instantiate a new client against alternate API servers</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>alt_client</span>(<span class='ident'>base_url</span>: <span class='ident'>Url</span>, <span class='ident'>api_key</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>Algorithmia</span> {
+        <span class='ident'>Algorithmia</span> {
+            <span class='ident'>http_client</span>: <span class='ident'>HttpClient</span>::<span class='ident'>new</span>(<span class='ident'>api_key</span>.<span class='ident'>to_string</span>(), <span class='ident'>base_url</span>.<span class='ident'>serialize</span>()),
+        }
     }
 
-    <span class='doccomment'>/// Instantiate an `AlgorithmService` from this `Service`</span>
+    <span class='doccomment'>/// Instantiate an `Algorithm` from this client</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// By using In</span>
+    <span class='doccomment'>/// # Examples</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='doccomment'>/// use algorithmia::Algorithmia;</span>
+    <span class='doccomment'>/// use algorithmia::algo::Version;</span>
+    <span class='doccomment'>/// let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
+    <span class='doccomment'>/// let factor = client.algo(&quot;anowell/Dijkstra/0.1&quot;);</span>
+    <span class='doccomment'>/// let factor = client.algo((&quot;anowell/Dijkstra&quot;, Version::Latest));</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>algo</span><span class='op'>&lt;</span><span class='ident'>A</span>: <span class='ident'>Into</span><span class='op'>&lt;</span><span class='ident'>AlgoRef</span><span class='op'>&gt;&gt;</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>algorithm</span>: <span class='ident'>A</span>) <span class='op'>-&gt;</span> <span class='ident'>Algorithm</span> {
+        <span class='ident'>Algorithm</span>::<span class='ident'>new</span>(<span class='self'>self</span>.<span class='ident'>http_client</span>.<span class='ident'>clone</span>(), <span class='ident'>algorithm</span>.<span class='ident'>into</span>())
+    }
+
+    <span class='doccomment'>/// Instantiate a `DataDirectory` from this client</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// # Examples</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ```</span>
-    <span class='doccomment'>/// use algorithmia::Service;</span>
-    <span class='doccomment'>/// use algorithmia::algorithm::{Algorithm, Version};</span>
-    <span class='doccomment'>/// let service = Service::new(&quot;111112222233333444445555566&quot;);</span>
-    <span class='doccomment'>/// let factor = service.algorithm(&quot;anowell&quot;, &quot;Dijkstra&quot;, Version::Latest);</span>
+    <span class='doccomment'>/// use algorithmia::Algorithmia;</span>
+    <span class='doccomment'>/// let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
+    <span class='doccomment'>/// let rustfoo = client.dir(&quot;data://.my/rustfoo&quot;);</span>
     <span class='doccomment'>/// ```</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>algorithm</span>(<span class='self'>self</span>, <span class='ident'>user</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>, <span class='ident'>repo</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>, <span class='ident'>version</span>: <span class='ident'>Version</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>) <span class='op'>-&gt;</span> <span class='ident'>Algorithm</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
-        <span class='ident'>Algorithm</span> {
-            <span class='ident'>service</span>: <span class='self'>self</span>,
-            <span class='ident'>user</span>: <span class='ident'>user</span>,
-            <span class='ident'>repo</span>: <span class='ident'>repo</span>,
-            <span class='ident'>version</span>: <span class='ident'>version</span>
-        }
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>dir</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>path</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>DataDir</span> {
+        <span class='ident'>DataDir</span>::<span class='ident'>new</span>(<span class='self'>self</span>.<span class='ident'>http_client</span>.<span class='ident'>clone</span>(), <span class='ident'>path</span>)
     }
 
-    <span class='doccomment'>/// Instantiate an algorithm from the algorithm&#39;s URI</span>
-    <span class='doccomment'>///</span>
-    <span class='doccomment'>/// # Examples</span>
-    <span class='doccomment'>/// ```</span>
-    <span class='doccomment'>/// use algorithmia::Service;</span>
-    <span class='doccomment'>/// use algorithmia::algorithm::{Algorithm, Version};</span>
-    <span class='doccomment'>/// let service = Service::new(&quot;111112222233333444445555566&quot;);</span>
-    <span class='doccomment'>/// let factor = service.algorithm_from_str(&quot;anowell/Dijkstra/0.1&quot;);</span>
-    <span class='doccomment'>/// ```</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>algorithm_from_str</span>(<span class='self'>self</span>, <span class='ident'>algo_uri</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Algorithm</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span>, <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span><span class='op'>&gt;</span> {
-        <span class='comment'>// TODO: test that this works for stripping algo:// prefix</span>
-        <span class='comment'>// let stripped = match algo_uri.rsplitn(2, &quot;//&quot;).nth(0) {</span>
-        <span class='comment'>//     Some(path) =&gt; path,</span>
-        <span class='comment'>//     None =&gt; return Err(&quot;Invalid algorithm URI&quot;),</span>
-        <span class='comment'>// };</span>
-
-        <span class='kw'>let</span> <span class='ident'>parts</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span>_<span class='op'>&gt;</span> <span class='op'>=</span> <span class='ident'>algo_uri</span>.<span class='ident'>split</span>(<span class='string'>&quot;/&quot;</span>).<span class='ident'>collect</span>();
-        <span class='kw'>match</span> <span class='ident'>parts</span>.<span class='ident'>len</span>() {
-            <span class='number'>3</span> <span class='op'>=&gt;</span> <span class='prelude-val'>Ok</span>(
-                <span class='ident'>Algorithm</span> {
-                    <span class='ident'>service</span>: <span class='self'>self</span>,
-                    <span class='ident'>user</span>: <span class='ident'>parts</span>[<span class='number'>0</span>],
-                    <span class='ident'>repo</span>: <span class='ident'>parts</span>[<span class='number'>1</span>],
-                    <span class='ident'>version</span>: <span class='ident'>Version</span>::<span class='ident'>from_str</span>(<span class='ident'>parts</span>[<span class='number'>2</span>])
-                }
-            ),
-            <span class='number'>2</span> <span class='op'>=&gt;</span> <span class='prelude-val'>Ok</span>(
-                <span class='ident'>Algorithm</span> {
-                    <span class='ident'>service</span>: <span class='self'>self</span>,
-                    <span class='ident'>user</span>: <span class='ident'>parts</span>[<span class='number'>0</span>],
-                    <span class='ident'>repo</span>: <span class='ident'>parts</span>[<span class='number'>1</span>],
-                    <span class='ident'>version</span>: <span class='ident'>Version</span>::<span class='ident'>Latest</span>
-                }
-            ),
-            _ <span class='op'>=&gt;</span> <span class='prelude-val'>Err</span>(<span class='string'>&quot;Invalid algorithm URI&quot;</span>)
-        }
-    }
-
-    <span class='doccomment'>/// Instantiate a `CollectionService` from this `Service`</span>
+    <span class='doccomment'>/// Instantiate a `DataDirectory` from this client</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// # Examples</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ```</span>
-    <span class='doccomment'>/// use algorithmia::Service;</span>
-    <span class='doccomment'>/// use algorithmia::collection::Collection;</span>
-    <span class='doccomment'>/// let service = Service::new(&quot;111112222233333444445555566&quot;);</span>
-    <span class='doccomment'>/// let rustfoo = service.collection(&quot;anowell/rustfoo&quot;);</span>
+    <span class='doccomment'>/// use algorithmia::Algorithmia;</span>
+    <span class='doccomment'>/// let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
+    <span class='doccomment'>/// let rustfoo = client.file(&quot;data://.my/rustfoo&quot;);</span>
     <span class='doccomment'>/// ```</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>collection</span>(<span class='self'>self</span>, <span class='ident'>path</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>Collection</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
-        <span class='ident'>Collection</span> {
-            <span class='ident'>service</span>: <span class='self'>self</span>,
-            <span class='ident'>path</span>: <span class='ident'>path</span>,
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>file</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>path</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>DataFile</span> {
+        <span class='ident'>DataFile</span>::<span class='ident'>new</span>(<span class='self'>self</span>.<span class='ident'>http_client</span>.<span class='ident'>clone</span>(), <span class='ident'>path</span>)
+    }
+
+    <span class='doccomment'>/// Instantiate a `DataPath` from this client</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// Use this if you don&#39;t explicitly know if a Data URI is to a directory or file</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// # Examples</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='doccomment'>/// use algorithmia::Algorithmia;</span>
+    <span class='doccomment'>/// let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
+    <span class='doccomment'>/// let rustfoo = client.data(&quot;data://.my/rustfoo/what_am_i&quot;);</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>data</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>path</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>DataPath</span> {
+        <span class='ident'>DataPath</span>::<span class='ident'>new</span>(<span class='self'>self</span>.<span class='ident'>http_client</span>.<span class='ident'>clone</span>(), <span class='ident'>path</span>)
+    }
+
+}
+
+
+<span class='doccomment'>/// Allow cloning in order to reuse http client (and API key) for multiple connections</span>
+<span class='kw'>impl</span> <span class='ident'>clone</span>::<span class='ident'>Clone</span> <span class='kw'>for</span> <span class='ident'>Algorithmia</span> {
+    <span class='kw'>fn</span> <span class='ident'>clone</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>Algorithmia</span> {
+        <span class='ident'>Algorithmia</span> {
+            <span class='ident'>http_client</span>: <span class='self'>self</span>.<span class='ident'>http_client</span>.<span class='ident'>clone</span>(),
         }
-    }
-
-    <span class='doccomment'>/// Helper to standardize decoding to a specific Algorithmia Result type</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>decode_to_result</span><span class='op'>&lt;</span><span class='ident'>T</span>: <span class='ident'>Decodable</span><span class='op'>&gt;</span>(<span class='ident'>res_json</span>: <span class='ident'>String</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>T</span>, <span class='ident'>AlgorithmiaError</span><span class='op'>&gt;</span> {
-        <span class='kw'>match</span> <span class='ident'>json</span>::<span class='ident'>decode</span>::<span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>res_json</span>) {
-            <span class='prelude-val'>Ok</span>(<span class='ident'>result</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Ok</span>(<span class='ident'>result</span>),
-            <span class='prelude-val'>Err</span>(<span class='ident'>why</span>) <span class='op'>=&gt;</span> <span class='kw'>match</span> <span class='ident'>json</span>::<span class='ident'>decode</span>::<span class='op'>&lt;</span><span class='ident'>ApiErrorResponse</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>res_json</span>) {
-                <span class='prelude-val'>Ok</span>(<span class='ident'>api_error</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Err</span>(<span class='ident'>AlgorithmiaError</span>::<span class='ident'>ApiError</span>(<span class='ident'>api_error</span>.<span class='ident'>error</span>)),
-                <span class='prelude-val'>Err</span>(_) <span class='op'>=&gt;</span> <span class='prelude-val'>Err</span>(<span class='ident'>AlgorithmiaError</span>::<span class='ident'>DecoderErrorWithContext</span>(<span class='ident'>why</span>, <span class='ident'>res_json</span>)),
-            }
-        }
-    }
-
-}
-
-<span class='kw'>impl</span> <span class='ident'>ApiClient</span> {
-    <span class='doccomment'>/// Instantiate an ApiClient - creates a new `hyper` client</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>(<span class='ident'>api_key</span>: <span class='ident'>String</span>) <span class='op'>-&gt;</span> <span class='ident'>ApiClient</span> {
-        <span class='ident'>ApiClient</span> {
-            <span class='ident'>api_key</span>: <span class='ident'>api_key</span>,
-            <span class='ident'>client</span>: <span class='ident'>Client</span>::<span class='ident'>new</span>(),
-            <span class='ident'>user_agent</span>: <span class='macro'>format</span><span class='macro'>!</span>(<span class='string'>&quot;rust/{} algorithmia.rs/{}&quot;</span>, <span class='macro'>option_env</span><span class='macro'>!</span>(<span class='string'>&quot;CFG_RELEASE&quot;</span>).<span class='ident'>unwrap_or</span>(<span class='string'>&quot;unknown&quot;</span>), <span class='macro'>option_env</span><span class='macro'>!</span>(<span class='string'>&quot;CARGO_PKG_VERSION&quot;</span>).<span class='ident'>unwrap_or</span>(<span class='string'>&quot;unknown&quot;</span>)),
-        }
-    }
-
-    <span class='doccomment'>/// Helper to make Algorithmia GET requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>get</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
-        <span class='self'>self</span>.<span class='ident'>client</span>.<span class='ident'>get</span>(<span class='ident'>url</span>)
-            .<span class='ident'>header</span>(<span class='ident'>UserAgent</span>(<span class='self'>self</span>.<span class='ident'>user_agent</span>.<span class='ident'>clone</span>()))
-            .<span class='ident'>header</span>(<span class='ident'>Authorization</span>(<span class='self'>self</span>.<span class='ident'>api_key</span>.<span class='ident'>clone</span>()))
-    }
-
-    <span class='doccomment'>/// Helper to make Algorithmia POST requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>post</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
-        <span class='self'>self</span>.<span class='ident'>client</span>.<span class='ident'>post</span>(<span class='ident'>url</span>)
-            .<span class='ident'>header</span>(<span class='ident'>UserAgent</span>(<span class='self'>self</span>.<span class='ident'>user_agent</span>.<span class='ident'>clone</span>()))
-            .<span class='ident'>header</span>(<span class='ident'>Authorization</span>(<span class='self'>self</span>.<span class='ident'>api_key</span>.<span class='ident'>clone</span>()))
-    }
-
-    <span class='doccomment'>/// Helper to make Algorithmia POST requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>delete</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
-        <span class='self'>self</span>.<span class='ident'>client</span>.<span class='ident'>delete</span>(<span class='ident'>url</span>)
-            .<span class='ident'>header</span>(<span class='ident'>UserAgent</span>(<span class='self'>self</span>.<span class='ident'>user_agent</span>.<span class='ident'>clone</span>()))
-            .<span class='ident'>header</span>(<span class='ident'>Authorization</span>(<span class='self'>self</span>.<span class='ident'>api_key</span>.<span class='ident'>clone</span>()))
-    }
-
-    <span class='doccomment'>/// Helper to POST JSON to Algorithmia with the correct Mime types</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>post_json</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
-        <span class='self'>self</span>.<span class='ident'>post</span>(<span class='ident'>url</span>)
-            .<span class='ident'>header</span>(<span class='ident'>ContentType</span>(<span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Json</span>, <span class='macro'>vec</span><span class='macro'>!</span>[])))
-            .<span class='ident'>header</span>(<span class='ident'>Accept</span>(<span class='macro'>vec</span><span class='macro'>!</span>[<span class='ident'>qitem</span>(<span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Json</span>, <span class='macro'>vec</span><span class='macro'>!</span>[]))]))
-    }
-}
-
-
-<span class='comment'>/*
-* Trait implementations
-*/</span>
-<span class='doccomment'>/// Allow cloning a service in order to reuse the API key for multiple connections</span>
-<span class='kw'>impl</span> <span class='ident'>std</span>::<span class='ident'>clone</span>::<span class='ident'>Clone</span> <span class='kw'>for</span> <span class='ident'>Service</span> {
-    <span class='kw'>fn</span> <span class='ident'>clone</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>Service</span> {
-        <span class='ident'>Service</span> {
-            <span class='ident'>api_key</span>: <span class='self'>self</span>.<span class='ident'>api_key</span>.<span class='ident'>clone</span>(),
-        }
-    }
-}
-
-<span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>io</span>::<span class='ident'>Error</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgorithmiaError</span> {
-    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>err</span>: <span class='ident'>io</span>::<span class='ident'>Error</span>) <span class='op'>-&gt;</span> <span class='ident'>AlgorithmiaError</span> {
-        <span class='ident'>IoError</span>(<span class='ident'>err</span>)
-    }
-}
-
-<span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>hyper</span>::<span class='ident'>HttpError</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgorithmiaError</span> {
-    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>err</span>: <span class='ident'>hyper</span>::<span class='ident'>HttpError</span>) <span class='op'>-&gt;</span> <span class='ident'>AlgorithmiaError</span> {
-        <span class='ident'>HttpError</span>(<span class='ident'>err</span>)
-    }
-}
-
-<span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>json</span>::<span class='ident'>DecoderError</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgorithmiaError</span> {
-    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>err</span>: <span class='ident'>json</span>::<span class='ident'>DecoderError</span>) <span class='op'>-&gt;</span> <span class='ident'>AlgorithmiaError</span> {
-        <span class='ident'>DecoderError</span>(<span class='ident'>err</span>)
-    }
-}
-
-<span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>json</span>::<span class='ident'>EncoderError</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgorithmiaError</span> {
-    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>err</span>: <span class='ident'>json</span>::<span class='ident'>EncoderError</span>) <span class='op'>-&gt;</span> <span class='ident'>AlgorithmiaError</span> {
-        <span class='ident'>EncoderError</span>(<span class='ident'>err</span>)
     }
 }
 </pre>
@@ -554,33 +306,44 @@
     <section class="footer"></section>
 
     <div id="help" class="hidden">
-        <div class="shortcuts">
-            <h1>Keyboard shortcuts</h1>
-            <dl>
-                <dt>?</dt>
-                <dd>Show this help dialog</dd>
-                <dt>S</dt>
-                <dd>Focus the search field</dd>
-                <dt>&larrb;</dt>
-                <dd>Move up in search results</dd>
-                <dt>&rarrb;</dt>
-                <dd>Move down in search results</dd>
-                <dt>&#9166;</dt>
-                <dd>Go to active search result</dd>
-            </dl>
-        </div>
-        <div class="infos">
-            <h1>Search tricks</h1>
-            <p>
-                Prefix searches with a type followed by a colon (e.g.
-                <code>fn:</code>) to restrict the search to a given type.
-            </p>
-            <p>
-                Accepted types are: <code>fn</code>, <code>mod</code>,
-                <code>struct</code>, <code>enum</code>,
-                <code>trait</code>, <code>typedef</code> (or
-                <code>tdef</code>).
-            </p>
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
         </div>
     </div>
 

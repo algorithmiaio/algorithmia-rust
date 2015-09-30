@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DirEntry",""]],"struct":[["DataAcl",""],["DataDir","Algorithmia Data Directory"],["DataFileEntry",""],["DirectoryDeleted","Response when deleting a new Directory"],["DirectoryListing",""],["DirectoryUpdated",""]]});

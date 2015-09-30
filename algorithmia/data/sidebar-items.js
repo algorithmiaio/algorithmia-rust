@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DataObject",""],["DataType",""]],"fn":[["parse_data_uri",""]],"mod":[["dir","Directory module for managing Algorithmia Data Directories"],["file","File module for managing Algorithmia Data Files"],["path",""]],"struct":[["DeletedResult",""],["XDataType",""],["XErrorMessage",""]]});

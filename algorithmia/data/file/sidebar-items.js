@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["DataFile","Algorithmia data file"],["DataResponse",""],["FileAdded","Response when creating a file via the Data API"],["FileDeleted","Response when deleting a file from the Data API"]]});

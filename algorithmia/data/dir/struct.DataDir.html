@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `DataDir` struct in crate `algorithmia`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, DataDir">
+
+    <title>algorithmia::data::dir::DataDir - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        <a href='../../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
+        <p class='location'><a href='../../index.html'>algorithmia</a>::<wbr><a href='../index.html'>data</a>::<wbr><a href='index.html'>dir</a></p><script>window.sidebarCurrent = {name: 'DataDir', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>algorithmia</a>::<wbr><a href='../index.html'>data</a>::<wbr><a href='index.html'>dir</a>::<wbr><a class='struct' href=''>DataDir</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-1828' class='srclink' href='../../../src/algorithmia/data/dir.rs.html#39-42' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct DataDir {
+    // some fields omitted
+}</pre><div class='docblock'><p>Algorithmia Data Directory</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a></code></h3><div class='impl-items'><h4 id='method.list' class='method'><code>fn <a href='#method.list' class='fnname'>list</a>(&amp;self) -&gt; <a class='struct' href='../../../algorithmia/data/dir/struct.DirectoryListing.html' title='algorithmia::data::dir::DirectoryListing'>DirectoryListing</a></code></h4>
+<div class='docblock'><p>Display Directory details if it exists</p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>my_dir</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>dir</span>(<span class='string'>&quot;.my/my_dir&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>dir_list</span> <span class='op'>=</span> <span class='ident'>my_dir</span>.<span class='ident'>list</span>();
+<span class='kw'>for</span> <span class='ident'>entry</span> <span class='kw'>in</span> <span class='ident'>dir_list</span> {
+    <span class='kw'>match</span> <span class='ident'>entry</span> {
+        <span class='prelude-val'>Ok</span>(<span class='ident'>DirEntry</span>::<span class='ident'>File</span>(<span class='ident'>f</span>)) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;File: {}&quot;</span>, <span class='ident'>f</span>.<span class='ident'>to_data_uri</span>()),
+        <span class='prelude-val'>Ok</span>(<span class='ident'>DirEntry</span>::<span class='ident'>Dir</span>(<span class='ident'>d</span>)) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Dir: {}&quot;</span>, <span class='ident'>d</span>.<span class='ident'>to_data_uri</span>()),
+        <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> { <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Error: {}&quot;</span>, <span class='ident'>err</span>); <span class='kw'>break</span>; },
+    }
+};</pre>
+</div><h4 id='method.create' class='method'><code>fn <a href='#method.create' class='fnname'>create</a>(&amp;self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Create a Directory</p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>my_dir</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>dir</span>(<span class='string'>&quot;.my/my_dir&quot;</span>);
+<span class='kw'>match</span> <span class='ident'>my_dir</span>.<span class='ident'>create</span>() {
+  <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Successfully created Directory&quot;</span>),
+  <span class='prelude-val'>Err</span>(<span class='ident'>e</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Error created directory: {}&quot;</span>, <span class='ident'>e</span>),
+};</pre>
+</div><h4 id='method.delete' class='method'><code>fn <a href='#method.delete' class='fnname'>delete</a>(&amp;self, force: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/dir/struct.DirectoryDeleted.html' title='algorithmia::data::dir::DirectoryDeleted'>DirectoryDeleted</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Delete a Directory</p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>my_dir</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>dir</span>(<span class='string'>&quot;.my/my_dir&quot;</span>);
+<span class='kw'>match</span> <span class='ident'>my_dir</span>.<span class='ident'>delete</span>(<span class='boolval'>false</span>) {
+  <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Successfully deleted Directory&quot;</span>),
+  <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Error deleting directory: {}&quot;</span>, <span class='ident'>err</span>),
+};</pre>
+</div><h4 id='method.put_file' class='method'><code>fn <a href='#method.put_file' class='fnname'>put_file</a>&lt;P: <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/std/path/struct.Path.html' title='std::path::Path'>Path</a>&gt;&gt;(&amp;self, file_path: P) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/file/struct.FileAdded.html' title='algorithmia::data::file::FileAdded'>FileAdded</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Upload a file to an existing Directory</p>
+
+<h1 id="examples" class='section-header'><a
+                           href="#examples">Examples</a></h1><pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
+<span class='kw'>let</span> <span class='ident'>my_dir</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>dir</span>(<span class='string'>&quot;.my/my_dir&quot;</span>);
+
+<span class='kw'>match</span> <span class='ident'>my_dir</span>.<span class='ident'>put_file</span>(<span class='string'>&quot;/path/to/file&quot;</span>) {
+  <span class='prelude-val'>Ok</span>(<span class='ident'>response</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Successfully uploaded to: {}&quot;</span>, <span class='ident'>response</span>.<span class='ident'>result</span>),
+  <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Error uploading file: {}&quot;</span>, <span class='ident'>err</span>),
+};</pre>
+</div><h4 id='method.child' class='method'><code>fn <a href='#method.child' class='fnname'>child</a>&lt;T: <a class='trait' href='../../../algorithmia/data/path/trait.HasDataPath.html' title='algorithmia::data::path::HasDataPath'>HasDataPath</a>&gt;(&amp;self, filename: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; T</code></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='../../../algorithmia/data/path/trait.HasDataPath.html' title='algorithmia::data::path::HasDataPath'>HasDataPath</a> for <a class='struct' href='../../../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.new' class='fnname'>new</a>(client: <a class='struct' href='../../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a>, path: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; Self</code></h4>
+<h4 id='method.path' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.path' class='fnname'>path</a>(&amp;self) -&gt; &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a></code></h4>
+<h4 id='method.client' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.client' class='fnname'>client</a>(&amp;self) -&gt; &amp;<a class='struct' href='../../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h4>
+<h4 id='method.to_url' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.to_url' class='fnname'>to_url</a>(&amp;self) -&gt; <a class='struct' href='../../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a></code></h4>
+<h4 id='method.to_data_uri' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.to_data_uri' class='fnname'>to_data_uri</a>(&amp;self) -&gt; <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+<h4 id='method.parent' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.parent' class='fnname'>parent</a>(&amp;self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a>&gt;</code></h4>
+<h4 id='method.basename' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.basename' class='fnname'>basename</a>(&amp;self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;</code></h4>
+<h4 id='method.exists' class='method'><code>fn <a href='../../../algorithmia/data/path/trait.HasDataPath.html#method.exists' class='fnname'>exists</a>(&amp;self) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+</div><h3 class='impl'><code>impl&lt;'a&gt; <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;&amp;'a <a class='struct' href='../../../algorithmia/data/path/struct.DataPath.html' title='algorithmia::data::path::DataPath'>DataPath</a>&gt; for <a class='struct' href='../../../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(d: &amp;'a <a class='struct' href='../../../algorithmia/data/path/struct.DataPath.html' title='algorithmia::data::path::DataPath'>DataPath</a>) -&gt; Self</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../../";
+        window.currentCrate = "algorithmia";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../../jquery.js"></script>
+    <script src="../../../main.js"></script>
+    
+    <script async src="../../../search-index.js"></script>
+</body>
+</html>
