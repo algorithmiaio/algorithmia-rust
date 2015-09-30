@@ -3,9 +3,9 @@ Algorithmia Rust Client Library
 
 A rust client library for the Algorithmia API.
 
-[Documentation](http://anowell.github.io/algorithmia_rust/algorithmia/)
+[Documentation](http://algorithmiaio.github.io/algorithmia-rust/algorithmia/)
 
-[![Build Status](https://travis-ci.org/anowell/algorithmia_rust.svg)](https://travis-ci.org/anowell/algorithmia_rust)
+[![Build Status](https://travis-ci.org/algorithmiaio/algorithmia-rust.svg)](https://travis-ci.org/algorithmiaio/algorithmia-rust)
 
 
 ## Examples
@@ -23,5 +23,5 @@ This project is built and tested with cargo:
 
 Pro-tip: before building docs, clone existing docs to track changes
 
-    git clone -b gh-pages git@github.com:anowell/algorithmia_rust.git target/doc
+    git clone -b gh-pages git@github.com:algorithmiaio/algorithmia-rust.git target/doc
 
