@@ -10,7 +10,7 @@ A rust client library for the Algorithmia API.
 
 ## Examples
 
-See the [examples](examples) as well as the [Algorithmia CLI repo](https://github.com/algorithmiaio/algorithmia_cli) for examples of using this library.
+See the [examples](examples) as well as the [Algorithmia CLI repo](https://github.com/algorithmiaio/algorithmia-cli) for examples of using this library.
 
 ## Build & Test
 
