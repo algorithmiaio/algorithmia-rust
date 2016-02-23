@@ -16,12 +16,13 @@ See the [examples](examples) as well as the [Algorithmia CLI repo](https://githu
 
 This project is built and tested with cargo:
 
-    cargo build
-    cargo test
-    cargo doc --no-deps
-
+```bash
+cargo build
+cargo test
+cargo doc --no-deps
+```
 
 Pro-tip: before building docs, clone existing docs to track changes
-
-    git clone -b gh-pages git@github.com:algorithmiaio/algorithmia-rust.git target/doc
-
+```bash
+git clone -b gh-pages git@github.com:algorithmiaio/algorithmia-rust.git target/doc
+```
