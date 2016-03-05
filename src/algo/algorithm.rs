@@ -37,7 +37,7 @@ use std::ops::{Deref, DerefMut};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
-enum AlgoInput<'a> {
+pub enum AlgoInput<'a> {
     Text(&'a str),
     Binary(&'a [u8]),
     Json(String)
@@ -69,10 +69,10 @@ pub struct AlgoMetadata {
 
 pub struct AlgoResponse {
     pub metadata: AlgoMetadata,
-    result: AlgoResult,
+    result: AlgoOutput,
 }
 
-enum AlgoResult {
+pub enum AlgoOutput {
     Void,
     Text(String),
     Json(String),
@@ -222,21 +222,21 @@ impl AlgoOptions {
 impl AlgoResponse {
     pub fn result_json(&self) -> Result<&str, Error> {
         match self.result {
-            AlgoResult::Json(ref json) => Ok(&json),
+            AlgoOutput::Json(ref json) => Ok(&json),
             _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
         }
     }
 
     pub fn result_bytes(&self) -> Result<&[u8], Error> {
         match self.result {
-            AlgoResult::Binary(ref bytes) => Ok(&bytes),
+            AlgoOutput::Binary(ref bytes) => Ok(&bytes),
             _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
         }
     }
 
     pub fn result_str(&self) -> Result<&str, Error> {
         match self.result {
-            AlgoResult::Text(ref text) => Ok(&text),
+            AlgoOutput::Text(ref text) => Ok(&text),
             _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
         }
     }
@@ -271,16 +271,16 @@ impl FromStr for AlgoResponse {
             None => return Err(json::DecoderError::MissingFieldError("metadata".into()).into()),
         };
 
-        // Construct the AlgoResult object
+        // Construct the AlgoOutput object
         let result = match (&*metadata.content_type, data.search("result")) {
-            ("void", _) => AlgoResult::Void,
-            ("json", Some(json)) => AlgoResult::Json(json.to_string()),
+            ("void", _) => AlgoOutput::Void,
+            ("json", Some(json)) => AlgoOutput::Json(json.to_string()),
             ("text", Some(json)) => match json.as_string() {
-                Some(text) => AlgoResult::Text(text.into()),
+                Some(text) => AlgoOutput::Text(text.into()),
                 None => return Err(Error::ContentTypeError("invalid text".into())),
             },
             ("binary", Some(json)) => match json.as_string() {
-                Some(text) => AlgoResult::Binary(try!(text.from_base64())),
+                Some(text) => AlgoOutput::Binary(try!(text.from_base64())),
                 None => return Err(Error::ContentTypeError("invalid text".into())),
             },
             (_, None) => return Err(json::DecoderError::MissingFieldError("result".into()).into()),
@@ -295,9 +295,9 @@ impl FromStr for AlgoResponse {
 impl fmt::Display for AlgoResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.result {
-            AlgoResult::Void => Err(fmt::Error),
-            AlgoResult::Text(ref s) | AlgoResult::Json(ref s) => f.write_str(s),
-            AlgoResult::Binary(ref bytes) => f.write_str(&String::from_utf8_lossy(bytes)),
+            AlgoOutput::Void => Err(fmt::Error),
+            AlgoOutput::Text(ref s) | AlgoOutput::Json(ref s) => f.write_str(s),
+            AlgoOutput::Binary(ref bytes) => f.write_str(&String::from_utf8_lossy(bytes)),
         }
     }
 }
@@ -306,9 +306,9 @@ impl Read for AlgoResponse {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut out = buf; // why do I need this binding?
         match self.result {
-            AlgoResult::Void => Err(io::Error::new(io::ErrorKind::Other, "cannot read void content type")),
-            AlgoResult::Text(ref s) | AlgoResult::Json(ref s) => out.write(s.as_bytes()),
-            AlgoResult::Binary(ref bytes) => out.write(bytes),
+            AlgoOutput::Void => Err(io::Error::new(io::ErrorKind::Other, "cannot read void content type")),
+            AlgoOutput::Text(ref s) | AlgoOutput::Json(ref s) => out.write(s.as_bytes()),
+            AlgoOutput::Binary(ref bytes) => out.write(bytes),
         }
     }
 }
@@ -342,6 +342,19 @@ impl <'a> From<&'a [u8]> for AlgoInput<'a> {
         AlgoInput::Binary(bytes)
     }
 }
+
+impl From<String> for AlgoOutput {
+    fn from(text: String) -> Self {
+        AlgoOutput::Text(text)
+    }
+}
+
+impl <'a> From<&'a [u8]> for AlgoOutput {
+    fn from(bytes: &'a [u8]) -> Self {
+        AlgoOutput::Binary(bytes.into())
+    }
+}
+
 
 impl Deref for AlgoOptions {
     type Target = HashMap<String, String>;
