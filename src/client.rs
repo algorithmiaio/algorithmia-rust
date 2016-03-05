@@ -29,32 +29,32 @@ impl HttpClient {
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn get(&self, url: Url) -> RequestBuilder<Url> {
+    pub fn get(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Get, url)
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn head(&self, url: Url) -> RequestBuilder<Url> {
+    pub fn head(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Head, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn post(&self, url: Url) -> RequestBuilder<Url> {
+    pub fn post(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Post, url)
     }
 
     /// Helper to make Algorithmia PUT requests with the API key
-    pub fn put(&self, url: Url) -> RequestBuilder<Url> {
+    pub fn put(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Put, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn delete(&self, url: Url) -> RequestBuilder<Url> {
+    pub fn delete(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Delete, url)
     }
 
 
-    fn build_request(&self, verb: Method, url: Url) -> RequestBuilder<Url> {
+    fn build_request(&self, verb: Method, url: Url) -> RequestBuilder {
         let req = self.hyper_client.request(verb, url);
 
         // TODO: Support Secure Auth
