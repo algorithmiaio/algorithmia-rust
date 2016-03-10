@@ -2,6 +2,7 @@ extern crate algorithmia;
 extern crate rustc_serialize;
 
 use algorithmia::Algorithmia;
+use algorithmia::data::ReadAcl;
 use std::env;
 
 
@@ -19,7 +20,7 @@ fn main() {
     };
 
     let client = Algorithmia::client(&*api_key);
-    match client.clone().dir(&*path).create() {
+    match client.clone().dir(&*path).create(ReadAcl::Private) {
         Ok(_) => println!("Successfully created collection {}", path),
         Err(e) => println!("Error creating collection: {}", e),
     }

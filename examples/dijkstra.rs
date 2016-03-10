@@ -68,6 +68,6 @@ fn main() {
 
     let output = input_map.get_dijkstra_route(&start, &end);
     let result: Route = output.result().unwrap();
-    println!("Shortest route: {}", result.connect("->"));
+    println!("Shortest route: {}", result.join("->"));
     println!("Completed in {} seconds.", output.metadata.duration);
 }

@@ -1,4 +1,4 @@
-pub use data::dir::{DataDir, DirEntry};
+pub use data::dir::{DataDir, DirEntry, DataAcl, ReadAcl};
 pub use self::file::DataFile;
 pub use self::path::{DataPath, HasDataPath};
 
