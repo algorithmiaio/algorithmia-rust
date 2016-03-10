@@ -4,12 +4,13 @@
 //!
 //! ```no_run
 //! use algorithmia::Algorithmia;
+//! use algorithmia::data::DataAcl;
 //! use std::fs::File;
 //!
 //! let client = Algorithmia::client("111112222233333444445555566");
 //! let my_dir = client.dir(".my/my_dir");
 //!
-//! my_dir.create();
+//! my_dir.create(DataAcl::default());
 //! my_dir.put_file("/path/to/file");
 //! ```
 
@@ -88,9 +89,36 @@ impl Decodable for FileItem {
 }
 
 
+/// ACL that indicates permissions for a DataDirectory
+/// See also: [ReadAcl](enum.ReadAcl.html) enum to construct a DataACL
 #[derive(RustcDecodable, RustcEncodable, Debug)]
 pub struct DataAcl {
     pub read: Vec<String>
+}
+
+pub enum ReadAcl {
+  /// Readable only by owner
+  Private,
+  /// Readable by owner's algorithms (regardless of caller)
+  MyAlgorithms,
+  /// Readable by any user
+  Public,
+}
+
+impl Default for DataAcl {
+  fn default() -> Self {
+    ReadAcl::MyAlgorithms.into()
+  }
+}
+
+impl From<ReadAcl> for DataAcl {
+    fn from(acl: ReadAcl) -> Self {
+      match acl {
+        ReadAcl::Private => DataAcl { read: vec![] },
+        ReadAcl::MyAlgorithms => DataAcl { read: vec!["algo://.my/*".into()] },
+        ReadAcl::Public => DataAcl { read: vec!["user://*".into()] },
+      }
+    }
 }
 
 /// Response when querying an existing Directory
@@ -235,24 +263,27 @@ impl DataDir {
 
     /// Create a Directory
     ///
+    /// Use `DataAcl::default()` or the `ReadAcl` enum to set the ACL
+    ///
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
+    /// # use algorithmia::data::DataAcl;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let my_dir = client.dir(".my/my_dir");
-    /// match my_dir.create() {
+    /// match my_dir.create(DataAcl::default()) {
     ///   Ok(_) => println!("Successfully created Directory"),
     ///   Err(e) => println!("Error created directory: {}", e),
     /// };
     /// ```
-    pub fn create(&self) -> Result<(), Error> {
+    pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
         let parent = try!(self.parent().ok_or(Error::DataPathError("has no parent".into())));
         let url = parent.to_url();
 
         // TODO: address complete abuse of this structure
         let input_data = FolderItem {
             name: try!(self.basename().ok_or(Error::DataPathError("has no basename".into()))).into(),
-            acl: Some(DataAcl { read: vec![] }),
+            acl: Some(acl.into()),
         };
         let raw_input = try!(json::encode(&input_data));
 
@@ -349,6 +380,7 @@ impl DataDir {
 #[cfg(test)]
 mod tests {
     use data::HasDataPath;
+    use super::*;
     use Algorithmia;
 
     fn mock_client() -> Algorithmia { Algorithmia::client("") }
@@ -371,4 +403,29 @@ mod tests {
         let expected = mock_client().dir("data://anowell");
         assert_eq!(dir.parent().unwrap().path, expected.path);
     }
+
+    #[test]
+    fn test_default_acl() {
+        let acl: DataAcl = DataAcl::default();
+        assert_eq!(acl.read, vec!["algo://.my/*".to_string()]);
+    }
+
+    #[test]
+    fn test_private_acl() {
+        let acl: DataAcl = ReadAcl::Private.into();
+        assert!(acl.read.is_empty());
+    }
+
+    #[test]
+    fn test_public_acl() {
+        let acl: DataAcl = ReadAcl::Public.into();
+        assert_eq!(acl.read, vec!["user://*".to_string()]);
+    }
+
+    #[test]
+    fn test_myalgos_acl() {
+        let acl: DataAcl = ReadAcl::MyAlgorithms.into();
+        assert_eq!(acl.read, vec!["algo://.my/*".to_string()]);
+    }
+
 }
