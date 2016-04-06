@@ -29,6 +29,7 @@ use hyper::mime::{Mime, TopLevel, SubLevel};
 use hyper::{self, Url};
 use hyper::client::response::Response;
 
+use std::borrow::Cow;
 use std::io::{self, Read, Write};
 use std::str::FromStr;
 use std::fmt;
@@ -40,7 +41,7 @@ static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 pub enum AlgoInput<'a> {
     Text(&'a str),
     Binary(&'a [u8]),
-    Json(String)
+    Json(Cow<'a, str>)
 }
 
 
@@ -369,7 +370,7 @@ impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
     fn from(encodable: &'a E) -> Self {
         // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
         //       or store a result and let pipe() do error handling
-        AlgoInput::Json(json::encode(encodable).unwrap())
+        AlgoInput::Json(json::encode(encodable).unwrap().into())
     }
 }
 
