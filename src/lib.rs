@@ -29,9 +29,13 @@ use client::HttpClient;
 
 use std::clone;
 
+/// Interact with Algorithmia algorithms
 pub mod algo;
+/// Manage data for algorithms
 pub mod data;
+/// Error types
 pub mod error;
+/// Internal client (do not use directly) - use [Algorithmia struct](struct.Algorithmia.html) instead
 pub mod client;
 pub mod json_helpers;
 pub use hyper::{mime, Url};
