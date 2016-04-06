@@ -1,5 +1,5 @@
 use std::error::Error as StdError;
-use std::{fmt, io};
+use std::{fmt, io, str, string};
 use rustc_serialize::{json, base64};
 use hyper;
 
@@ -16,6 +16,7 @@ pub enum Error {
     EncoderError(json::EncoderError),
     FromBase64Error(base64::FromBase64Error),
     IoError(io::Error),
+    Utf8Error(str::Utf8Error),
 }
 
 #[derive(RustcDecodable, Debug)]
@@ -56,6 +57,7 @@ impl StdError for Error {
             Error::EncoderError(ref e) => e.description(),
             Error::FromBase64Error(ref e) => e.description(),
             Error::IoError(ref e) => e.description(),
+            Error::Utf8Error(ref e) => e.description(),
         }
     }
 
@@ -66,6 +68,7 @@ impl StdError for Error {
             Error::EncoderError(ref e) => Some(e),
             Error::FromBase64Error(ref e) => Some(e),
             Error::IoError(ref e) => Some(e),
+            Error::Utf8Error(ref e) => Some(e),
             _ => None,
         }
     }
@@ -126,5 +129,17 @@ impl From<json::EncoderError> for Error {
 impl From<base64::FromBase64Error> for Error {
     fn from(err: base64::FromBase64Error) -> Error {
         Error::FromBase64Error(err)
+    }
+}
+
+impl From<str::Utf8Error> for Error {
+    fn from(err: str::Utf8Error) -> Error {
+        Error::Utf8Error(err)
+    }
+}
+
+impl From<string::FromUtf8Error> for Error {
+    fn from(err: string::FromUtf8Error) -> Error {
+        Error::Utf8Error(err.utf8_error())
     }
 }
