@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Version","Version of an algorithm"]],"struct":[["AlgoMetadata",""],["AlgoOptions",""],["AlgoRef",""],["AlgoResponse",""],["Algorithm","Algorithmia algorithm"]]});
+initSidebarItems({"enum":[["AlgoInput",""],["AlgoOutput",""],["Version","Version of an algorithm"]],"struct":[["AlgoMetadata",""],["AlgoOptions",""],["AlgoRef",""],["AlgoResponse",""],["Algorithm","Algorithmia algorithm"]]});

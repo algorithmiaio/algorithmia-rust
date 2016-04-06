@@ -9,6 +9,7 @@
 
     <title>algorithmia::data - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
 
     
@@ -24,10 +25,10 @@
 
     
 
-    <section class="sidebar">
+    <nav class="sidebar">
         <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
         <p class='location'><a href='../index.html'>algorithmia</a></p><script>window.sidebarCurrent = {name: 'data', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
-    </section>
+    </nav>
 
     <nav class="sub">
         <form class="search-form js-only">
@@ -45,9 +46,10 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-1786' class='srclink' href='../../src/algorithmia/data/mod.rs.html#1-36' title='goto source code'>[src]</a></span></h1>
-<h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
-<table><tr><td><code>pub use data::dir::{<a class='struct' href='../../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a>, <a class='enum' href='../../algorithmia/data/dir/enum.DirEntry.html' title='algorithmia::data::dir::DirEntry'>DirEntry</a>};</code></td></tr><tr><td><code>pub use self::<a class='mod'
+        </span><a id='src-313' class='srclink' href='../../src/algorithmia/data/mod.rs.html#1-36' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Manage data for algorithms</p>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use data::dir::{<a class='struct' href='../../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a>, <a class='enum' href='../../algorithmia/data/dir/enum.DirEntry.html' title='algorithmia::data::dir::DirEntry'>DirEntry</a>, <a class='struct' href='../../algorithmia/data/dir/struct.DataAcl.html' title='algorithmia::data::dir::DataAcl'>DataAcl</a>, <a class='enum' href='../../algorithmia/data/dir/enum.ReadAcl.html' title='algorithmia::data::dir::ReadAcl'>ReadAcl</a>};</code></td></tr><tr><td><code>pub use self::<a class='mod'
                                             href='./file/index.html'>file</a>::<a class='struct' href='../../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a>;</code></td></tr><tr><td><code>pub use self::path::{<a class='struct' href='../../algorithmia/data/path/struct.DataPath.html' title='algorithmia::data::path::DataPath'>DataPath</a>, <a class='trait' href='../../algorithmia/data/path/trait.HasDataPath.html' title='algorithmia::data::path::HasDataPath'>HasDataPath</a>};</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
 <table>
                     <tr class=' module-item'>
@@ -131,10 +133,12 @@
 
     <section class="footer"></section>
 
-    <div id="help" class="hidden">
+    <aside id="help" class="hidden">
         <div>
+            <h1 class="hidden">Help</h1>
+
             <div class="shortcuts">
-                <h1>Keyboard Shortcuts</h1>
+                <h2>Keyboard Shortcuts</h2>
 
                 <dl>
                     <dt>?</dt>
@@ -151,7 +155,7 @@
             </div>
 
             <div class="infos">
-                <h1>Search Tricks</h1>
+                <h2>Search Tricks</h2>
 
                 <p>
                     Prefix searches with a type followed by a colon (e.g.
@@ -161,8 +165,8 @@
                 <p>
                     Accepted types are: <code>fn</code>, <code>mod</code>,
                     <code>struct</code>, <code>enum</code>,
-                    <code>trait</code>, <code>typedef</code> (or
-                    <code>tdef</code>).
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
                 </p>
 
                 <p>
@@ -171,7 +175,7 @@
                 </p>
             </div>
         </div>
-    </div>
+    </aside>
 
     
 
@@ -183,6 +187,6 @@
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>

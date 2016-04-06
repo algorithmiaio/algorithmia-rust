@@ -9,6 +9,7 @@
 
     <title>algorithmia::algo::Algorithm - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
 
     
@@ -24,10 +25,10 @@
 
     
 
-    <section class="sidebar">
+    <nav class="sidebar">
         <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
         <p class='location'><a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>algo</a></p><script>window.sidebarCurrent = {name: 'Algorithm', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
-    </section>
+    </nav>
 
     <nav class="sub">
         <form class="search-form js-only">
@@ -45,9 +46,9 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-76' class='srclink' href='../../src/algorithmia/algo/algorithm.rs.html#48-51' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-41' class='srclink' href='../../src/algorithmia/algo/algorithm.rs.html#49-52' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Algorithm {
-    pub path: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
+    pub path: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
     // some fields omitted
 }</pre><div class='docblock'><p>Algorithmia algorithm</p>
 </div><h2 class='fields'>Fields</h2>
@@ -55,9 +56,9 @@
                                   <td id='structfield.path'><code>path</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../algorithmia/algo/struct.Algorithm.html' title='algorithmia::algo::Algorithm'>Algorithm</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(client: <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a>, algo_ref: <a class='struct' href='../../algorithmia/algo/struct.AlgoRef.html' title='algorithmia::algo::AlgoRef'>AlgoRef</a>) -&gt; <a class='struct' href='../../algorithmia/algo/struct.Algorithm.html' title='algorithmia::algo::Algorithm'>Algorithm</a></code></h4>
 <h4 id='method.to_url' class='method'><code>fn <a href='#method.to_url' class='fnname'>to_url</a>(&amp;self) -&gt; <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a></code></h4>
 <div class='docblock'><p>Get the API Endpoint URL for this Algorithm</p>
-</div><h4 id='method.to_algo_uri' class='method'><code>fn <a href='#method.to_algo_uri' class='fnname'>to_algo_uri</a>(&amp;self) -&gt; <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
+</div><h4 id='method.to_algo_uri' class='method'><code>fn <a href='#method.to_algo_uri' class='fnname'>to_algo_uri</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
 <div class='docblock'><p>Get the Algorithmia algo URI for this Algorithm</p>
-</div><h4 id='method.pipe' class='method'><code>fn <a href='#method.pipe' class='fnname'>pipe</a>&lt;'a, I&gt;(&amp;'a self, input_data: I, options: <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/algo/struct.AlgoResponse.html' title='algorithmia::algo::AlgoResponse'>AlgoResponse</a>, <a class='enum' href='../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt; <span class='where'>where I: <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;AlgoInput&lt;'a&gt;&gt;</span></code></h4>
+</div><h4 id='method.pipe' class='method'><code>fn <a href='#method.pipe' class='fnname'>pipe</a>&lt;'a, I&gt;(&amp;'a self, input_data: I, options: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/algo/struct.AlgoResponse.html' title='algorithmia::algo::AlgoResponse'>AlgoResponse</a>, <a class='enum' href='../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt; <span class='where'>where I: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoInput.html' title='algorithmia::algo::AlgoInput'>AlgoInput</a>&lt;'a&gt;&gt;</span></code></h4>
 <div class='docblock'><p>Execute an algorithm with</p>
 
 <p>Content-type is determined by the type of input_data
@@ -71,8 +72,7 @@
 <p>If you want a string to be sent as application/json,
    use <code>pipe_json(...)</code> instead</p>
 
-<h1 id="examples" class='section-header'><a
-                           href="#examples">Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1><pre class='rust rust-example-rendered'>
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>moving_avg</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>algo</span>(<span class='string'>&quot;timeseries/SimpleMovingAverage/0.1&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>input</span> <span class='op'>=</span> (<span class='macro'>vec</span><span class='macro'>!</span>[<span class='number'>0</span>,<span class='number'>1</span>,<span class='number'>2</span>,<span class='number'>3</span>,<span class='number'>15</span>,<span class='number'>4</span>,<span class='number'>5</span>,<span class='number'>6</span>,<span class='number'>7</span>], <span class='number'>3</span>);
@@ -80,13 +80,12 @@
     <span class='prelude-val'>Ok</span>(<span class='ident'>response</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{}&quot;</span>, <span class='ident'>response</span>.<span class='ident'>result_json</span>().<span class='ident'>unwrap</span>()),
     <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;ERROR: {}&quot;</span>, <span class='ident'>err</span>),
 };</pre>
-</div><h4 id='method.pipe_json' class='method'><code>fn <a href='#method.pipe_json' class='fnname'>pipe_json</a>(&amp;self, json_input: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, options: <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/algo/struct.AlgoResponse.html' title='algorithmia::algo::AlgoResponse'>AlgoResponse</a>, <a class='enum' href='../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+</div><h4 id='method.pipe_json' class='method'><code>fn <a href='#method.pipe_json' class='fnname'>pipe_json</a>(&amp;self, json_input: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, options: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;<a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/algo/struct.AlgoResponse.html' title='algorithmia::algo::AlgoResponse'>AlgoResponse</a>, <a class='enum' href='../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
 <div class='docblock'><p>Execute an algorithm with explicitly set content-type</p>
 
 <p><code>pipe</code> provides a JSON encoding/decoding wrapper around this method</p>
 
-<h1 id="examples" class='section-header'><a
-                           href="#examples">Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples-1' class='section-header'><a href='#examples-1'>Examples</a></h1><pre class='rust rust-example-rendered'>
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>minmax</span>  <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>algo</span>(<span class='string'>&quot;codeb34v3r/FindMinMax/0.1&quot;</span>);
 
@@ -94,16 +93,18 @@
    <span class='prelude-val'>Ok</span>(<span class='ident'>response</span>) <span class='op'>=&gt;</span> <span class='ident'>response</span>.<span class='ident'>result_json</span>().<span class='ident'>unwrap</span>().<span class='ident'>to_owned</span>(),
    <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>panic</span><span class='macro'>!</span>(<span class='string'>&quot;{}&quot;</span>, <span class='ident'>err</span>),
 };</pre>
-</div><h4 id='method.pipe_as' class='method'><code>fn <a href='#method.pipe_as' class='fnname'>pipe_as</a>&lt;'a, B&gt;(&amp;'a self, input_data: B, content_type: <a class='struct' href='../../algorithmia/mime/struct.Mime.html' title='algorithmia::mime::Mime'>Mime</a>, options: <a class='enum' href='http://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/client/struct.Response.html' title='algorithmia::client::Response'>Response</a>, <a class='enum' href='https://hyperium.github.io/hyper/hyper/error/enum.Error.html' title='hyper::error::Error'>Error</a>&gt; <span class='where'>where B: <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../algorithmia/client/enum.Body.html' title='algorithmia::client::Body'>Body</a>&lt;'a&gt;&gt;</span></code></h4>
+</div><h4 id='method.pipe_as' class='method'><code>fn <a href='#method.pipe_as' class='fnname'>pipe_as</a>&lt;'a, B&gt;(&amp;'a self, input_data: B, content_type: <a class='struct' href='../../algorithmia/mime/struct.Mime.html' title='algorithmia::mime::Mime'>Mime</a>, options: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/client/struct.Response.html' title='algorithmia::client::Response'>Response</a>, <a class='enum' href='https://hyperium.github.io/hyper/hyper/error/enum.Error.html' title='hyper::error::Error'>Error</a>&gt; <span class='where'>where B: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../algorithmia/client/enum.Body.html' title='algorithmia::client::Body'>Body</a>&lt;'a&gt;&gt;</span></code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
 
-    <div id="help" class="hidden">
+    <aside id="help" class="hidden">
         <div>
+            <h1 class="hidden">Help</h1>
+
             <div class="shortcuts">
-                <h1>Keyboard Shortcuts</h1>
+                <h2>Keyboard Shortcuts</h2>
 
                 <dl>
                     <dt>?</dt>
@@ -120,7 +121,7 @@
             </div>
 
             <div class="infos">
-                <h1>Search Tricks</h1>
+                <h2>Search Tricks</h2>
 
                 <p>
                     Prefix searches with a type followed by a colon (e.g.
@@ -130,8 +131,8 @@
                 <p>
                     Accepted types are: <code>fn</code>, <code>mod</code>,
                     <code>struct</code>, <code>enum</code>,
-                    <code>trait</code>, <code>typedef</code> (or
-                    <code>tdef</code>).
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
                 </p>
 
                 <p>
@@ -140,7 +141,7 @@
                 </p>
             </div>
         </div>
-    </div>
+    </aside>
 
     
 
@@ -152,6 +153,6 @@
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>

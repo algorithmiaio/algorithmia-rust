@@ -9,6 +9,7 @@
 
     <title>client.rs.html -- source</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
 
     
@@ -24,10 +25,10 @@
 
     
 
-    <section class="sidebar">
+    <nav class="sidebar">
         <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
         
-    </section>
+    </nav>
 
     <nav class="sub">
         <form class="search-form js-only">
@@ -149,32 +150,32 @@
     }
 
     <span class='doccomment'>/// Helper to make Algorithmia GET requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>get</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>get</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span> {
         <span class='self'>self</span>.<span class='ident'>build_request</span>(<span class='ident'>Method</span>::<span class='ident'>Get</span>, <span class='ident'>url</span>)
     }
 
     <span class='doccomment'>/// Helper to make Algorithmia GET requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>head</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>head</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span> {
         <span class='self'>self</span>.<span class='ident'>build_request</span>(<span class='ident'>Method</span>::<span class='ident'>Head</span>, <span class='ident'>url</span>)
     }
 
     <span class='doccomment'>/// Helper to make Algorithmia POST requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>post</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>post</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span> {
         <span class='self'>self</span>.<span class='ident'>build_request</span>(<span class='ident'>Method</span>::<span class='ident'>Post</span>, <span class='ident'>url</span>)
     }
 
     <span class='doccomment'>/// Helper to make Algorithmia PUT requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>put</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>put</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span> {
         <span class='self'>self</span>.<span class='ident'>build_request</span>(<span class='ident'>Method</span>::<span class='ident'>Put</span>, <span class='ident'>url</span>)
     }
 
     <span class='doccomment'>/// Helper to make Algorithmia POST requests with the API key</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>delete</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>delete</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span> {
         <span class='self'>self</span>.<span class='ident'>build_request</span>(<span class='ident'>Method</span>::<span class='ident'>Delete</span>, <span class='ident'>url</span>)
     }
 
 
-    <span class='kw'>fn</span> <span class='ident'>build_request</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>verb</span>: <span class='ident'>Method</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span><span class='op'>&lt;</span><span class='ident'>Url</span><span class='op'>&gt;</span> {
+    <span class='kw'>fn</span> <span class='ident'>build_request</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>verb</span>: <span class='ident'>Method</span>, <span class='ident'>url</span>: <span class='ident'>Url</span>) <span class='op'>-&gt;</span> <span class='ident'>RequestBuilder</span> {
         <span class='kw'>let</span> <span class='ident'>req</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>hyper_client</span>.<span class='ident'>request</span>(<span class='ident'>verb</span>, <span class='ident'>url</span>);
 
         <span class='comment'>// TODO: Support Secure Auth</span>
@@ -201,10 +202,12 @@
 
     <section class="footer"></section>
 
-    <div id="help" class="hidden">
+    <aside id="help" class="hidden">
         <div>
+            <h1 class="hidden">Help</h1>
+
             <div class="shortcuts">
-                <h1>Keyboard Shortcuts</h1>
+                <h2>Keyboard Shortcuts</h2>
 
                 <dl>
                     <dt>?</dt>
@@ -221,7 +224,7 @@
             </div>
 
             <div class="infos">
-                <h1>Search Tricks</h1>
+                <h2>Search Tricks</h2>
 
                 <p>
                     Prefix searches with a type followed by a colon (e.g.
@@ -231,8 +234,8 @@
                 <p>
                     Accepted types are: <code>fn</code>, <code>mod</code>,
                     <code>struct</code>, <code>enum</code>,
-                    <code>trait</code>, <code>typedef</code> (or
-                    <code>tdef</code>).
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
                 </p>
 
                 <p>
@@ -241,7 +244,7 @@
                 </p>
             </div>
         </div>
-    </div>
+    </aside>
 
     
 
@@ -253,6 +256,6 @@
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>

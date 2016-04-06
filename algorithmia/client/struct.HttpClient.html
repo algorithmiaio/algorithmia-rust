@@ -9,6 +9,7 @@
 
     <title>algorithmia::client::HttpClient - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
 
     
@@ -24,10 +25,10 @@
 
     
 
-    <section class="sidebar">
+    <nav class="sidebar">
         <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
         <p class='location'><a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>client</a></p><script>window.sidebarCurrent = {name: 'HttpClient', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
-    </section>
+    </nav>
 
     <nav class="sub">
         <form class="search-form js-only">
@@ -45,37 +46,39 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-6199' class='srclink' href='../../src/algorithmia/client.rs.html#13-18' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1105' class='srclink' href='../../src/algorithmia/client.rs.html#13-18' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct HttpClient {
-    pub base_url: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
+    pub base_url: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
     // some fields omitted
 }</pre><div class='docblock'><p>Internal HttpClient to build requests: wraps <code>hyper</code> client</p>
 </div><h2 class='fields'>Fields</h2>
 <table><tr class='stab '>
-                                  <td id='structfield.base_url'><code>base_url</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(api_key: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, base_url: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h4>
+                                  <td id='structfield.base_url'><code>base_url</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(api_key: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, base_url: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h4>
 <div class='docblock'><p>Instantiate an HttpClient - creates a new <code>hyper</code> client</p>
-</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;<a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>&gt;</code></h4>
+</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
 <div class='docblock'><p>Helper to make Algorithmia GET requests with the API key</p>
-</div><h4 id='method.head' class='method'><code>fn <a href='#method.head' class='fnname'>head</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;<a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>&gt;</code></h4>
+</div><h4 id='method.head' class='method'><code>fn <a href='#method.head' class='fnname'>head</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
 <div class='docblock'><p>Helper to make Algorithmia GET requests with the API key</p>
-</div><h4 id='method.post' class='method'><code>fn <a href='#method.post' class='fnname'>post</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;<a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>&gt;</code></h4>
+</div><h4 id='method.post' class='method'><code>fn <a href='#method.post' class='fnname'>post</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
 <div class='docblock'><p>Helper to make Algorithmia POST requests with the API key</p>
-</div><h4 id='method.put' class='method'><code>fn <a href='#method.put' class='fnname'>put</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;<a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>&gt;</code></h4>
+</div><h4 id='method.put' class='method'><code>fn <a href='#method.put' class='fnname'>put</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
 <div class='docblock'><p>Helper to make Algorithmia PUT requests with the API key</p>
-</div><h4 id='method.delete' class='method'><code>fn <a href='#method.delete' class='fnname'>delete</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a>&lt;<a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>&gt;</code></h4>
+</div><h4 id='method.delete' class='method'><code>fn <a href='#method.delete' class='fnname'>delete</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
 <div class='docblock'><p>Helper to make Algorithmia POST requests with the API key</p>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h3><div class='docblock'><p>Allow cloning in order to reuse http client (and API key) for multiple connections</p>
-</div><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h4>
-<h4 id='method.clone_from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h3><div class='docblock'><p>Allow cloning in order to reuse http client (and API key) for multiple connections</p>
+</div><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h4>
+<h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
 
-    <div id="help" class="hidden">
+    <aside id="help" class="hidden">
         <div>
+            <h1 class="hidden">Help</h1>
+
             <div class="shortcuts">
-                <h1>Keyboard Shortcuts</h1>
+                <h2>Keyboard Shortcuts</h2>
 
                 <dl>
                     <dt>?</dt>
@@ -92,7 +95,7 @@
             </div>
 
             <div class="infos">
-                <h1>Search Tricks</h1>
+                <h2>Search Tricks</h2>
 
                 <p>
                     Prefix searches with a type followed by a colon (e.g.
@@ -102,8 +105,8 @@
                 <p>
                     Accepted types are: <code>fn</code>, <code>mod</code>,
                     <code>struct</code>, <code>enum</code>,
-                    <code>trait</code>, <code>typedef</code> (or
-                    <code>tdef</code>).
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
                 </p>
 
                 <p>
@@ -112,7 +115,7 @@
                 </p>
             </div>
         </div>
-    </div>
+    </aside>
 
     
 
@@ -124,6 +127,6 @@
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>

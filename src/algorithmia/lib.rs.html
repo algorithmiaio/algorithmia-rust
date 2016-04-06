@@ -9,6 +9,7 @@
 
     <title>lib.rs.html -- source</title>
 
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
 
     
@@ -24,10 +25,10 @@
 
     
 
-    <section class="sidebar">
+    <nav class="sidebar">
         <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
         
-    </section>
+    </nav>
 
     <nav class="sub">
         <form class="search-form js-only">
@@ -169,6 +170,10 @@
 <span id="127">127</span>
 <span id="128">128</span>
 <span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Algorithmia client library</span>
 <span class='doccomment'>//!</span>
@@ -201,9 +206,13 @@
 
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>clone</span>;
 
+<span class='doccomment'>/// Interact with Algorithmia algorithms</span>
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>algo</span>;
+<span class='doccomment'>/// Manage data for algorithms</span>
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>data</span>;
+<span class='doccomment'>/// Error types</span>
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>error</span>;
+<span class='doccomment'>/// Internal client (do not use directly) - use [Algorithmia struct](struct.Algorithmia.html) instead</span>
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>client</span>;
 <span class='kw'>pub</span> <span class='kw'>mod</span> <span class='ident'>json_helpers</span>;
 <span class='kw'>pub</span> <span class='kw'>use</span> <span class='ident'>hyper</span>::{<span class='ident'>mime</span>, <span class='ident'>Url</span>};
@@ -305,10 +314,12 @@
 
     <section class="footer"></section>
 
-    <div id="help" class="hidden">
+    <aside id="help" class="hidden">
         <div>
+            <h1 class="hidden">Help</h1>
+
             <div class="shortcuts">
-                <h1>Keyboard Shortcuts</h1>
+                <h2>Keyboard Shortcuts</h2>
 
                 <dl>
                     <dt>?</dt>
@@ -325,7 +336,7 @@
             </div>
 
             <div class="infos">
-                <h1>Search Tricks</h1>
+                <h2>Search Tricks</h2>
 
                 <p>
                     Prefix searches with a type followed by a colon (e.g.
@@ -335,8 +346,8 @@
                 <p>
                     Accepted types are: <code>fn</code>, <code>mod</code>,
                     <code>struct</code>, <code>enum</code>,
-                    <code>trait</code>, <code>typedef</code> (or
-                    <code>tdef</code>).
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
                 </p>
 
                 <p>
@@ -345,7 +356,7 @@
                 </p>
             </div>
         </div>
-    </div>
+    </aside>
 
     
 
@@ -357,6 +368,6 @@
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
     
-    <script async src="../../search-index.js"></script>
+    <script defer src="../../search-index.js"></script>
 </body>
 </html>
