@@ -1,6 +1,6 @@
 [package]
 name = "algorithmia"
-version = "0.8.0"
+version = "1.0.0"
 license = "MIT"
 authors = ["Anthony Nowell <anthony@algorithmia.com>"]
 
