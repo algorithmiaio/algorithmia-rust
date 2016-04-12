@@ -44,7 +44,6 @@ pub enum AlgoInput<'a> {
     Json(Cow<'a, str>)
 }
 
-
 /// Algorithmia algorithm
 pub struct Algorithm {
     pub path: String,
@@ -202,7 +201,34 @@ impl Algorithm {
     }
 }
 
+impl <'a> AlgoInput<'a> {
+    pub fn as_text(self) -> Option<Cow<'a, str>> {
+        match self {
+            AlgoInput::Text(text) => Some(text.into()),
+            AlgoInput::Binary(_) => None,
+            AlgoInput::Json(json) => match Json::from_str(&json) {
+                Ok(Json::String(text)) => Some(text.into()),
+                _ => None,
+            }
+        }
+    }
 
+    pub fn as_json(self) -> Option<Cow<'a, str>> {
+        match self {
+            AlgoInput::Text(text) => json::encode(&text).map(|t| t.into()).ok(),
+            AlgoInput::Json(json) => Some(json),
+            AlgoInput::Binary(_) => None,
+        }
+    }
+
+    pub fn as_bytes(self) -> Option<&'a [u8]> {
+        match self {
+            AlgoInput::Text(_) => None,
+            AlgoInput::Json(_) => None,
+            AlgoInput::Binary(bytes) => Some(bytes),
+        }
+    }
+}
 
 impl AlgoOptions {
     pub fn new() -> AlgoOptions {
