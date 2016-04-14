@@ -240,6 +240,13 @@ impl <'a> AlgoInput<'a> {
             AlgoInput::Binary(bytes) => Some(bytes),
         }
     }
+
+    /// If the `AlgoInput` is valid JSON, decode it to a particular type
+    pub fn decode<D: Decodable>(self) -> Result<D, Error> {
+        let res_json = try!(self.as_json()
+            .ok_or(Error::ContentTypeError("Input is not JSON".into())));
+        json::decode::<D>(&res_json).map_err(|err| err.into())
+    }
 }
 
 impl AlgoResponse {
