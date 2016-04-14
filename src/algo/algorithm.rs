@@ -13,7 +13,7 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let result: Vec<f64> = moving_avg.pipe(&input, None).unwrap().result().unwrap();
+//! let result: Vec<f64> = moving_avg.pipe(&input, None).unwrap().decode().unwrap();
 //! println!("Completed with result: {:?}", result);
 //! ```
 
@@ -38,10 +38,24 @@ use std::ops::{Deref, DerefMut};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
+/// Types that can be used as input to an algorithm
 pub enum AlgoInput<'a> {
+    /// Data that will be sent with `Content-Type: text/plain`
     Text(&'a str),
+    /// Data that will be sent with `Content-Type: application/octet-stream`
     Binary(&'a [u8]),
+    /// Data that will be sent with `Content-Type: application/json`
     Json(Cow<'a, str>)
+}
+
+/// Types that can store the output of an algorithm
+pub enum AlgoOutput {
+    /// Representation of result when `metadata.content_type` is 'text'
+    Text(String),
+    /// Representation of result when `metadata.content_type` is 'json'
+    Json(String),
+    /// Representation of result when `metadata.content_type` is 'binary'
+    Binary(Vec<u8>),
 }
 
 /// Algorithmia algorithm
@@ -50,7 +64,7 @@ pub struct Algorithm {
     client: HttpClient,
 }
 
-
+/// Options used to alter the algorithm call, e.g. configuring the timeout
 pub struct AlgoOptions {
     opts: HashMap<String, String>
 }
@@ -59,6 +73,7 @@ pub struct AlgoRef {
     pub path: String
 }
 
+/// Metadata returned from the API
 #[derive(RustcDecodable, Debug)]
 pub struct AlgoMetadata {
     pub duration: f32,
@@ -67,16 +82,10 @@ pub struct AlgoMetadata {
     pub content_type: String,
 }
 
+/// Successful API response that wraps the AlgoOutput and its Metadata
 pub struct AlgoResponse {
     pub metadata: AlgoMetadata,
-    result: AlgoOutput,
-}
-
-pub enum AlgoOutput {
-    Void,
-    Text(String),
-    Json(String),
-    Binary(Vec<u8>),
+    pub result: AlgoOutput,
 }
 
 impl Algorithm {
@@ -125,7 +134,7 @@ impl Algorithm {
     /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
     /// match moving_avg.pipe(&input, None) {
-    ///     Ok(response) => println!("{}", response.result_json().unwrap()),
+    ///     Ok(response) => println!("{}", response.as_json().unwrap()),
     ///     Err(err) => println!("ERROR: {}", err),
     /// };
     /// ```
@@ -158,7 +167,7 @@ impl Algorithm {
     /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
     /// let output = match minmax.pipe_json("[2,3,4]", None) {
-    ///    Ok(response) => response.result_json().unwrap().to_owned(),
+    ///    Ok(response) => response.as_json().unwrap(),
     ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_json(&self, json_input: &str, options: Option<&AlgoOptions>) -> Result<AlgoResponse, Error> {
@@ -202,7 +211,8 @@ impl Algorithm {
 }
 
 impl <'a> AlgoInput<'a> {
-    pub fn as_text(self) -> Option<Cow<'a, str>> {
+    /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
+    pub fn as_string(self) -> Option<Cow<'a, str>> {
         match self {
             AlgoInput::Text(text) => Some(text.into()),
             AlgoInput::Binary(_) => None,
@@ -213,6 +223,7 @@ impl <'a> AlgoInput<'a> {
         }
     }
 
+    /// If the `AlgoInput` is Json (or text that can be JSON encoded), returns the associated JSON string
     pub fn as_json(self) -> Option<Cow<'a, str>> {
         match self {
             AlgoInput::Text(text) => json::encode(&text).map(|t| t.into()).ok(),
@@ -221,6 +232,7 @@ impl <'a> AlgoInput<'a> {
         }
     }
 
+    /// If the `AlgoInput` is binary, returns the associated byte slice
     pub fn as_bytes(self) -> Option<&'a [u8]> {
         match self {
             AlgoInput::Text(_) => None,
@@ -230,50 +242,62 @@ impl <'a> AlgoInput<'a> {
     }
 }
 
-impl AlgoOptions {
-    pub fn new() -> AlgoOptions {
-        AlgoOptions { opts: HashMap::new() }
-    }
-
-    pub fn timeout(&mut self, timeout: u32) {
-        self.opts.insert("timeout".into(), timeout.to_string());
-    }
-
-    pub fn stdout(&mut self, stdout: bool) {
-        self.opts.insert("stdout".into(), stdout.to_string());
-    }
-}
-
-
-
 impl AlgoResponse {
-    pub fn result_json(&self) -> Result<&str, Error> {
+    /// If the result is text (or a valid JSON string), returns the associated string
+    pub fn as_string(self) -> Option<String> {
         match self.result {
-            AlgoOutput::Json(ref json) => Ok(&json),
-            _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
+            AlgoOutput::Text(text) => Some(text),
+            AlgoOutput::Json(json) => match Json::from_str(&json) {
+                Ok(Json::String(text)) => Some(text),
+                _ => None,
+            },
+            _ => None,
         }
     }
 
-    pub fn result_bytes(&self) -> Result<&[u8], Error> {
+    /// If the result is Json (or text that can be JSON encoded), returns the associated JSON string
+    pub fn as_json(self) -> Option<String> {
         match self.result {
-            AlgoOutput::Binary(ref bytes) => Ok(&bytes),
-            _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
+            AlgoOutput::Json(json) => Some(json),
+            AlgoOutput::Text(text) => json::encode(&text).ok(),
+            _ => None,
         }
     }
 
-    pub fn result_str(&self) -> Result<&str, Error> {
+    /// If the result is Binary, returns the associated byte slice
+    pub fn as_bytes(self) -> Option<Vec<u8>> {
         match self.result {
-            AlgoOutput::Text(ref text) => Ok(&text),
-            _ => Err(Error::ContentTypeError(self.metadata.content_type.clone())),
+            AlgoOutput::Binary(bytes) => Some(bytes),
+            _ => None,
         }
     }
 
-    pub fn result<D: Decodable>(&self) -> Result<D, Error> {
-        let res_json = try!(self.result_json());
+    /// If the result is valid JSON, decode it to a particular type
+    pub fn decode<D: Decodable>(self) -> Result<D, Error> {
+        let ct = self.metadata.content_type.clone();
+        let res_json = try!(self.as_json()
+            .ok_or(Error::ContentTypeError(ct)));
         json::decode::<D>(&res_json).map_err(|err| err.into())
     }
 }
 
+impl AlgoOptions {
+    /// Initialize empty set of `AlgoOptions`
+    pub fn new() -> AlgoOptions {
+        AlgoOptions { opts: HashMap::new() }
+    }
+
+    /// Configure the timeout in seconds
+    pub fn timeout(&mut self, timeout: u32) {
+        self.opts.insert("timeout".into(), timeout.to_string());
+    }
+
+    /// Include algorithm stdout in the response metadata
+    /// This has no affect unless authenticated as the owner of the algorithm
+    pub fn stdout(&mut self, stdout: bool) {
+        self.opts.insert("stdout".into(), stdout.to_string());
+    }
+}
 
 impl FromStr for AlgoResponse {
     type Err = Error;
@@ -300,7 +324,7 @@ impl FromStr for AlgoResponse {
 
         // Construct the AlgoOutput object
         let result = match (&*metadata.content_type, data.search("result")) {
-            ("void", _) => AlgoOutput::Void,
+            ("void", _) => AlgoOutput::Json("null".into()),
             ("json", Some(json)) => AlgoOutput::Json(json.to_string()),
             ("text", Some(json)) => match json.as_string() {
                 Some(text) => AlgoOutput::Text(text.into()),
@@ -322,7 +346,6 @@ impl FromStr for AlgoResponse {
 impl fmt::Display for AlgoResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.result {
-            AlgoOutput::Void => Err(fmt::Error),
             AlgoOutput::Text(ref s) | AlgoOutput::Json(ref s) => f.write_str(s),
             AlgoOutput::Binary(ref bytes) => f.write_str(&String::from_utf8_lossy(bytes)),
         }
@@ -333,7 +356,6 @@ impl Read for AlgoResponse {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut out = buf; // why do I need this binding?
         match self.result {
-            AlgoOutput::Void => Err(io::Error::new(io::ErrorKind::Other, "cannot read void content type")),
             AlgoOutput::Text(ref s) | AlgoOutput::Json(ref s) => out.write(s.as_bytes()),
             AlgoOutput::Binary(ref bytes) => out.write(bytes),
         }
@@ -445,6 +467,6 @@ mod tests {
         let expected_result = [5, 41];
         let decoded = json_output.parse::<AlgoResponse>().unwrap();
         assert_eq!(expected_meta.duration, decoded.metadata.duration);
-        assert_eq!(expected_result, &*decoded.result::<Vec<i32>>().unwrap());
+        assert_eq!(expected_result, &*decoded.decode::<Vec<i32>>().unwrap());
     }
 }
