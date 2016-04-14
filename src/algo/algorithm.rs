@@ -392,6 +392,12 @@ impl <'a> From<&'a [u8]> for AlgoInput<'a> {
     }
 }
 
+impl From<()> for AlgoOutput {
+    fn from(_unit: ()) -> Self {
+        AlgoOutput::Json("null".into())
+    }
+}
+
 impl From<String> for AlgoOutput {
     fn from(text: String) -> Self {
         AlgoOutput::Text(text)
