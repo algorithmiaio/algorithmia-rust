@@ -26,7 +26,7 @@
     
 
     <nav class="sidebar">
-        <a href='../../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
+        <a href='../../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='logo' width='100'></a>
         <p class='location'><a href='../../index.html'>algorithmia</a>::<wbr><a href='../index.html'>data</a>::<wbr><a href='index.html'>path</a></p><script>window.sidebarCurrent = {name: 'DataPath', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
@@ -46,11 +46,12 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-803' class='srclink' href='../../../src/algorithmia/data/path.rs.html#94-97' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-861' class='srclink' href='../../../src/algorithmia/src/data/path.rs.html#94-97' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct DataPath {
     // some fields omitted
 }</pre><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../../algorithmia/data/path/struct.DataPath.html' title='algorithmia::data::path::DataPath'>DataPath</a></code></h3><div class='impl-items'><h4 id='method.get_type' class='method'><code>fn <a href='#method.get_type' class='fnname'>get_type</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../../algorithmia/data/enum.DataType.html' title='algorithmia::data::DataType'>DataType</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
 <div class='docblock'><p>Determine if a particular data URI is for a file or directory</p>
+
 <pre class='rust rust-example-rendered'>
 <span class='kw'>let</span> <span class='ident'>my_obj</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>data</span>(<span class='string'>&quot;data://.my/some/path&quot;</span>);
 <span class='kw'>match</span> <span class='ident'>my_obj</span>.<span class='ident'>get_type</span>().<span class='ident'>ok</span>().<span class='ident'>unwrap</span>() {
@@ -109,7 +110,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>

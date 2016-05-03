@@ -26,7 +26,7 @@
     
 
     <nav class="sidebar">
-        <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
+        <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='logo' width='100'></a>
         <p class='location'><a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>algo</a></p><script>window.sidebarCurrent = {name: 'AlgoOutput', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
@@ -46,15 +46,19 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-79' class='srclink' href='../../src/algorithmia/algo/algorithm.rs.html#75-80' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-41' class='srclink' href='../../src/algorithmia/src/algo/algorithm.rs.html#52-59' title='goto source code'>[src]</a></span></h1>
 <pre class='rust enum'>pub enum AlgoOutput {
-    Void,
     Text(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>),
-    Json(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>),
+    Json(<a class='enum' href='https://doc.rust-lang.org/rustc-serialize/rustc_serialize/json/enum.Json.html' title='rustc_serialize::json::Json'>Json</a>),
     Binary(<a class='struct' href='https://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;),
-}</pre><h2 class='variants'>Variants</h2>
-<table><tr><td id='variant.Void'><code>Void</code></td><td></td></tr><tr><td id='variant.Text'><code>Text</code></td><td></td></tr><tr><td id='variant.Json'><code>Json</code></td><td></td></tr><tr><td id='variant.Binary'><code>Binary</code></td><td></td></tr></table><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt; for <a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(text: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; Self</code></h4>
-</div><h3 class='impl'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt; for <a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a></code></h3><div class='impl-items'><h4 id='method.from-1' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(bytes: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; Self</code></h4>
+}</pre><div class='docblock'><p>Types that can store the output of an algorithm</p>
+</div><h2 class='variants'>Variants</h2>
+<table class='variants_table'><tr><td id='variant.Text'><code>Text</code></td><td><div class='docblock'><p>Representation of result when <code>metadata.content_type</code> is &#39;text&#39;</p>
+</div></td><td></td></tr><tr><td id='variant.Json'><code>Json</code></td><td><div class='docblock'><p>Representation of result when <code>metadata.content_type</code> is &#39;json&#39;</p>
+</div></td><td></td></tr><tr><td id='variant.Binary'><code>Binary</code></td><td><div class='docblock'><p>Representation of result when <code>metadata.content_type</code> is &#39;binary&#39;</p>
+</div></td><td></td></tr></table><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>&gt; for <a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a></code></h3><div class='impl-items'><h4 id='method.from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(_unit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>) -&gt; Self</code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt; for <a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a></code></h3><div class='impl-items'><h4 id='method.from-1' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(text: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; Self</code></h4>
+</div><h3 class='impl'><code>impl&lt;'a&gt; <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html' title='core::convert::From'>From</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>&gt; for <a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a></code></h3><div class='impl-items'><h4 id='method.from-2' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/convert/trait.From.html#method.from' class='fnname'>from</a>(bytes: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; Self</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
@@ -98,7 +102,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>

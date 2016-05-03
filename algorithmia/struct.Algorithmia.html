@@ -26,7 +26,7 @@
     
 
     <nav class="sidebar">
-        <a href='../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='' width='100'></a>
+        <a href='../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='logo' width='100'></a>
         <p class='location'><a href='index.html'>algorithmia</a></p><script>window.sidebarCurrent = {name: 'Algorithmia', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </nav>
 
@@ -46,7 +46,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-1162' class='srclink' href='../src/algorithmia/lib.rs.html#46-48' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1222' class='srclink' href='../src/algorithmia/src/lib.rs.html#46-48' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Algorithmia {
     // some fields omitted
 }</pre><div class='docblock'><p>The top-level struct for instantiating Algorithmia client endpoints</p>
@@ -59,7 +59,8 @@
 
 <p>By using In</p>
 
-<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Algorithmia</span>;
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>algo</span>::<span class='ident'>Version</span>;
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
@@ -68,14 +69,16 @@
 </div><h4 id='method.dir' class='method'><code>fn <a href='#method.dir' class='fnname'>dir</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a></code></h4>
 <div class='docblock'><p>Instantiate a <code>DataDirectory</code> from this client</p>
 
-<h1 id='examples-1' class='section-header'><a href='#examples-1'>Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples-1' class='section-header'><a href='#examples-1'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Algorithmia</span>;
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>rustfoo</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>dir</span>(<span class='string'>&quot;data://.my/rustfoo&quot;</span>);</pre>
 </div><h4 id='method.file' class='method'><code>fn <a href='#method.file' class='fnname'>file</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a></code></h4>
 <div class='docblock'><p>Instantiate a <code>DataDirectory</code> from this client</p>
 
-<h1 id='examples-2' class='section-header'><a href='#examples-2'>Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples-2' class='section-header'><a href='#examples-2'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Algorithmia</span>;
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>rustfoo</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>file</span>(<span class='string'>&quot;data://.my/rustfoo&quot;</span>);</pre>
@@ -84,13 +87,14 @@
 
 <p>Use this if you don&#39;t explicitly know if a Data URI is to a directory or file</p>
 
-<h1 id='examples-3' class='section-header'><a href='#examples-3'>Examples</a></h1><pre class='rust rust-example-rendered'>
+<h1 id='examples-3' class='section-header'><a href='#examples-3'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Algorithmia</span>;
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>rustfoo</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>data</span>(<span class='string'>&quot;data://.my/rustfoo/what_am_i&quot;</span>);</pre>
 </div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></h3><div class='docblock'><p>Allow cloning in order to reuse http client (and API key) for multiple connections</p>
 </div><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></h4>
-<h4 id='method.clone_from' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+<h4 id='method.clone_from' class='method'><span class="since">1.0.0</span><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
 </div></section>
     <section id='search' class="content hidden"></section>
 
@@ -134,7 +138,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
