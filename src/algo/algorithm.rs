@@ -103,14 +103,19 @@ pub trait AlgoEntryPoint: Default {
         Err(Error::UnsupportedInput.into())
     }
 
-    /// This method is the default `apply`, and is called
-    /// The default implementation tries to call `apply_str`, `apply_json`, or `apply_bytes`
-    ///   based on the input type (e.g. `AlgoInput::Text` calls `apply_str` )
-
-    /// If the obvious method returns `UnsupportedInput` error, then this `apply`
+    /// The default implementation of this method calls
+    /// `apply_str`, `apply_json`, or `apply_bytes` based on the input type.
+    ///
+    ///   - `AlgoInput::Text` results in call to  `apply_str`
+    ///   - `AlgoInput::Json` results in call to  `apply_json`
+    ///   - `AlgoInput::Binary` results in call to  `apply_bytes`
+    ///
+    /// If that call returns an `UnsupportedInput` error, then this method
     ///   method will may attempt to coerce the input into another type
-    ///   For example, if text input is received, but `apply_str` is not overriden,
-    ///   then this method will attempt to convert the text to a `Json::String`, and call `apply_json`
+    ///   and attempt one more call:
+    ///
+    ///   - `AlgoInput::Text` input will be JSON-encoded to call `apply_json`
+    ///   - `AlgoInput::Json` input will be parse to see it can call `apply_str`
     fn apply<'a>(&self, input: AlgoInput<'a>) -> Result<AlgoOutput, Box<std::error::Error>> {
         match &input {
             &AlgoInput::Text(ref text) => match self.apply_str(&text) {
