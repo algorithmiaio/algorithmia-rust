@@ -17,6 +17,7 @@ pub enum Error {
     FromBase64Error(base64::FromBase64Error),
     IoError(io::Error),
     Utf8Error(str::Utf8Error),
+    UnsupportedInput,
 }
 
 #[derive(RustcDecodable, Debug)]
@@ -58,6 +59,7 @@ impl StdError for Error {
             Error::FromBase64Error(ref e) => e.description(),
             Error::IoError(ref e) => e.description(),
             Error::Utf8Error(ref e) => e.description(),
+            Error::UnsupportedInput => "Unsupported input type",
         }
     }
 

@@ -32,7 +32,7 @@ use hyper::client::response::Response;
 use std::borrow::Cow;
 use std::io::{self, Read, Write};
 use std::str::FromStr;
-use std::fmt;
+use std::{self, fmt};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
@@ -45,7 +45,7 @@ pub enum AlgoInput<'a> {
     /// Data that will be sent with `Content-Type: application/octet-stream`
     Binary(&'a [u8]),
     /// Data that will be sent with `Content-Type: application/json`
-    Json(Cow<'a, str>)
+    Json(Cow<'a, Json>),
 }
 
 /// Types that can store the output of an algorithm
@@ -53,12 +53,12 @@ pub enum AlgoOutput {
     /// Representation of result when `metadata.content_type` is 'text'
     Text(String),
     /// Representation of result when `metadata.content_type` is 'json'
-    Json(String),
+    Json(Json),
     /// Representation of result when `metadata.content_type` is 'binary'
     Binary(Vec<u8>),
 }
 
-/// Algorithmia algorithm
+/// Algorithmia algorithm - intialized from the `Algorithmia` builder
 pub struct Algorithm {
     pub path: String,
     client: HttpClient,
@@ -86,6 +86,58 @@ pub struct AlgoMetadata {
 pub struct AlgoResponse {
     pub metadata: AlgoMetadata,
     pub result: AlgoOutput,
+}
+
+/// Implementing an algorithm involves overriding at least one of these methods
+pub trait AlgoEntryPoint: Default {
+    #[allow(unused_variables)]
+    fn apply_str(&self, name: &str) -> Result<AlgoOutput, Box<std::error::Error>> {
+        Err(Error::UnsupportedInput.into())
+    }
+    #[allow(unused_variables)]
+    fn apply_json(&self, json: &Json) -> Result<AlgoOutput, Box<std::error::Error>> {
+        Err(Error::UnsupportedInput.into())
+    }
+    #[allow(unused_variables)]
+    fn apply_bytes(&self, bytes: &[u8]) -> Result<AlgoOutput, Box<std::error::Error>> {
+        Err(Error::UnsupportedInput.into())
+    }
+
+    /// This method is the default `apply`, and is called
+    /// The default implementation tries to call `apply_str`, `apply_json`, or `apply_bytes`
+    ///   based on the input type (e.g. `AlgoInput::Text` calls `apply_str` )
+
+    /// If the obvious method returns `UnsupportedInput` error, then this `apply`
+    ///   method will may attempt to coerce the input into another type
+    ///   For example, if text input is received, but `apply_str` is not overriden,
+    ///   then this method will attempt to convert the text to a `Json::String`, and call `apply_json`
+    fn apply<'a>(&self, input: AlgoInput<'a>) -> Result<AlgoOutput, Box<std::error::Error>> {
+        match &input {
+            &AlgoInput::Text(ref text) => match self.apply_str(&text) {
+                Err(err) => match err.downcast::<Error>().map(|b| *b) {
+                    Ok(Error::UnsupportedInput) =>  match input.as_json() {
+                        Some(json) => self.apply_json(&json),
+                        None => Err(Error::UnsupportedInput.into()),
+                    },
+                    Ok(err) => Err(err.into()),
+                    Err(err) => Err(err.into()),
+                },
+                ret => ret,
+            },
+            &AlgoInput::Json(ref json) => match self.apply_json(&json) {
+                Err(err) => match err.downcast::<Error>().map(|b| *b) {
+                    Ok(Error::UnsupportedInput) =>  match input.as_string() {
+                        Some(text) => self.apply_str(&text),
+                        None => Err(Error::UnsupportedInput.into()).into(),
+                    },
+                    Ok(err) => Err(err.into()),
+                    Err(err) => Err(err.into()),
+                },
+                ret => ret,
+            },
+            &AlgoInput::Binary(ref bytes) => self.apply_bytes(&bytes),
+        }
+    }
 }
 
 impl Algorithm {
@@ -144,7 +196,10 @@ impl Algorithm {
     {
         let mut res = try!(match input_data.into() {
             AlgoInput::Text(text) => self.pipe_as(text, Mime(TopLevel::Text, SubLevel::Plain, vec![]), options),
-            AlgoInput::Json(json) => self.pipe_as(&*json, Mime(TopLevel::Application, SubLevel::Json, vec![]), options),
+            AlgoInput::Json(json) => {
+                let encoded = try!(json::encode(&json));
+                self.pipe_as(&*encoded, Mime(TopLevel::Application, SubLevel::Json, vec![]), options)
+            },
             AlgoInput::Binary(bytes) => self.pipe_as(bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![]), options),
         });
 
@@ -212,40 +267,40 @@ impl Algorithm {
 
 impl <'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
-    pub fn as_string(self) -> Option<Cow<'a, str>> {
+    pub fn as_string(&'a self) -> Option<Cow<'a, str>> {
         match self {
-            AlgoInput::Text(text) => Some(text.into()),
-            AlgoInput::Binary(_) => None,
-            AlgoInput::Json(json) => match Json::from_str(&json) {
-                Ok(Json::String(text)) => Some(text.into()),
-                _ => None,
-            }
+            &AlgoInput::Text(text) => Some(text.into()),
+            &AlgoInput::Binary(_) => None,
+            &AlgoInput::Json(Cow::Borrowed(&Json::String(ref text))) => Some(text.clone().into()),
+            &AlgoInput::Json(Cow::Owned(Json::String(ref text))) => Some(text.clone().into()),
+            _ => None,
         }
     }
 
     /// If the `AlgoInput` is Json (or text that can be JSON encoded), returns the associated JSON string
-    pub fn as_json(self) -> Option<Cow<'a, str>> {
+    pub fn as_json(&'a self) -> Option<Cow<'a, Json>> {
         match self {
-            AlgoInput::Text(text) => json::encode(&text).map(|t| t.into()).ok(),
-            AlgoInput::Json(json) => Some(json),
-            AlgoInput::Binary(_) => None,
+            &AlgoInput::Text(text) => Some(Cow::Owned(Json::String(text.into()))),
+            &AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
+            &AlgoInput::Binary(_) => None,
         }
     }
 
     /// If the `AlgoInput` is binary, returns the associated byte slice
-    pub fn as_bytes(self) -> Option<&'a [u8]> {
+    pub fn as_bytes(&'a self) -> Option<&'a [u8]> {
         match self {
-            AlgoInput::Text(_) => None,
-            AlgoInput::Json(_) => None,
-            AlgoInput::Binary(bytes) => Some(bytes),
+            &AlgoInput::Text(_) => None,
+            &AlgoInput::Json(_) => None,
+            &AlgoInput::Binary(bytes) => Some(bytes),
         }
     }
 
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
-    pub fn decode<D: Decodable>(self) -> Result<D, Error> {
+    pub fn decode<D: Decodable>(&self) -> Result<D, Error> {
         let res_json = try!(self.as_json()
             .ok_or(Error::ContentTypeError("Input is not JSON".into())));
-        json::decode::<D>(&res_json).map_err(|err| err.into())
+        let encoded = try!(json::encode(&res_json));
+        json::decode::<D>(&encoded).map_err(|err| err.into())
     }
 }
 
@@ -254,19 +309,16 @@ impl AlgoResponse {
     pub fn as_string(self) -> Option<String> {
         match self.result {
             AlgoOutput::Text(text) => Some(text),
-            AlgoOutput::Json(json) => match Json::from_str(&json) {
-                Ok(Json::String(text)) => Some(text),
-                _ => None,
-            },
+            AlgoOutput::Json(Json::String(text)) => Some(text),
             _ => None,
         }
     }
 
     /// If the result is Json (or text that can be JSON encoded), returns the associated JSON string
-    pub fn as_json(self) -> Option<String> {
+    pub fn as_json(self) -> Option<Json> {
         match self.result {
             AlgoOutput::Json(json) => Some(json),
-            AlgoOutput::Text(text) => json::encode(&text).ok(),
+            AlgoOutput::Text(text) => Some(Json::String(text)),
             _ => None,
         }
     }
@@ -284,7 +336,8 @@ impl AlgoResponse {
         let ct = self.metadata.content_type.clone();
         let res_json = try!(self.as_json()
             .ok_or(Error::ContentTypeError(ct)));
-        json::decode::<D>(&res_json).map_err(|err| err.into())
+        let encoded = try!(json::encode(&res_json));
+        json::decode::<D>(&encoded).map_err(|err| err.into())
     }
 }
 
@@ -331,8 +384,8 @@ impl FromStr for AlgoResponse {
 
         // Construct the AlgoOutput object
         let result = match (&*metadata.content_type, data.search("result")) {
-            ("void", _) => AlgoOutput::Json("null".into()),
-            ("json", Some(json)) => AlgoOutput::Json(json.to_string()),
+            ("void", _) => AlgoOutput::Json(Json::Null),
+            ("json", Some(json)) => AlgoOutput::Json(json.clone()), // TODO: Consider Cow<'a Json>
             ("text", Some(json)) => match json.as_string() {
                 Some(text) => AlgoOutput::Text(text.into()),
                 None => return Err(Error::ContentTypeError("invalid text".into())),
@@ -353,7 +406,8 @@ impl FromStr for AlgoResponse {
 impl fmt::Display for AlgoResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.result {
-            AlgoOutput::Text(ref s) | AlgoOutput::Json(ref s) => f.write_str(s),
+            AlgoOutput::Text(ref s) => f.write_str(s),
+            AlgoOutput::Json(ref s) => f.write_str(&s.to_string()),
             AlgoOutput::Binary(ref bytes) => f.write_str(&String::from_utf8_lossy(bytes)),
         }
     }
@@ -363,7 +417,8 @@ impl Read for AlgoResponse {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         let mut out = buf; // why do I need this binding?
         match self.result {
-            AlgoOutput::Text(ref s) | AlgoOutput::Json(ref s) => out.write(s.as_bytes()),
+            AlgoOutput::Text(ref s) => out.write(s.as_bytes()),
+            AlgoOutput::Json(ref s) => out.write(s.to_string().as_bytes()),
             AlgoOutput::Binary(ref bytes) => out.write(bytes),
         }
     }
@@ -399,9 +454,15 @@ impl <'a> From<&'a [u8]> for AlgoInput<'a> {
     }
 }
 
+impl <'a> From<Json> for AlgoInput<'a> {
+    fn from(json: Json) -> Self {
+        AlgoInput::Json(Cow::Owned(json))
+    }
+}
+
 impl From<()> for AlgoOutput {
     fn from(_unit: ()) -> Self {
-        AlgoOutput::Json("null".into())
+        AlgoOutput::Json(Json::Null)
     }
 }
 
@@ -431,10 +492,10 @@ impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
     fn from(encodable: &'a E) -> Self {
         // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
         //       or store a result and let pipe() do error handling
-        AlgoInput::Json(json::encode(encodable).unwrap().into())
+        let encoded = json::encode(&encodable).unwrap();
+        AlgoInput::Json(Cow::Owned(Json::from_str(&encoded).unwrap()))
     }
 }
-
 
 
 #[cfg(test)]
