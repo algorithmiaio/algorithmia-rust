@@ -88,8 +88,51 @@ pub struct AlgoResponse {
     pub result: AlgoOutput,
 }
 
+/// This trait provides a alternate implementation for `EntryPoint` by overriding
+///   the default `apply` method to handle any JSON input and automatically decoded
+///   it to the `Input` type before calling `apply_decoded`.
+///
+/// # Examples
+/// ```no_run
+/// use algorithmia::algo::*;
+///
+/// #[derive(Default)]
+/// struct Algo;
+///
+/// impl DecodedEntryPoint for Algo {
+///     // Expect input to be an array of 2 strings
+///     type Input = (String, String);
+///     fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<std::error::Error>> {
+///         let msg = format!("{} - {}", input.0, input.1);
+///         Ok(msg.into())
+///     }
+/// }
+/// ```
+pub trait DecodedEntryPoint: Default {
+    type Input: Decodable;
+
+    /// This method is an apply variant that will receive the decoded form of JSON input.
+    ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
+    #[allow(unused_variables)]
+    fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<std::error::Error>>;
+
+}
+
+impl<T> EntryPoint for T where T: DecodedEntryPoint {
+    fn apply<'a>(&self, input: AlgoInput<'a>) -> Result<AlgoOutput, Box<std::error::Error>> {
+        match input.as_json() {
+            Some(obj) => {
+                let encoded = try!(json::encode(&obj));
+                let decoded = try!(json::decode(&encoded));
+                self.apply_decoded(decoded)
+            },
+            None => Err(Error::UnsupportedInput.into()),
+        }
+    }
+}
+
 /// Implementing an algorithm involves overriding at least one of these methods
-pub trait AlgoEntryPoint: Default {
+pub trait EntryPoint: Default {
     #[allow(unused_variables)]
     fn apply_str(&self, name: &str) -> Result<AlgoOutput, Box<std::error::Error>> {
         Err(Error::UnsupportedInput.into())
