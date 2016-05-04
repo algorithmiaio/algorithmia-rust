@@ -117,8 +117,18 @@
                 </table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='trait' href='trait.AlgoEntryPoint.html'
-                               title='algorithmia::algo::AlgoEntryPoint'>AlgoEntryPoint</a></td>
+                        <td><a class='trait' href='trait.DecodedEntryPoint.html'
+                               title='algorithmia::algo::DecodedEntryPoint'>DecodedEntryPoint</a></td>
+                        <td class='docblock short'>
+                             <p>This trait provides a alternate implementation for <code>EntryPoint</code> by overriding
+  the default <code>apply</code> method to handle any JSON input and automatically decoded
+  it to the <code>Input</code> type before calling <code>apply_decoded</code>.</p>
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.EntryPoint.html'
+                               title='algorithmia::algo::EntryPoint'>EntryPoint</a></td>
                         <td class='docblock short'>
                              <p>Implementing an algorithm involves overriding at least one of these methods</p>
                         </td>

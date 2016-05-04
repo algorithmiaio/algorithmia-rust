@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `DecodedEntryPoint` trait in crate `algorithmia`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, DecodedEntryPoint">
+
+    <title>algorithmia::algo::DecodedEntryPoint - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        <a href='../../algorithmia/index.html'><img src='https://algorithmia.com/assets/images/apple-touch-icon.png' alt='logo' width='100'></a>
+        <p class='location'><a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>algo</a></p><script>window.sidebarCurrent = {name: 'DecodedEntryPoint', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>algo</a>::<wbr><a class='trait' href=''>DecodedEntryPoint</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-86' class='srclink' href='../../src/algorithmia/src/algo/algorithm.rs.html#111-119' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait DecodedEntryPoint: <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> {
+    type Input: <a class='trait' href='https://doc.rust-lang.org/rustc-serialize/rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a>;
+    fn <a href='#tymethod.apply_decoded' class='fnname'>apply_decoded</a>(&amp;self, input: Self::<a class='trait' href='../../algorithmia/algo/trait.DecodedEntryPoint.html' title='algorithmia::algo::DecodedEntryPoint'>Input</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;;
+}</pre><div class='docblock'><p>This trait provides a alternate implementation for <code>EntryPoint</code> by overriding
+  the default <code>apply</code> method to handle any JSON input and automatically decoded
+  it to the <code>Input</code> type before calling <code>apply_decoded</code>.</p>
+
+<h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>algo</span>::<span class='op'>*</span>;
+
+<span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Default</span>)]</span>
+<span class='kw'>struct</span> <span class='ident'>Algo</span>;
+
+<span class='kw'>impl</span> <span class='ident'>DecodedEntryPoint</span> <span class='kw'>for</span> <span class='ident'>Algo</span> {
+    <span class='comment'>// Expect input to be an array of 2 strings</span>
+    <span class='kw'>type</span> <span class='ident'>Input</span> <span class='op'>=</span> (<span class='ident'>String</span>, <span class='ident'>String</span>);
+    <span class='kw'>fn</span> <span class='ident'>apply_decoded</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>input</span>: <span class='ident'>Self</span>::<span class='ident'>Input</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>AlgoOutput</span>, <span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>std</span>::<span class='ident'>error</span>::<span class='ident'>Error</span><span class='op'>&gt;&gt;</span> {
+        <span class='kw'>let</span> <span class='ident'>msg</span> <span class='op'>=</span> <span class='macro'>format</span><span class='macro'>!</span>(<span class='string'>&quot;{} - {}&quot;</span>, <span class='ident'>input</span>.<span class='number'>0</span>, <span class='ident'>input</span>.<span class='number'>1</span>);
+        <span class='prelude-val'>Ok</span>(<span class='ident'>msg</span>.<span class='ident'>into</span>())
+    }
+}</pre>
+</div>
+            <h2 id='associated-types'>Associated Types</h2>
+            <div class='methods'>
+        <h3 id='associatedtype.Input' class='method stab '><code>type Input: <a class='trait' href='https://doc.rust-lang.org/rustc-serialize/rustc_serialize/serialize/trait.Decodable.html' title='rustc_serialize::serialize::Decodable'>Decodable</a></code></h3></div>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.apply_decoded' class='method stab '><code>fn <a href='#tymethod.apply_decoded' class='fnname'>apply_decoded</a>(&amp;self, input: Self::<a class='trait' href='../../algorithmia/algo/trait.DecodedEntryPoint.html' title='algorithmia::algo::DecodedEntryPoint'>Input</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></h3><div class='docblock'><p>This method is an apply variant that will receive the decoded form of JSON input.
+If decoding failed, a <code>DecoderError</code> will be returned before this method is invoked.</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    </ul><script type="text/javascript" async
+                              src="../../implementors/algorithmia/algo/trait.DecodedEntryPoint.js">
+                      </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "algorithmia";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>
