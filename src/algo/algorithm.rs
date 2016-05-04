@@ -97,7 +97,7 @@ pub struct AlgoResponse {
 /// use algorithmia::algo::*;
 ///
 /// #[derive(Default)]
-/// struct Algo;
+/// pub struct Algo;
 ///
 /// impl DecodedEntryPoint for Algo {
 ///     // Expect input to be an array of 2 strings
