@@ -41,9 +41,9 @@ static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 /// Types that can be used as input to an algorithm
 pub enum AlgoInput<'a> {
     /// Data that will be sent with `Content-Type: text/plain`
-    Text(&'a str),
+    Text(Cow<'a, str>),
     /// Data that will be sent with `Content-Type: application/octet-stream`
-    Binary(&'a [u8]),
+    Binary(Cow<'a, [u8]>),
     /// Data that will be sent with `Content-Type: application/json`
     Json(Cow<'a, Json>),
 }
@@ -180,7 +180,7 @@ pub trait EntryPoint: Default {
                 },
                 ret => ret,
             },
-            &AlgoInput::Binary(ref bytes) => self.apply_bytes(&bytes),
+            &AlgoInput::Binary(ref bytes) => self.apply_bytes(bytes),
         }
     }
 }
@@ -240,12 +240,12 @@ impl Algorithm {
         I: Into<AlgoInput<'a>>
     {
         let mut res = try!(match input_data.into() {
-            AlgoInput::Text(text) => self.pipe_as(text, Mime(TopLevel::Text, SubLevel::Plain, vec![]), options),
+            AlgoInput::Text(text) => self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![]), options),
             AlgoInput::Json(json) => {
                 let encoded = try!(json::encode(&json));
                 self.pipe_as(&*encoded, Mime(TopLevel::Application, SubLevel::Json, vec![]), options)
             },
-            AlgoInput::Binary(bytes) => self.pipe_as(bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![]), options),
+            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![]), options),
         });
 
         let mut res_json = String::new();
@@ -314,7 +314,7 @@ impl <'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
     pub fn as_string(&'a self) -> Option<Cow<'a, str>> {
         match self {
-            &AlgoInput::Text(text) => Some(text.into()),
+            &AlgoInput::Text(ref text) => Some(text.clone()),
             &AlgoInput::Binary(_) => None,
             &AlgoInput::Json(Cow::Borrowed(&Json::String(ref text))) => Some(text.clone().into()),
             &AlgoInput::Json(Cow::Owned(Json::String(ref text))) => Some(text.clone().into()),
@@ -325,7 +325,7 @@ impl <'a> AlgoInput<'a> {
     /// If the `AlgoInput` is Json (or text that can be JSON encoded), returns the associated JSON string
     pub fn as_json(&'a self) -> Option<Cow<'a, Json>> {
         match self {
-            &AlgoInput::Text(text) => Some(Cow::Owned(Json::String(text.into()))),
+            &AlgoInput::Text(ref text) => Some(Cow::Owned(Json::String(text.clone().into_owned()))),
             &AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             &AlgoInput::Binary(_) => None,
         }
@@ -336,7 +336,7 @@ impl <'a> AlgoInput<'a> {
         match self {
             &AlgoInput::Text(_) => None,
             &AlgoInput::Json(_) => None,
-            &AlgoInput::Binary(bytes) => Some(bytes),
+            &AlgoInput::Binary(ref bytes) => Some(&*bytes),
         }
     }
 
@@ -489,13 +489,13 @@ impl <'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
 
 impl <'a> From<&'a str> for AlgoInput<'a> {
     fn from(text: &'a str) -> Self {
-        AlgoInput::Text(text)
+        AlgoInput::Text(Cow::Borrowed(text))
     }
 }
 
 impl <'a> From<&'a [u8]> for AlgoInput<'a> {
     fn from(bytes: &'a [u8]) -> Self {
-        AlgoInput::Binary(bytes)
+        AlgoInput::Binary(Cow::Borrowed(bytes))
     }
 }
 
@@ -523,6 +523,15 @@ impl <'a> From<&'a [u8]> for AlgoOutput {
     }
 }
 
+impl <'a> From<AlgoOutput> for AlgoInput<'a> {
+    fn from(output: AlgoOutput) -> Self {
+        match output {
+            AlgoOutput::Text(text) => AlgoInput::Text(Cow::Owned(text)),
+            AlgoOutput::Json(json) => AlgoInput::Json(Cow::Owned(json)),
+            AlgoOutput::Binary(bytes) => AlgoInput::Binary(Cow::Owned(bytes)),
+        }
+    }
+}
 
 impl Deref for AlgoOptions {
     type Target = HashMap<String, String>;
