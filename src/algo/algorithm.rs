@@ -88,17 +88,14 @@ pub struct AlgoResponse {
     pub result: AlgoOutput,
 }
 
-/// This trait provides a alternate implementation for `EntryPoint` by overriding
-///   the default `apply` method to handle any JSON input and automatically decoded
-///   it to the `Input` type before calling `apply_decoded`.
+/// Alternate implementation for `EntryPoint`
+///   that automatically decodes JSON input to the associate type.
 ///
 /// # Examples
 /// ```no_run
-/// use algorithmia::algo::*;
-///
-/// #[derive(Default)]
-/// pub struct Algo;
-///
+/// # use algorithmia::algo::*;
+/// # #[derive(Default)]
+/// # struct Algo;
 /// impl DecodedEntryPoint for Algo {
 ///     // Expect input to be an array of 2 strings
 ///     type Input = (String, String);

@@ -1,3 +1,6 @@
+//! Manage data for algorithms
+//!
+//! Instantiate from the [`Algorithmia`](../struct.Algorithmia.html) struct
 pub use data::dir::{DataDir, DirEntry, DataAcl, ReadAcl};
 pub use self::file::DataFile;
 pub use self::path::{DataPath, HasDataPath};

@@ -29,16 +29,12 @@ use client::HttpClient;
 
 use std::clone;
 
-/// Interact with Algorithmia algorithms
 pub mod algo;
-/// Manage data for algorithms
 pub mod data;
-/// Error types
 pub mod error;
-/// Internal client (do not use directly) - use [Algorithmia struct](struct.Algorithmia.html) instead
 pub mod client;
-pub mod json_helpers;
 pub use hyper::{mime, Url};
+pub use client::ApiAuth::{self, SimpleAuth, NoAuth};
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
@@ -47,23 +43,36 @@ pub struct Algorithmia {
     http_client: HttpClient,
 }
 
-
 impl<'a, 'c> Algorithmia {
     /// Instantiate a new client
-    pub fn client(api_key: &str) -> Algorithmia {
+    ///
+    /// Client should be instatiated with your API key, except
+    ///   when running within an algorithm on the Algorithmia platform.
+    ///
+    /// # Examples
+    /// ```
+    /// use algorithmia::*;
+    /// // Initialize a client
+    /// let client = Algorithmia::client("simUseYourApiKey");
+    ///
+    /// // Initialize a client (for algorithms running on the Algorithmia platform)
+    /// let client = Algorithmia::client(NoAuth);
+    /// ```
+    pub fn client<A: Into<ApiAuth>>(api_key: A) -> Algorithmia {
+        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
         Algorithmia {
-            http_client: HttpClient::new(api_key.to_string(), DEFAULT_API_BASE_URL.to_string()),
+            http_client: HttpClient::new(api_key.into(), api_address),
         }
     }
 
     /// Instantiate a new client against alternate API servers
-    pub fn alt_client(base_url: Url, api_key: &str) -> Algorithmia {
+    pub fn alt_client<A: Into<ApiAuth>>(base_url: Url, api_key: A) -> Algorithmia {
         Algorithmia {
-            http_client: HttpClient::new(api_key.to_string(), base_url.serialize()),
+            http_client: HttpClient::new(api_key.into(), base_url.serialize()),
         }
     }
 
-    /// Instantiate an `Algorithm` from this client
+    /// Instantiate an [`Algorithm`](algo/algorithm.struct.html) from this client
     ///
     /// By using In
     /// # Examples

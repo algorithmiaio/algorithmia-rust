@@ -1,3 +1,4 @@
+//! Error types
 use std::error::Error as StdError;
 use std::{fmt, io, str, string};
 use rustc_serialize::{json, base64};
