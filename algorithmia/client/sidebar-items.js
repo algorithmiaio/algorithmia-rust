@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Body","An enum of possible body types for a Request."]],"struct":[["HttpClient","Internal HttpClient to build requests: wraps `hyper` client"],["Response","A response for a client request to a remote server."]]});
+initSidebarItems({"enum":[["ApiAuth","Represent the different ways to auth with the API"],["Body","An enum of possible body types for a Request."]],"struct":[["HttpClient","Internal HttpClient to build requests: wraps `hyper` client"],["Response","A response for a client request to a remote server."]]});

@@ -1,1 +1,0 @@
-initSidebarItems({"type":[["AlgorithmJsonResult","Result type for the raw JSON returned by calling `pipe_raw`"],["AlgorithmResult","Result type for generic `AlgorithmOutput` when calling `pipe`"]],"enum":[["Version","Version of an algorithm"]],"struct":[["Algorithm","Algorithmia algorithm"],["AlgorithmOutput","Generic struct for decoding an algorithm response JSON"]]});

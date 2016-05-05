@@ -46,8 +46,10 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-10' class='srclink' href='../../src/algorithmia/src/algo/mod.rs.html#1-5' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-10' class='srclink' href='../../src/algorithmia/src/algo/mod.rs.html#1-8' title='goto source code'>[src]</a></span></h1>
 <div class='docblock'><p>Interact with Algorithmia algorithms</p>
+
+<p>Instantiate from the <a href="../struct.Algorithmia.html"><code>Algorithmia</code></a> struct</p>
 </div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr class=' module-item'>
@@ -78,7 +80,7 @@
                         <td><a class='struct' href='struct.AlgoResponse.html'
                                title='algorithmia::algo::AlgoResponse'>AlgoResponse</a></td>
                         <td class='docblock short'>
-                             <p>Successful API response that wraps the AlgoOutput and its Metadata</p>
+                             <p>Successful API response that wraps the AlgoIo and its Metadata</p>
                         </td>
                     </tr>
                 
@@ -92,18 +94,10 @@
                 </table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
 <table>
                     <tr class=' module-item'>
-                        <td><a class='enum' href='enum.AlgoInput.html'
-                               title='algorithmia::algo::AlgoInput'>AlgoInput</a></td>
+                        <td><a class='enum' href='enum.AlgoIo.html'
+                               title='algorithmia::algo::AlgoIo'>AlgoIo</a></td>
                         <td class='docblock short'>
-                             <p>Types that can be used as input to an algorithm</p>
-                        </td>
-                    </tr>
-                
-                    <tr class=' module-item'>
-                        <td><a class='enum' href='enum.AlgoOutput.html'
-                               title='algorithmia::algo::AlgoOutput'>AlgoOutput</a></td>
-                        <td class='docblock short'>
-                             <p>Types that can store the output of an algorithm</p>
+                             <p>Types that represent either input to or output from an algorithm</p>
                         </td>
                     </tr>
                 
@@ -120,9 +114,8 @@
                         <td><a class='trait' href='trait.DecodedEntryPoint.html'
                                title='algorithmia::algo::DecodedEntryPoint'>DecodedEntryPoint</a></td>
                         <td class='docblock short'>
-                             <p>This trait provides a alternate implementation for <code>EntryPoint</code> by overriding
-  the default <code>apply</code> method to handle any JSON input and automatically decoded
-  it to the <code>Input</code> type before calling <code>apply_decoded</code>.</p>
+                             <p>Alternate implementation for <code>EntryPoint</code>
+  that automatically decodes JSON input to the associate type.</p>
                         </td>
                     </tr>
                 

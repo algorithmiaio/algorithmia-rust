@@ -46,7 +46,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-48' class='srclink' href='../../src/algorithmia/src/algo/algorithm.rs.html#62-65' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-40' class='srclink' href='../../src/algorithmia/src/algo/algorithm.rs.html#52-55' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Algorithm {
     pub path: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
     // some fields omitted
@@ -58,7 +58,7 @@
 <div class='docblock'><p>Get the API Endpoint URL for this Algorithm</p>
 </div><h4 id='method.to_algo_uri' class='method'><code>fn <a href='#method.to_algo_uri' class='fnname'>to_algo_uri</a>(&amp;self) -&gt; <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a></code></h4>
 <div class='docblock'><p>Get the Algorithmia algo URI for this Algorithm</p>
-</div><h4 id='method.pipe' class='method'><code>fn <a href='#method.pipe' class='fnname'>pipe</a>&lt;'a, I&gt;(&amp;'a self, input_data: I, options: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/algo/struct.AlgoResponse.html' title='algorithmia::algo::AlgoResponse'>AlgoResponse</a>, <a class='enum' href='../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt; <span class='where'>where I: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoInput.html' title='algorithmia::algo::AlgoInput'>AlgoInput</a>&lt;'a&gt;&gt;</span></code></h4>
+</div><h4 id='method.pipe' class='method'><code>fn <a href='#method.pipe' class='fnname'>pipe</a>&lt;'a, I&gt;(&amp;'a self, input_data: I, options: <a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;&amp;'a <a class='struct' href='../../algorithmia/algo/struct.AlgoOptions.html' title='algorithmia::algo::AlgoOptions'>AlgoOptions</a>&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../algorithmia/algo/struct.AlgoResponse.html' title='algorithmia::algo::AlgoResponse'>AlgoResponse</a>, <a class='enum' href='../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt; <span class='where'>where I: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoIo.html' title='algorithmia::algo::AlgoIo'>AlgoIo</a>&gt;</span></code></h4>
 <div class='docblock'><p>Execute an algorithm with</p>
 
 <p>Content-type is determined by the type of input_data

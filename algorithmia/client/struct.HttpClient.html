@@ -46,14 +46,14 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-1200' class='srclink' href='../../src/algorithmia/src/client.rs.html#13-18' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-1197' class='srclink' href='../../src/algorithmia/src/client.rs.html#23-28' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct HttpClient {
     pub base_url: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>,
     // some fields omitted
 }</pre><div class='docblock'><p>Internal HttpClient to build requests: wraps <code>hyper</code> client</p>
 </div><h2 class='fields'>Fields</h2>
 <table><tr class='stab '>
-                                  <td id='structfield.base_url'><code>base_url</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(api_key: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>, base_url: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h4>
+                                  <td id='structfield.base_url'><code>base_url</code></td><td></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(api_auth: <a class='enum' href='../../algorithmia/client/enum.ApiAuth.html' title='algorithmia::client::ApiAuth'>ApiAuth</a>, base_url: <a class='struct' href='https://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>) -&gt; <a class='struct' href='../../algorithmia/client/struct.HttpClient.html' title='algorithmia::client::HttpClient'>HttpClient</a></code></h4>
 <div class='docblock'><p>Instantiate an HttpClient - creates a new <code>hyper</code> client</p>
 </div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;self, url: <a class='struct' href='../../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>) -&gt; <a class='struct' href='https://hyperium.github.io/hyper/hyper/client/struct.RequestBuilder.html' title='hyper::client::RequestBuilder'>RequestBuilder</a></code></h4>
 <div class='docblock'><p>Helper to make Algorithmia GET requests with the API key</p>
