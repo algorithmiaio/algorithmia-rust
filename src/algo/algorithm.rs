@@ -312,17 +312,20 @@ impl Algorithm {
 
 impl <'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
-    pub fn as_string(&'a self) -> Option<Cow<'a, str>> {
+    pub fn as_string(&'a self) -> Option<&'a str> {
         match self {
-            &AlgoInput::Text(ref text) => Some(text.clone()),
+            &AlgoInput::Text(ref text) => Some(&*text),
             &AlgoInput::Binary(_) => None,
-            &AlgoInput::Json(Cow::Borrowed(&Json::String(ref text))) => Some(text.clone().into()),
-            &AlgoInput::Json(Cow::Owned(Json::String(ref text))) => Some(text.clone().into()),
+            &AlgoInput::Json(Cow::Borrowed(&Json::String(ref text))) => Some(&*text),
+            &AlgoInput::Json(Cow::Owned(Json::String(ref text))) => Some(&*text),
             _ => None,
         }
     }
 
     /// If the `AlgoInput` is Json (or text that can be JSON encoded), returns the associated JSON string
+    ///
+    /// For `AlgoInput::Json`, this returns the borrowed `Json`.
+    ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
     pub fn as_json(&'a self) -> Option<Cow<'a, Json>> {
         match self {
             &AlgoInput::Text(ref text) => Some(Cow::Owned(Json::String(text.clone().into_owned()))),
@@ -487,6 +490,13 @@ impl <'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
     }
 }
 
+// AlgoInput Conversions
+impl <'a> From<()> for AlgoInput<'a> {
+    fn from(_unit: ()) -> Self {
+        AlgoInput::Json(Cow::Owned(Json::Null))
+    }
+}
+
 impl <'a> From<&'a str> for AlgoInput<'a> {
     fn from(text: &'a str) -> Self {
         AlgoInput::Text(Cow::Borrowed(text))
@@ -499,15 +509,43 @@ impl <'a> From<&'a [u8]> for AlgoInput<'a> {
     }
 }
 
+impl <'a> From<String> for AlgoInput<'a> {
+    fn from(text: String) -> Self {
+        AlgoInput::Text(Cow::Owned(text))
+    }
+}
+
+impl <'a> From<Vec<u8>> for AlgoInput<'a> {
+    fn from(bytes: Vec<u8>) -> Self {
+        AlgoInput::Binary(Cow::Owned(bytes))
+    }
+}
+
 impl <'a> From<Json> for AlgoInput<'a> {
     fn from(json: Json) -> Self {
         AlgoInput::Json(Cow::Owned(json))
     }
 }
 
+impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
+    fn from(encodable: &'a E) -> Self {
+        // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
+        //       or store a result and let pipe() do error handling
+        let encoded = json::encode(&encodable).unwrap();
+        AlgoInput::Json(Cow::Owned(Json::from_str(&encoded).unwrap()))
+    }
+}
+
+// AlgoOutput conversions - could probably combine with fancier implementations
 impl From<()> for AlgoOutput {
     fn from(_unit: ()) -> Self {
         AlgoOutput::Json(Json::Null)
+    }
+}
+
+impl <'a> From<&'a str> for AlgoOutput {
+    fn from(text: &'a str) -> Self {
+        AlgoOutput::Text(text.into())
     }
 }
 
@@ -523,6 +561,28 @@ impl <'a> From<&'a [u8]> for AlgoOutput {
     }
 }
 
+impl From<Vec<u8>> for AlgoOutput {
+    fn from(bytes: Vec<u8>) -> Self {
+        AlgoOutput::Binary(bytes)
+    }
+}
+
+impl From<Json> for AlgoOutput {
+    fn from(json: Json) -> Self {
+        AlgoOutput::Json(json)
+    }
+}
+
+impl <'a, E: Encodable> From<&'a E> for AlgoOutput {
+    fn from(encodable: &'a E) -> Self {
+        // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
+        //       or store a result and let pipe() do error handling
+        let encoded = json::encode(&encodable).unwrap();
+        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
+    }
+}
+
+// The conversion that makes it easy to pipe output to another algorithm's input
 impl <'a> From<AlgoOutput> for AlgoInput<'a> {
     fn from(output: AlgoOutput) -> Self {
         match output {
@@ -541,16 +601,6 @@ impl Deref for AlgoOptions {
 impl DerefMut for AlgoOptions {
     fn deref_mut(&mut self) -> &mut Self::Target { &mut self.opts }
 }
-
-impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
-    fn from(encodable: &'a E) -> Self {
-        // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
-        //       or store a result and let pipe() do error handling
-        let encoded = json::encode(&encodable).unwrap();
-        AlgoInput::Json(Cow::Owned(Json::from_str(&encoded).unwrap()))
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
