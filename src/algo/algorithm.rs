@@ -333,9 +333,9 @@ impl Algorithm {
         self
     }
 
-    // Builder method to nclude stdout in the response metadata
-    //
-    // This has no affect unless authenticated as the owner of the algorithm
+    /// Builder method to include stdout in the response metadata
+    ///
+    /// This has no affect unless authenticated as the owner of the algorithm
     pub fn enable_stdout(&mut self) -> &mut Algorithm {
         self.options.enable_stdout();
         self
@@ -426,10 +426,14 @@ impl AlgoOptions {
         AlgoOptions{ opts: HashMap::new() }
     }
 
+    /// Configure timeout in seconds
     pub fn timeout(&mut self, timeout: u32) {
         self.opts.insert("timeout".into(), timeout.to_string());
     }
 
+    /// Sets the option to enable stdout retrieval
+    ///
+    /// This has no affect unless authenticated as the owner of the algorithm
     pub fn enable_stdout(&mut self) {
         self.opts.insert("stdout".into(), true.to_string());
     }
