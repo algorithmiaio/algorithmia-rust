@@ -199,7 +199,7 @@
 <span class='doccomment'>//! // Run the algorithm using a type safe decoding of the output to Vec&lt;int&gt;</span>
 <span class='doccomment'>//! //   since this algorithm outputs results as a JSON array of integers</span>
 <span class='doccomment'>//! let input = (vec![0,1,2,3,15,4,5,6,7], 3);</span>
-<span class='doccomment'>//! let result: Vec&lt;f64&gt; = moving_avg.pipe(&amp;input, None).unwrap().decode().unwrap();</span>
+<span class='doccomment'>//! let result: Vec&lt;f64&gt; = moving_avg.pipe(&amp;input).unwrap().decode().unwrap();</span>
 <span class='doccomment'>//! println!(&quot;Completed with result: {:?}&quot;, result);</span>
 <span class='doccomment'>//! ```</span>
 

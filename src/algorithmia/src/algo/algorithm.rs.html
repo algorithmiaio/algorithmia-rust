@@ -641,6 +641,88 @@
 <span id="598">598</span>
 <span id="599">599</span>
 <span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Algorithm module for executing Algorithmia algorithms</span>
 <span class='doccomment'>//!</span>
@@ -657,7 +739,7 @@
 <span class='doccomment'>//! // Run the algorithm using a type safe decoding of the output to Vec&lt;int&gt;</span>
 <span class='doccomment'>//! //   since this algorithm outputs results as a JSON array of integers</span>
 <span class='doccomment'>//! let input = (vec![0,1,2,3,15,4,5,6,7], 3);</span>
-<span class='doccomment'>//! let result: Vec&lt;f64&gt; = moving_avg.pipe(&amp;input, None).unwrap().decode().unwrap();</span>
+<span class='doccomment'>//! let result: Vec&lt;f64&gt; = moving_avg.pipe(&amp;input).unwrap().decode().unwrap();</span>
 <span class='doccomment'>//! println!(&quot;Completed with result: {:?}&quot;, result);</span>
 <span class='doccomment'>//! ```</span>
 
@@ -705,6 +787,7 @@
 <span class='doccomment'>/// Algorithmia algorithm - intialized from the `Algorithmia` builder</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Algorithm</span> {
     <span class='kw'>pub</span> <span class='ident'>path</span>: <span class='ident'>String</span>,
+    <span class='ident'>options</span>: <span class='ident'>AlgoOptions</span>,
     <span class='ident'>client</span>: <span class='ident'>HttpClient</span>,
 }
 
@@ -839,6 +922,7 @@
         <span class='ident'>Algorithm</span> {
             <span class='ident'>client</span>: <span class='ident'>client</span>,
             <span class='ident'>path</span>: <span class='ident'>path</span>,
+            <span class='ident'>options</span>: <span class='ident'>AlgoOptions</span>::<span class='ident'>new</span>(),
         }
     }
 
@@ -874,22 +958,21 @@
     <span class='doccomment'>/// let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
     <span class='doccomment'>/// let moving_avg = client.algo(&quot;timeseries/SimpleMovingAverage/0.1&quot;);</span>
     <span class='doccomment'>/// let input = (vec![0,1,2,3,15,4,5,6,7], 3);</span>
-    <span class='doccomment'>/// match moving_avg.pipe(&amp;input, None) {</span>
+    <span class='doccomment'>/// match moving_avg.pipe(&amp;input) {</span>
     <span class='doccomment'>///     Ok(response) =&gt; println!(&quot;{}&quot;, response.as_json().unwrap()),</span>
     <span class='doccomment'>///     Err(err) =&gt; println!(&quot;ERROR: {}&quot;, err),</span>
     <span class='doccomment'>/// };</span>
     <span class='doccomment'>/// ```</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pipe</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>I</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>, <span class='ident'>input_data</span>: <span class='ident'>I</span>, <span class='ident'>options</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>AlgoOptions</span><span class='op'>&gt;</span>)
-                       <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>AlgoResponse</span>, <span class='ident'>Error</span><span class='op'>&gt;</span> <span class='kw'>where</span>
-        <span class='ident'>I</span>: <span class='ident'>Into</span><span class='op'>&lt;</span><span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;&gt;</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pipe</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>I</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>, <span class='ident'>input_data</span>: <span class='ident'>I</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>AlgoResponse</span>, <span class='ident'>Error</span><span class='op'>&gt;</span>
+        <span class='kw'>where</span> <span class='ident'>I</span>: <span class='ident'>Into</span><span class='op'>&lt;</span><span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;&gt;</span>
     {
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='kw'>match</span> <span class='ident'>input_data</span>.<span class='ident'>into</span>() {
-            <span class='ident'>AlgoInput</span>::<span class='ident'>Text</span>(<span class='ident'>text</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>text</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Text</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Plain</span>, <span class='macro'>vec</span><span class='macro'>!</span>[]), <span class='ident'>options</span>),
+            <span class='ident'>AlgoInput</span>::<span class='ident'>Text</span>(<span class='ident'>text</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>text</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Text</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Plain</span>, <span class='macro'>vec</span><span class='macro'>!</span>[])),
             <span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>json</span>) <span class='op'>=&gt;</span> {
                 <span class='kw'>let</span> <span class='ident'>encoded</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>json</span>::<span class='ident'>encode</span>(<span class='kw-2'>&amp;</span><span class='ident'>json</span>));
-                <span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>encoded</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Json</span>, <span class='macro'>vec</span><span class='macro'>!</span>[]), <span class='ident'>options</span>)
+                <span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>encoded</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Json</span>, <span class='macro'>vec</span><span class='macro'>!</span>[]))
             },
-            <span class='ident'>AlgoInput</span>::<span class='ident'>Binary</span>(<span class='ident'>bytes</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>bytes</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Ext</span>(<span class='string'>&quot;octet-stream&quot;</span>.<span class='ident'>into</span>()), <span class='macro'>vec</span><span class='macro'>!</span>[]), <span class='ident'>options</span>),
+            <span class='ident'>AlgoInput</span>::<span class='ident'>Binary</span>(<span class='ident'>bytes</span>) <span class='op'>=&gt;</span> <span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>bytes</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Ext</span>(<span class='string'>&quot;octet-stream&quot;</span>.<span class='ident'>into</span>()), <span class='macro'>vec</span><span class='macro'>!</span>[])),
         });
 
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res_json</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>new</span>();
@@ -910,12 +993,12 @@
     <span class='doccomment'>/// let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
     <span class='doccomment'>/// let minmax  = client.algo(&quot;codeb34v3r/FindMinMax/0.1&quot;);</span>
     <span class='doccomment'>///</span>
-    <span class='doccomment'>/// let output = match minmax.pipe_json(&quot;[2,3,4]&quot;, None) {</span>
+    <span class='doccomment'>/// let output = match minmax.pipe_json(&quot;[2,3,4]&quot;) {</span>
     <span class='doccomment'>///    Ok(response) =&gt; response.as_json().unwrap(),</span>
     <span class='doccomment'>///    Err(err) =&gt; panic!(&quot;{}&quot;, err),</span>
     <span class='doccomment'>/// };</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pipe_json</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>json_input</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>, <span class='ident'>options</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>AlgoOptions</span><span class='op'>&gt;</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>AlgoResponse</span>, <span class='ident'>Error</span><span class='op'>&gt;</span> {
-        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='ident'>json_input</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Json</span>, <span class='macro'>vec</span><span class='macro'>!</span>[]), <span class='ident'>options</span>));
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pipe_json</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>json_input</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>AlgoResponse</span>, <span class='ident'>Error</span><span class='op'>&gt;</span> {
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res</span> <span class='op'>=</span> <span class='macro'>try</span><span class='macro'>!</span>(<span class='self'>self</span>.<span class='ident'>pipe_as</span>(<span class='ident'>json_input</span>, <span class='ident'>Mime</span>(<span class='ident'>TopLevel</span>::<span class='ident'>Application</span>, <span class='ident'>SubLevel</span>::<span class='ident'>Json</span>, <span class='macro'>vec</span><span class='macro'>!</span>[])));
 
         <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>res_json</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>new</span>();
         <span class='macro'>try</span><span class='macro'>!</span>(<span class='ident'>res</span>.<span class='ident'>read_to_string</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>res_json</span>));
@@ -923,7 +1006,7 @@
     }
 
 
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pipe_as</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>B</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>, <span class='ident'>input_data</span>: <span class='ident'>B</span>, <span class='ident'>content_type</span>: <span class='ident'>Mime</span>, <span class='ident'>options</span>: <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>AlgoOptions</span><span class='op'>&gt;</span>)
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>pipe_as</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>B</span><span class='op'>&gt;</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>, <span class='ident'>input_data</span>: <span class='ident'>B</span>, <span class='ident'>content_type</span>: <span class='ident'>Mime</span>)
                           <span class='op'>-&gt;</span> <span class='prelude-ty'>Result</span><span class='op'>&lt;</span><span class='ident'>Response</span>, <span class='ident'>hyper</span>::<span class='ident'>error</span>::<span class='ident'>Error</span><span class='op'>&gt;</span>
         <span class='kw'>where</span> <span class='ident'>B</span>: <span class='ident'>Into</span><span class='op'>&lt;</span><span class='ident'>Body</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;&gt;</span>
     {
@@ -938,8 +1021,9 @@
                 <span class='ident'>final_params</span>.<span class='ident'>insert</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>pair</span>.<span class='number'>0</span>, <span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>pair</span>.<span class='number'>1</span>);
             }
         }
-        <span class='kw'>if</span> <span class='kw'>let</span> <span class='prelude-val'>Some</span>(<span class='kw-2'>ref</span> <span class='ident'>opts</span>) <span class='op'>=</span> <span class='ident'>options</span> {
-            <span class='kw'>for</span> (<span class='ident'>k</span>,<span class='ident'>v</span>) <span class='kw'>in</span> <span class='ident'>opts</span>.<span class='ident'>iter</span>() {
+
+        <span class='kw'>if</span> <span class='op'>!</span><span class='self'>self</span>.<span class='ident'>options</span>.<span class='ident'>is_empty</span>() {
+            <span class='kw'>for</span> (<span class='ident'>k</span>,<span class='ident'>v</span>) <span class='kw'>in</span> <span class='self'>self</span>.<span class='ident'>options</span>.<span class='ident'>iter</span>() {
                 <span class='ident'>final_params</span>.<span class='ident'>insert</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>k</span>, <span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>v</span>);
             }
             <span class='comment'>// update query since AlgoOptions were provided</span>
@@ -952,21 +1036,54 @@
 
         <span class='ident'>req</span>.<span class='ident'>send</span>()
     }
+
+    <span class='doccomment'>/// Builder method to explicitly configure options</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>set_options</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>options</span>: <span class='ident'>AlgoOptions</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Algorithm</span> {
+        <span class='self'>self</span>.<span class='ident'>options</span> <span class='op'>=</span> <span class='ident'>options</span>;
+        <span class='self'>self</span>
+    }
+
+    <span class='doccomment'>/// Builder method to configure the timeout in seconds</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// # Examples</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// ```no_run</span>
+    <span class='doccomment'>/// # use algorithmia::Algorithmia;</span>
+    <span class='doccomment'>/// # use algorithmia::algo::Algorithm;</span>
+    <span class='doccomment'>/// let client = Algorithmia::client(&quot;111112222233333444445555566&quot;);</span>
+    <span class='doccomment'>/// let minmax  = client.algo(&quot;codeb34v3r/FindMinMax/0.1&quot;).timeout(3);</span>
+    <span class='doccomment'>/// minmax.pipe(vec![2,3,4]);</span>
+    <span class='doccomment'>/// ```</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>timeout</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>timeout</span>: <span class='ident'>u32</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Algorithm</span> {
+        <span class='self'>self</span>.<span class='ident'>options</span>.<span class='ident'>timeout</span>(<span class='ident'>timeout</span>);
+        <span class='self'>self</span>
+    }
+
+    <span class='doccomment'>/// Builder method to include stdout in the response metadata</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// This has no affect unless authenticated as the owner of the algorithm</span>
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>enable_stdout</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Algorithm</span> {
+        <span class='self'>self</span>.<span class='ident'>options</span>.<span class='ident'>enable_stdout</span>();
+        <span class='self'>self</span>
+    }
 }
 
 <span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='doccomment'>/// If the `AlgoInput` is text (or a valid JSON string), returns the associated text</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>as_string</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>Cow</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>str</span><span class='op'>&gt;&gt;</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>as_string</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span><span class='op'>&gt;</span> {
         <span class='kw'>match</span> <span class='self'>self</span> {
-            <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Text</span>(<span class='kw-2'>ref</span> <span class='ident'>text</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='ident'>text</span>.<span class='ident'>clone</span>()),
+            <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Text</span>(<span class='kw-2'>ref</span> <span class='ident'>text</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>text</span>),
             <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Binary</span>(_) <span class='op'>=&gt;</span> <span class='prelude-val'>None</span>,
-            <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Borrowed</span>(<span class='kw-2'>&amp;</span><span class='ident'>Json</span>::<span class='ident'>String</span>(<span class='kw-2'>ref</span> <span class='ident'>text</span>))) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='ident'>text</span>.<span class='ident'>clone</span>().<span class='ident'>into</span>()),
-            <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>Json</span>::<span class='ident'>String</span>(<span class='kw-2'>ref</span> <span class='ident'>text</span>))) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='ident'>text</span>.<span class='ident'>clone</span>().<span class='ident'>into</span>()),
+            <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Borrowed</span>(<span class='kw-2'>&amp;</span><span class='ident'>Json</span>::<span class='ident'>String</span>(<span class='kw-2'>ref</span> <span class='ident'>text</span>))) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>text</span>),
+            <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>Json</span>::<span class='ident'>String</span>(<span class='kw-2'>ref</span> <span class='ident'>text</span>))) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='kw-2'>&amp;</span><span class='op'>*</span><span class='ident'>text</span>),
             _ <span class='op'>=&gt;</span> <span class='prelude-val'>None</span>,
         }
     }
 
     <span class='doccomment'>/// If the `AlgoInput` is Json (or text that can be JSON encoded), returns the associated JSON string</span>
+    <span class='doccomment'>///</span>
+    <span class='doccomment'>/// For `AlgoInput::Json`, this returns the borrowed `Json`.</span>
+    <span class='doccomment'>///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>as_json</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>Cow</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>Json</span><span class='op'>&gt;&gt;</span> {
         <span class='kw'>match</span> <span class='self'>self</span> {
             <span class='kw-2'>&amp;</span><span class='ident'>AlgoInput</span>::<span class='ident'>Text</span>(<span class='kw-2'>ref</span> <span class='ident'>text</span>) <span class='op'>=&gt;</span> <span class='prelude-val'>Some</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>Json</span>::<span class='ident'>String</span>(<span class='ident'>text</span>.<span class='ident'>clone</span>().<span class='ident'>into_owned</span>()))),
@@ -1031,21 +1148,30 @@
 }
 
 <span class='kw'>impl</span> <span class='ident'>AlgoOptions</span> {
-    <span class='doccomment'>/// Initialize empty set of `AlgoOptions`</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>() <span class='op'>-&gt;</span> <span class='ident'>AlgoOptions</span> {
-        <span class='ident'>AlgoOptions</span> { <span class='ident'>opts</span>: <span class='ident'>HashMap</span>::<span class='ident'>new</span>() }
+        <span class='ident'>AlgoOptions</span>{ <span class='ident'>opts</span>: <span class='ident'>HashMap</span>::<span class='ident'>new</span>() }
     }
 
-    <span class='doccomment'>/// Configure the timeout in seconds</span>
+    <span class='doccomment'>/// Configure timeout in seconds</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>timeout</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>timeout</span>: <span class='ident'>u32</span>) {
         <span class='self'>self</span>.<span class='ident'>opts</span>.<span class='ident'>insert</span>(<span class='string'>&quot;timeout&quot;</span>.<span class='ident'>into</span>(), <span class='ident'>timeout</span>.<span class='ident'>to_string</span>());
     }
 
-    <span class='doccomment'>/// Include algorithm stdout in the response metadata</span>
+    <span class='doccomment'>/// Sets the option to enable stdout retrieval</span>
+    <span class='doccomment'>///</span>
     <span class='doccomment'>/// This has no affect unless authenticated as the owner of the algorithm</span>
-    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>stdout</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>stdout</span>: <span class='ident'>bool</span>) {
-        <span class='self'>self</span>.<span class='ident'>opts</span>.<span class='ident'>insert</span>(<span class='string'>&quot;stdout&quot;</span>.<span class='ident'>into</span>(), <span class='ident'>stdout</span>.<span class='ident'>to_string</span>());
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>enable_stdout</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
+        <span class='self'>self</span>.<span class='ident'>opts</span>.<span class='ident'>insert</span>(<span class='string'>&quot;stdout&quot;</span>.<span class='ident'>into</span>(), <span class='boolval'>true</span>.<span class='ident'>to_string</span>());
     }
+}
+
+<span class='kw'>impl</span> <span class='ident'>Deref</span> <span class='kw'>for</span> <span class='ident'>AlgoOptions</span> {
+    <span class='kw'>type</span> <span class='ident'>Target</span> <span class='op'>=</span> <span class='ident'>HashMap</span><span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>String</span><span class='op'>&gt;</span>;
+    <span class='kw'>fn</span> <span class='ident'>deref</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>HashMap</span><span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>String</span><span class='op'>&gt;</span> { <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>opts</span> }
+}
+
+<span class='kw'>impl</span> <span class='ident'>DerefMut</span> <span class='kw'>for</span> <span class='ident'>AlgoOptions</span> {
+    <span class='kw'>fn</span> <span class='ident'>deref_mut</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Self</span>::<span class='ident'>Target</span> { <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>.<span class='ident'>opts</span> }
 }
 
 <span class='kw'>impl</span> <span class='ident'>FromStr</span> <span class='kw'>for</span> <span class='ident'>AlgoResponse</span> {
@@ -1131,6 +1257,13 @@
     }
 }
 
+<span class='comment'>// AlgoInput Conversions</span>
+<span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span>()<span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>_unit</span>: ()) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>Json</span>::<span class='ident'>Null</span>))
+    }
+}
+
 <span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>text</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
         <span class='ident'>AlgoInput</span>::<span class='ident'>Text</span>(<span class='ident'>Cow</span>::<span class='ident'>Borrowed</span>(<span class='ident'>text</span>))
@@ -1143,15 +1276,43 @@
     }
 }
 
+<span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>String</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>text</span>: <span class='ident'>String</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='ident'>AlgoInput</span>::<span class='ident'>Text</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>text</span>))
+    }
+}
+
+<span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>bytes</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='ident'>AlgoInput</span>::<span class='ident'>Binary</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>bytes</span>))
+    }
+}
+
 <span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>Json</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>json</span>: <span class='ident'>Json</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
         <span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>json</span>))
     }
 }
 
+<span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>E</span>: <span class='ident'>Encodable</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>E</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>encodable</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>E</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='comment'>// TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it</span>
+        <span class='comment'>//       or store a result and let pipe() do error handling</span>
+        <span class='kw'>let</span> <span class='ident'>encoded</span> <span class='op'>=</span> <span class='ident'>json</span>::<span class='ident'>encode</span>(<span class='kw-2'>&amp;</span><span class='ident'>encodable</span>).<span class='ident'>unwrap</span>();
+        <span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>Json</span>::<span class='ident'>from_str</span>(<span class='kw-2'>&amp;</span><span class='ident'>encoded</span>).<span class='ident'>unwrap</span>()))
+    }
+}
+
+<span class='comment'>// AlgoOutput conversions - could probably combine with fancier implementations</span>
 <span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span>()<span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoOutput</span> {
     <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>_unit</span>: ()) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
         <span class='ident'>AlgoOutput</span>::<span class='ident'>Json</span>(<span class='ident'>Json</span>::<span class='ident'>Null</span>)
+    }
+}
+
+<span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoOutput</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>text</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='ident'>AlgoOutput</span>::<span class='ident'>Text</span>(<span class='ident'>text</span>.<span class='ident'>into</span>())
     }
 }
 
@@ -1167,6 +1328,28 @@
     }
 }
 
+<span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoOutput</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>bytes</span>: <span class='ident'>Vec</span><span class='op'>&lt;</span><span class='ident'>u8</span><span class='op'>&gt;</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='ident'>AlgoOutput</span>::<span class='ident'>Binary</span>(<span class='ident'>bytes</span>)
+    }
+}
+
+<span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>Json</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoOutput</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>json</span>: <span class='ident'>Json</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='ident'>AlgoOutput</span>::<span class='ident'>Json</span>(<span class='ident'>json</span>)
+    }
+}
+
+<span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>E</span>: <span class='ident'>Encodable</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>E</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoOutput</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>encodable</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>E</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+        <span class='comment'>// TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it</span>
+        <span class='comment'>//       or store a result and let pipe() do error handling</span>
+        <span class='kw'>let</span> <span class='ident'>encoded</span> <span class='op'>=</span> <span class='ident'>json</span>::<span class='ident'>encode</span>(<span class='kw-2'>&amp;</span><span class='ident'>encodable</span>).<span class='ident'>unwrap</span>();
+        <span class='ident'>AlgoOutput</span>::<span class='ident'>Json</span>(<span class='ident'>Json</span>::<span class='ident'>from_str</span>(<span class='kw-2'>&amp;</span><span class='ident'>encoded</span>).<span class='ident'>unwrap</span>())
+    }
+}
+
+<span class='comment'>// The conversion that makes it easy to pipe output to another algorithm&#39;s input</span>
 <span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='ident'>AlgoOutput</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
     <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>output</span>: <span class='ident'>AlgoOutput</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
         <span class='kw'>match</span> <span class='ident'>output</span> {
@@ -1176,25 +1359,6 @@
         }
     }
 }
-
-<span class='kw'>impl</span> <span class='ident'>Deref</span> <span class='kw'>for</span> <span class='ident'>AlgoOptions</span> {
-    <span class='kw'>type</span> <span class='ident'>Target</span> <span class='op'>=</span> <span class='ident'>HashMap</span><span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>String</span><span class='op'>&gt;</span>;
-    <span class='kw'>fn</span> <span class='ident'>deref</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>HashMap</span><span class='op'>&lt;</span><span class='ident'>String</span>, <span class='ident'>String</span><span class='op'>&gt;</span> { <span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>opts</span> }
-}
-
-<span class='kw'>impl</span> <span class='ident'>DerefMut</span> <span class='kw'>for</span> <span class='ident'>AlgoOptions</span> {
-    <span class='kw'>fn</span> <span class='ident'>deref_mut</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Self</span>::<span class='ident'>Target</span> { <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>.<span class='ident'>opts</span> }
-}
-
-<span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span>, <span class='ident'>E</span>: <span class='ident'>Encodable</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>E</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>AlgoInput</span><span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> {
-    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>encodable</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>E</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
-        <span class='comment'>// TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it</span>
-        <span class='comment'>//       or store a result and let pipe() do error handling</span>
-        <span class='kw'>let</span> <span class='ident'>encoded</span> <span class='op'>=</span> <span class='ident'>json</span>::<span class='ident'>encode</span>(<span class='kw-2'>&amp;</span><span class='ident'>encodable</span>).<span class='ident'>unwrap</span>();
-        <span class='ident'>AlgoInput</span>::<span class='ident'>Json</span>(<span class='ident'>Cow</span>::<span class='ident'>Owned</span>(<span class='ident'>Json</span>::<span class='ident'>from_str</span>(<span class='kw-2'>&amp;</span><span class='ident'>encoded</span>).<span class='ident'>unwrap</span>()))
-    }
-}
-
 
 <span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>
 <span class='kw'>mod</span> <span class='ident'>tests</span> {
