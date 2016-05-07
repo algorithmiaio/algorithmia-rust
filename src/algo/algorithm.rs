@@ -13,7 +13,7 @@
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let result: Vec<f64> = moving_avg.pipe(&input, None).unwrap().decode().unwrap();
+//! let result: Vec<f64> = moving_avg.pipe(&input).unwrap().decode().unwrap();
 //! println!("Completed with result: {:?}", result);
 //! ```
 
@@ -34,7 +34,6 @@ use std::io::{self, Read, Write};
 use std::str::FromStr;
 use std::{self, fmt};
 use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
@@ -61,13 +60,12 @@ pub enum AlgoOutput {
 /// Algorithmia algorithm - intialized from the `Algorithmia` builder
 pub struct Algorithm {
     pub path: String,
+    options: AlgoOptions,
     client: HttpClient,
 }
 
 /// Options used to alter the algorithm call, e.g. configuring the timeout
-pub struct AlgoOptions {
-    opts: HashMap<String, String>
-}
+pub type AlgoOptions = HashMap<String, String>;
 
 pub struct AlgoRef {
     pub path: String
@@ -195,6 +193,7 @@ impl Algorithm {
         Algorithm {
             client: client,
             path: path,
+            options: AlgoOptions::new(),
         }
     }
 
@@ -230,22 +229,21 @@ impl Algorithm {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-    /// match moving_avg.pipe(&input, None) {
+    /// match moving_avg.pipe(&input) {
     ///     Ok(response) => println!("{}", response.as_json().unwrap()),
     ///     Err(err) => println!("ERROR: {}", err),
     /// };
     /// ```
-    pub fn pipe<'a, I>(&'a self, input_data: I, options: Option<&'a AlgoOptions>)
-                       -> Result<AlgoResponse, Error> where
-        I: Into<AlgoInput<'a>>
+    pub fn pipe<'a, I>(&'a self, input_data: I) -> Result<AlgoResponse, Error>
+        where I: Into<AlgoInput<'a>>
     {
         let mut res = try!(match input_data.into() {
-            AlgoInput::Text(text) => self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![]), options),
+            AlgoInput::Text(text) => self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![])),
             AlgoInput::Json(json) => {
                 let encoded = try!(json::encode(&json));
-                self.pipe_as(&*encoded, Mime(TopLevel::Application, SubLevel::Json, vec![]), options)
+                self.pipe_as(&*encoded, Mime(TopLevel::Application, SubLevel::Json, vec![]))
             },
-            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![]), options),
+            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![])),
         });
 
         let mut res_json = String::new();
@@ -266,12 +264,12 @@ impl Algorithm {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
-    /// let output = match minmax.pipe_json("[2,3,4]", None) {
+    /// let output = match minmax.pipe_json("[2,3,4]") {
     ///    Ok(response) => response.as_json().unwrap(),
     ///    Err(err) => panic!("{}", err),
     /// };
-    pub fn pipe_json(&self, json_input: &str, options: Option<&AlgoOptions>) -> Result<AlgoResponse, Error> {
-        let mut res = try!(self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![]), options));
+    pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
+        let mut res = try!(self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
 
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
@@ -279,7 +277,7 @@ impl Algorithm {
     }
 
 
-    pub fn pipe_as<'a, B>(&'a self, input_data: B, content_type: Mime, options: Option<&'a AlgoOptions>)
+    pub fn pipe_as<'a, B>(&'a self, input_data: B, content_type: Mime)
                           -> Result<Response, hyper::error::Error>
         where B: Into<Body<'a>>
     {
@@ -294,8 +292,9 @@ impl Algorithm {
                 final_params.insert(&*pair.0, &*pair.1);
             }
         }
-        if let Some(ref opts) = options {
-            for (k,v) in opts.iter() {
+
+        if !self.options.is_empty() {
+            for (k,v) in self.options.iter() {
                 final_params.insert(&*k, &*v);
             }
             // update query since AlgoOptions were provided
@@ -307,6 +306,35 @@ impl Algorithm {
             .body(input_data);
 
         req.send()
+    }
+
+    /// Builder method to explicitly configure options
+    pub fn set_options(&mut self, options: AlgoOptions) -> &mut Algorithm {
+        self.options = options;
+        self
+    }
+
+    /// Builder method to configure the timeout in seconds
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # use algorithmia::Algorithmia;
+    /// # use algorithmia::algo::Algorithm;
+    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1").timeout(3);
+    /// minmax.pipe(vec![2,3,4]);
+    /// ```
+    pub fn timeout(&mut self, timeout: u32) -> &mut Algorithm {
+        self.options.insert("timeout".into(), timeout.to_string());
+        self
+    }
+
+    // Builder method to nclude stdout in the response metadata
+    //
+    // This has no affect unless authenticated as the owner of the algorithm
+    pub fn enable_stdout(&mut self) {
+        self.options.insert("stdout".into(), true.to_string());
     }
 }
 
@@ -386,24 +414,6 @@ impl AlgoResponse {
             .ok_or(Error::ContentTypeError(ct)));
         let encoded = try!(json::encode(&res_json));
         json::decode::<D>(&encoded).map_err(|err| err.into())
-    }
-}
-
-impl AlgoOptions {
-    /// Initialize empty set of `AlgoOptions`
-    pub fn new() -> AlgoOptions {
-        AlgoOptions { opts: HashMap::new() }
-    }
-
-    /// Configure the timeout in seconds
-    pub fn timeout(&mut self, timeout: u32) {
-        self.opts.insert("timeout".into(), timeout.to_string());
-    }
-
-    /// Include algorithm stdout in the response metadata
-    /// This has no affect unless authenticated as the owner of the algorithm
-    pub fn stdout(&mut self, stdout: bool) {
-        self.opts.insert("stdout".into(), stdout.to_string());
     }
 }
 
@@ -591,15 +601,6 @@ impl <'a> From<AlgoOutput> for AlgoInput<'a> {
             AlgoOutput::Binary(bytes) => AlgoInput::Binary(Cow::Owned(bytes)),
         }
     }
-}
-
-impl Deref for AlgoOptions {
-    type Target = HashMap<String, String>;
-    fn deref(&self) -> &HashMap<String, String> { &self.opts }
-}
-
-impl DerefMut for AlgoOptions {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.opts }
 }
 
 #[cfg(test)]

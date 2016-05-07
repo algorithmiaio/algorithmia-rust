@@ -44,7 +44,7 @@ impl<'a> RouteMap<'a> {
         // println!("Input: {:?}", input_data);
         println!("Input:\n{}", json::as_pretty_json(&input_data));
 
-        match dijkstra.pipe(&input_data, None) {
+        match dijkstra.pipe(&input_data) {
             Ok(response) => response,
             Err(err) => panic!("{}", err),
         }
