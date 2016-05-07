@@ -34,6 +34,7 @@ use std::io::{self, Read, Write};
 use std::str::FromStr;
 use std::{self, fmt};
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
@@ -65,7 +66,9 @@ pub struct Algorithm {
 }
 
 /// Options used to alter the algorithm call, e.g. configuring the timeout
-pub type AlgoOptions = HashMap<String, String>;
+pub struct AlgoOptions {
+    opts: HashMap<String, String>
+}
 
 pub struct AlgoRef {
     pub path: String
@@ -326,15 +329,16 @@ impl Algorithm {
     /// minmax.pipe(vec![2,3,4]);
     /// ```
     pub fn timeout(&mut self, timeout: u32) -> &mut Algorithm {
-        self.options.insert("timeout".into(), timeout.to_string());
+        self.options.timeout(timeout);
         self
     }
 
     // Builder method to nclude stdout in the response metadata
     //
     // This has no affect unless authenticated as the owner of the algorithm
-    pub fn enable_stdout(&mut self) {
-        self.options.insert("stdout".into(), true.to_string());
+    pub fn enable_stdout(&mut self) -> &mut Algorithm {
+        self.options.enable_stdout();
+        self
     }
 }
 
@@ -415,6 +419,29 @@ impl AlgoResponse {
         let encoded = try!(json::encode(&res_json));
         json::decode::<D>(&encoded).map_err(|err| err.into())
     }
+}
+
+impl AlgoOptions {
+    pub fn new() -> AlgoOptions {
+        AlgoOptions{ opts: HashMap::new() }
+    }
+
+    pub fn timeout(&mut self, timeout: u32) {
+        self.opts.insert("timeout".into(), timeout.to_string());
+    }
+
+    pub fn enable_stdout(&mut self) {
+        self.opts.insert("stdout".into(), true.to_string());
+    }
+}
+
+impl Deref for AlgoOptions {
+    type Target = HashMap<String, String>;
+    fn deref(&self) -> &HashMap<String, String> { &self.opts }
+}
+
+impl DerefMut for AlgoOptions {
+    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.opts }
 }
 
 impl FromStr for AlgoResponse {
