@@ -188,9 +188,9 @@ impl <'a> Iterator for DirectoryListing<'a> {
                 None => {
                     // Query if there is another page of files/folders
                     if self.query_count == 0 || self.marker.is_some() {
+                        self.query_count = self.query_count + 1;
                         match get_directory(self.dir, self.marker.clone()) {
                             Ok(ds) => {
-                                self.query_count = self.query_count + 1;
                                 self.folders = ds.folders.unwrap_or(Vec::new()).into_iter();
                                 self.files = ds.files.unwrap_or(Vec::new()).into_iter();
                                 self.marker = ds.marker;
