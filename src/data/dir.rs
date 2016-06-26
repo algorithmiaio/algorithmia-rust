@@ -372,7 +372,11 @@ impl DataDir {
     }
 
     pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
-        T::new(self.client.clone(), &format!("{}/{}", self.to_data_uri(), filename))
+        let new_uri = match self.to_data_uri() {
+            ref uri if uri.ends_with("/") => format!("{}{}", uri, filename),
+            uri => format!("{}/{}", uri, filename),
+        };
+        T::new(self.client.clone(), &new_uri)
     }
 }
 
