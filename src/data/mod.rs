@@ -38,3 +38,29 @@ pub fn parse_data_uri(data_uri: &str) -> &str {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_protocol() {
+        assert_eq!(parse_data_uri("data://foo"), "foo");
+        assert_eq!(parse_data_uri("data://foo/"), "foo/");
+        assert_eq!(parse_data_uri("data://foo/bar"), "foo/bar");
+    }
+
+    #[test]
+    fn test_parse_leading_slash() {
+        assert_eq!(parse_data_uri("/foo"), "foo");
+        assert_eq!(parse_data_uri("/foo/"), "foo/");
+        assert_eq!(parse_data_uri("/foo/bar"), "foo/bar");
+    }
+
+    #[test]
+    fn test_parse_unprefixed() {
+        assert_eq!(parse_data_uri("foo"), "foo");
+        assert_eq!(parse_data_uri("foo/"), "foo/");
+        assert_eq!(parse_data_uri("foo/bar"), "foo/bar");
+    }
+
+}
