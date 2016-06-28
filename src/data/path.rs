@@ -1,6 +1,7 @@
-use data::{self, DataFile, DataDir, DataType, DataObject, XDataType, XErrorMessage};
+use data::{self, DataFile, DataDir, DataType, DataObject, DataDirEntry, DataFileEntry, XErrorMessage};
 use client::HttpClient;
 use error::*;
+use chrono::{UTC, TimeZone};
 
 use hyper::Url;
 use hyper::status::StatusCode;
@@ -119,33 +120,33 @@ impl DataPath {
     /// ```
     pub fn get_type(&self) -> Result<DataType, Error> {
         let req = self.client.head(self.to_url());
-
         let res = try!(req.send());
-        match res.status {
-            StatusCode::Ok => match res.headers.get::<XDataType>() {
-                Some(dt) if &*dt.to_string() == "directory" => Ok(DataType::Dir),
-                Some(dt) if &*dt.to_string() == "file"  => Ok(DataType::File),
-                Some(dt) => Err(Error::DataTypeError(format!("Unknown DataType: {}", dt.to_string()))),
-                None => Err(Error::DataTypeError("Unspecified DataType".to_string())),
-            },
-            status => {
-                let msg = match res.headers.get::<XErrorMessage>()  {
-                    Some(err_header) => format!("{}: {}", status, err_header),
-                    None => format!("{}", status),
-                };
+        let metadata = try!(data::parse_headers(&res.headers));
 
-                Err(ApiError{message: msg, stacktrace: None}.into())
-            },
+        match res.status {
+            StatusCode::Ok => Ok(metadata.data_type),
+            status => Err(ApiError{message: status.to_string(), stacktrace: None}.into()),
         }
     }
 
 
     pub fn into_type(&self) -> Result<DataObject, Error> {
-        match try!(self.get_type()) {
-            DataType::Dir => Ok(DataObject::Dir(self.into())),
-            DataType::File => Ok(DataObject::File(self.into())),
+        let req = self.client.head(self.to_url());
+        let res = try!(req.send());
+        let metadata = try!(data::parse_headers(&res.headers));
+
+        match metadata.data_type {
+            DataType::Dir => Ok(DataObject::Dir(DataDirEntry{
+                dir: self.into()
+            })),
+            DataType::File => Ok(DataObject::File(DataFileEntry{
+                size: metadata.content_length.unwrap_or(0),
+                last_modified: metadata.last_modified.unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
+                file: self.into()
+            })),
         }
     }
+
 }
 
 

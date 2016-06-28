@@ -11,8 +11,9 @@
 //! my_file.put("file_contents");
 //! ```
 
+use chrono::{DateTime, UTC, TimeZone};
 use client::{Body, HttpClient};
-use data::{self, HasDataPath, DeletedResult, XDataType, XErrorMessage};
+use data::{self, HasDataPath, DataType, DeletedResult};
 use std::io::{self, Read};
 use error::{self, Error, ApiError};
 use rustc_serialize::json;
@@ -30,7 +31,8 @@ pub struct FileDeleted {
 }
 
 pub struct DataResponse {
-    // pub meta: Metadata,
+    pub size: u64,
+    pub last_modified: DateTime<UTC>,
     data: Box<Read>,
 }
 
@@ -110,24 +112,23 @@ impl DataFile  {
 
         let req = self.client.get(url);
         let res = try!(req.send());
+        let metadata = try!(data::parse_headers(&res.headers));
 
         if res.status.is_success() {
-            if let Some(data_type) = res.headers.get::<XDataType>() {
-                if "file" != data_type.to_string() {
-                    return Err(Error::DataTypeError(format!("Expected file, Received {}", data_type)));
+            match metadata.data_type {
+                DataType::File => (),
+                DataType::Dir => {
+                    return Err(Error::DataTypeError("Expected file, Received directory".to_string()));
                 }
             }
 
             Ok(DataResponse{
+                size: metadata.content_length.unwrap_or(0),
+                last_modified: metadata.last_modified.unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
                 data: Box::new(res),
             })
         } else {
-            let msg = match res.headers.get::<XErrorMessage>()  {
-                Some(err_header) => format!("{}: {}", res.status, err_header),
-                None => format!("{}", res.status),
-            };
-
-            Err(ApiError{message: msg, stacktrace: None}.into())
+            Err(ApiError{message: res.status.to_string(), stacktrace: None}.into())
         }
     }
 

@@ -21,6 +21,7 @@
 
 #[macro_use]
 extern crate hyper;
+extern crate chrono;
 extern crate rustc_serialize;
 
 use algo::{Algorithm, AlgoRef};
