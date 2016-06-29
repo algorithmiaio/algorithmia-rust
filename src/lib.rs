@@ -25,7 +25,7 @@ extern crate chrono;
 extern crate rustc_serialize;
 
 use algo::{Algorithm, AlgoRef};
-use data::{DataDir, DataFile, DataPath, HasDataPath};
+use data::{DataDir, DataFile, DataObject, HasDataPath};
 use client::HttpClient;
 
 use std::clone;
@@ -126,8 +126,8 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let rustfoo = client.data("data://.my/rustfoo/what_am_i");
     /// ```
-    pub fn data(&self, path: &'a str) -> DataPath {
-        DataPath::new(self.http_client.clone(), path)
+    pub fn data(&self, path: &'a str) -> DataObject {
+        DataObject::new(self.http_client.clone(), path)
     }
 
 }

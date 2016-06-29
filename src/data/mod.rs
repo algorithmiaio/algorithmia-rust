@@ -2,19 +2,20 @@
 //!
 //! Instantiate from the [`Algorithmia`](../struct.Algorithmia.html) struct
 
-pub use data::dir::{DataDir, DataAcl, ReadAcl};
-pub use self::file::DataFile;
-pub use self::path::{DataPath, HasDataPath};
+pub use self::dir::*;
+pub use self::file::*;
+pub use self::path::*;
+pub use self::object::*;
 
+use error::*;
 use chrono::{DateTime, UTC, NaiveDateTime, TimeZone};
 use std::ops::Deref;
-use error::*;
 use hyper::header::{Headers, ContentLength, Date};
 
-
-pub mod dir;
-pub mod file;
-pub mod path;
+mod dir;
+mod file;
+mod path;
+mod object;
 
 static DATA_BASE_PATH: &'static str = "v1/connector";
 
@@ -26,27 +27,27 @@ pub enum DataType {
     Dir,
 }
 
-pub enum DataObject {
-    File(DataFileEntry),
-    Dir(DataDirEntry),
+pub enum DataItem {
+    File(DataFileItem),
+    Dir(DataDirItem),
 }
 
-pub struct DataFileEntry {
+pub struct DataFileItem {
     pub size: u64,
     pub last_modified: DateTime<UTC>,
     file: DataFile,
 }
 
-impl Deref for DataFileEntry {
+impl Deref for DataFileItem {
     type Target = DataFile;
     fn deref(&self) -> &DataFile {&self.file}
 }
 
-pub struct DataDirEntry {
+pub struct DataDirItem {
     dir: DataDir,
 }
 
-impl Deref for DataDirEntry {
+impl Deref for DataDirItem {
     type Target = DataDir;
     fn deref(&self) -> &DataDir {&self.dir}
 }
@@ -55,14 +56,6 @@ impl Deref for DataDirEntry {
 #[derive(RustcDecodable, Debug)]
 pub struct DeletedResult {
     pub deleted: u64,
-}
-
-pub fn parse_data_uri(data_uri: &str) -> String {
-    match data_uri {
-        p if p.contains("://") => p.split_terminator("://").collect::<Vec<_>>().join("/"),
-        p if p.starts_with("/") => format!("data/{}", &p[1..]),
-        p => format!("data/{}", p),
-    }
 }
 
 pub struct HeaderData {
@@ -97,35 +90,4 @@ pub fn parse_headers(headers: &Headers) -> Result<HeaderData, Error> {
         content_length: content_length,
         last_modified: last_modified,
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_protocol() {
-        assert_eq!(parse_data_uri("data://"), "data");
-        assert_eq!(parse_data_uri("data://foo"), "data/foo");
-        assert_eq!(parse_data_uri("data://foo/"), "data/foo/");
-        assert_eq!(parse_data_uri("data://foo/bar"), "data/foo/bar");
-        assert_eq!(parse_data_uri("dropbox://"), "dropbox");
-        assert_eq!(parse_data_uri("dropbox://foo"), "dropbox/foo");
-        assert_eq!(parse_data_uri("dropbox://foo/"), "dropbox/foo/");
-        assert_eq!(parse_data_uri("dropbox://foo/bar"), "dropbox/foo/bar");    }
-
-    #[test]
-    fn test_parse_leading_slash() {
-        assert_eq!(parse_data_uri("/foo"), "data/foo");
-        assert_eq!(parse_data_uri("/foo/"), "data/foo/");
-        assert_eq!(parse_data_uri("/foo/bar"), "data/foo/bar");
-    }
-
-    #[test]
-    fn test_parse_unprefixed() {
-        assert_eq!(parse_data_uri("foo"), "data/foo");
-        assert_eq!(parse_data_uri("foo/"), "data/foo/");
-        assert_eq!(parse_data_uri("foo/bar"), "data/foo/bar");
-    }
-
 }

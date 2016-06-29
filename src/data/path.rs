@@ -1,11 +1,17 @@
-use data::{self, DataFile, DataDir, DataType, DataObject, DataDirEntry, DataFileEntry, XErrorMessage};
-use client::HttpClient;
+use data::*;
 use error::*;
-use chrono::{UTC, TimeZone};
 
+use client::HttpClient;
 use hyper::Url;
 use hyper::status::StatusCode;
 
+pub fn parse_data_uri(data_uri: &str) -> String {
+    match data_uri {
+        p if p.contains("://") => p.split_terminator("://").collect::<Vec<_>>().join("/"),
+        p if p.starts_with("/") => format!("data/{}", &p[1..]),
+        p => format!("data/{}", p),
+    }
+}
 
 pub trait HasDataPath {
     fn new(client: HttpClient, path: &str) -> Self;
@@ -14,7 +20,7 @@ pub trait HasDataPath {
 
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}", self.client().base_url, data::DATA_BASE_PATH, self.path());
+        let url_string = format!("{}/{}/{}", self.client().base_url, super::DATA_BASE_PATH, self.path());
         Url::parse(&url_string).unwrap()
     }
 
@@ -28,7 +34,11 @@ pub trait HasDataPath {
     /// assert_eq!(my_dir.to_data_uri(), "data://.my/my_dir");
     /// ```
     fn to_data_uri(&self) -> String {
-        self.path().splitn(2, "/").collect::<Vec<_>>().join("://")
+        let parts = self.path().splitn(2, "/").collect::<Vec<_>>();
+        match parts.len() {
+            1 => format!("{}://", parts[0]),
+            _ => parts.join("://"),
+        }
     }
 
     /// Get the parent off a given Data Object
@@ -98,72 +108,32 @@ pub trait HasDataPath {
     }
 }
 
-pub struct DataPath {
-    path: String,
-    client: HttpClient,
-}
+#[cfg(test)]
+mod tests {
+    use data::*;
 
+    #[test]
+    fn test_parse_protocol() {
+        assert_eq!(parse_data_uri("data://"), "data");
+        assert_eq!(parse_data_uri("data://foo"), "data/foo");
+        assert_eq!(parse_data_uri("data://foo/"), "data/foo/");
+        assert_eq!(parse_data_uri("data://foo/bar"), "data/foo/bar");
+        assert_eq!(parse_data_uri("dropbox://"), "dropbox");
+        assert_eq!(parse_data_uri("dropbox://foo"), "dropbox/foo");
+        assert_eq!(parse_data_uri("dropbox://foo/"), "dropbox/foo/");
+        assert_eq!(parse_data_uri("dropbox://foo/bar"), "dropbox/foo/bar");    }
 
-impl HasDataPath for DataPath {
-    fn new(client: HttpClient, path: &str) -> Self { DataPath { client: client, path: data::parse_data_uri(path).to_string() } }
-    fn path(&self) -> &str { &self.path }
-    fn client(&self) -> &HttpClient { &self.client }
-}
-
-impl DataPath {
-
-    /// Determine if a particular data URI is for a file or directory
-    ///
-    /// ```no_run
-    /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::data::{DataFile, DataDir, DataType, HasDataPath};
-    /// # let client = Algorithmia::client("111112222233333444445555566");
-    /// let my_obj = client.data("data://.my/some/path");
-    /// match my_obj.get_type().ok().unwrap() {
-    ///     DataType::File => println!("{} is a file", my_obj.to_data_uri()),
-    ///     DataType::Dir => println!("{} is a directory", my_obj.to_data_uri()),
-    /// }
-    /// ```
-    pub fn get_type(&self) -> Result<DataType, Error> {
-        let req = self.client.head(self.to_url());
-        let res = try!(req.send());
-        let metadata = try!(data::parse_headers(&res.headers));
-
-        match res.status {
-            StatusCode::Ok => Ok(metadata.data_type),
-            status => Err(ApiError{message: status.to_string(), stacktrace: None}.into()),
-        }
+    #[test]
+    fn test_parse_leading_slash() {
+        assert_eq!(parse_data_uri("/foo"), "data/foo");
+        assert_eq!(parse_data_uri("/foo/"), "data/foo/");
+        assert_eq!(parse_data_uri("/foo/bar"), "data/foo/bar");
     }
 
-
-    pub fn into_type(&self) -> Result<DataObject, Error> {
-        let req = self.client.head(self.to_url());
-        let res = try!(req.send());
-        let metadata = try!(data::parse_headers(&res.headers));
-
-        match metadata.data_type {
-            DataType::Dir => Ok(DataObject::Dir(DataDirEntry{
-                dir: self.into()
-            })),
-            DataType::File => Ok(DataObject::File(DataFileEntry{
-                size: metadata.content_length.unwrap_or(0),
-                last_modified: metadata.last_modified.unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
-                file: self.into()
-            })),
-        }
-    }
-
-}
-
-
-impl <'a> From<&'a DataPath> for DataDir {
-    fn from(d: &'a DataPath) -> Self {
-        DataDir::new(d.client().clone(), d.path())
-    }
-}
-
-impl <'a> From<&'a DataPath> for DataFile {
-    fn from(d: &'a DataPath) -> Self {
-        DataFile::new(d.client().clone(), d.path())
+    #[test]
+    fn test_parse_unprefixed() {
+        assert_eq!(parse_data_uri("foo"), "data/foo");
+        assert_eq!(parse_data_uri("foo/"), "data/foo/");
+        assert_eq!(parse_data_uri("foo/bar"), "data/foo/bar");
     }
 }

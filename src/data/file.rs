@@ -13,7 +13,7 @@
 
 use chrono::{DateTime, UTC, TimeZone};
 use client::{Body, HttpClient};
-use data::{self, HasDataPath, DataType, DeletedResult};
+use data::*;
 use std::io::{self, Read};
 use error::{self, Error, ApiError};
 use rustc_serialize::json;
@@ -50,7 +50,7 @@ pub struct DataFile {
 }
 
 impl HasDataPath for DataFile {
-    fn new(client: HttpClient, path: &str) -> Self { DataFile { client: client, path: data::parse_data_uri(path).to_string() } }
+    fn new(client: HttpClient, path: &str) -> Self { DataFile { client: client, path: parse_data_uri(path).to_string() } }
     fn path(&self) -> &str { &self.path }
     fn client(&self) -> &HttpClient { &self.client }
 }
@@ -112,7 +112,7 @@ impl DataFile  {
 
         let req = self.client.get(url);
         let res = try!(req.send());
-        let metadata = try!(data::parse_headers(&res.headers));
+        let metadata = try!(parse_headers(&res.headers));
 
         if res.status.is_success() {
             match metadata.data_type {

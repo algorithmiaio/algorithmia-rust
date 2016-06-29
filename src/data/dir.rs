@@ -16,8 +16,7 @@
 
 use client::HttpClient;
 use error::{self, Error};
-use data::{self, DeletedResult, XDataType, HasDataPath, DataObject, DataFileEntry, DataDirEntry};
-use data::file::FileAdded;
+use data::*;
 
 use std::io::Read;
 use std::fs::File;
@@ -149,27 +148,21 @@ impl <'a> DirectoryListing<'a> {
     }
 }
 
-
-// pub enum DirEntry {
-//     File(DataFileEntry),
-//     Dir(DataDir),
-// }
-
 impl <'a> Iterator for DirectoryListing<'a> {
-    type Item = Result<DataObject, Error>;
+    type Item = Result<DataItem, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
             // Return folders first
-            Some(d) => Some(Ok(DataObject::Dir(
-                DataDirEntry{
+            Some(d) => Some(Ok(DataItem::Dir(
+                DataDirItem{
                     dir: self.dir.child(&d.name)
                 }
             ))),
             None => match self.files.next() {
                 // Return files second
-                Some(f) => Some(Ok(DataObject::File(
-                    DataFileEntry{
+                Some(f) => Some(Ok(DataItem::File(
+                    DataFileItem{
                         size: f.size,
                         last_modified: f.last_modified,
                         file: self.dir.child(&f.filename),
@@ -224,7 +217,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 }
 
 impl HasDataPath for DataDir {
-    fn new(client: HttpClient, path: &str) -> Self { DataDir { client: client, path: data::parse_data_uri(path).to_string() } }
+    fn new(client: HttpClient, path: &str) -> Self { DataDir { client: client, path: parse_data_uri(path).to_string() } }
     fn path(&self) -> &str { &self.path }
     fn client(&self) -> &HttpClient { &self.client }
 }
@@ -235,14 +228,14 @@ impl DataDir {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::data::{DataObject, HasDataPath};
+    /// # use algorithmia::data::{DataItem, HasDataPath};
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let my_dir = client.dir(".my/my_dir");
     /// let dir_list = my_dir.list();
     /// for entry in dir_list {
     ///     match entry {
-    ///         Ok(DataObject::File(f)) => println!("File: {}", f.to_data_uri()),
-    ///         Ok(DataObject::Dir(d)) => println!("Dir: {}", d.to_data_uri()),
+    ///         Ok(DataItem::File(f)) => println!("File: {}", f.to_data_uri()),
+    ///         Ok(DataItem::Dir(d)) => println!("Dir: {}", d.to_data_uri()),
     ///         Err(err) => { println!("Error: {}", err); break; },
     ///     }
     /// };
