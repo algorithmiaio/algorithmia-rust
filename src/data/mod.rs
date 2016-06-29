@@ -16,7 +16,7 @@ pub mod dir;
 pub mod file;
 pub mod path;
 
-static DATA_BASE_PATH: &'static str = "v1/data";
+static DATA_BASE_PATH: &'static str = "v1/connector";
 
 header! { (XDataType, "X-Data-Type") => [String] }
 header! { (XErrorMessage, "X-Error-Message") => [String] }
@@ -57,11 +57,11 @@ pub struct DeletedResult {
     pub deleted: u64,
 }
 
-pub fn parse_data_uri(data_uri: &str) -> &str {
+pub fn parse_data_uri(data_uri: &str) -> String {
     match data_uri {
-        p if p.starts_with("data://") => &p[7..],
-        p if p.starts_with("/") => &p[1..],
-        p => p,
+        p if p.contains("://") => p.split_terminator("://").collect::<Vec<_>>().join("/"),
+        p if p.starts_with("/") => format!("data/{}", &p[1..]),
+        p => format!("data/{}", p),
     }
 }
 
@@ -105,23 +105,27 @@ mod tests {
 
     #[test]
     fn test_parse_protocol() {
-        assert_eq!(parse_data_uri("data://foo"), "foo");
-        assert_eq!(parse_data_uri("data://foo/"), "foo/");
-        assert_eq!(parse_data_uri("data://foo/bar"), "foo/bar");
-    }
+        assert_eq!(parse_data_uri("data://"), "data");
+        assert_eq!(parse_data_uri("data://foo"), "data/foo");
+        assert_eq!(parse_data_uri("data://foo/"), "data/foo/");
+        assert_eq!(parse_data_uri("data://foo/bar"), "data/foo/bar");
+        assert_eq!(parse_data_uri("dropbox://"), "dropbox");
+        assert_eq!(parse_data_uri("dropbox://foo"), "dropbox/foo");
+        assert_eq!(parse_data_uri("dropbox://foo/"), "dropbox/foo/");
+        assert_eq!(parse_data_uri("dropbox://foo/bar"), "dropbox/foo/bar");    }
 
     #[test]
     fn test_parse_leading_slash() {
-        assert_eq!(parse_data_uri("/foo"), "foo");
-        assert_eq!(parse_data_uri("/foo/"), "foo/");
-        assert_eq!(parse_data_uri("/foo/bar"), "foo/bar");
+        assert_eq!(parse_data_uri("/foo"), "data/foo");
+        assert_eq!(parse_data_uri("/foo/"), "data/foo/");
+        assert_eq!(parse_data_uri("/foo/bar"), "data/foo/bar");
     }
 
     #[test]
     fn test_parse_unprefixed() {
-        assert_eq!(parse_data_uri("foo"), "foo");
-        assert_eq!(parse_data_uri("foo/"), "foo/");
-        assert_eq!(parse_data_uri("foo/bar"), "foo/bar");
+        assert_eq!(parse_data_uri("foo"), "data/foo");
+        assert_eq!(parse_data_uri("foo/"), "data/foo/");
+        assert_eq!(parse_data_uri("foo/bar"), "data/foo/bar");
     }
 
 }

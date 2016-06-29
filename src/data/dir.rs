@@ -382,7 +382,7 @@ mod tests {
     #[test]
     fn test_to_url() {
         let dir = mock_client().dir("data://anowell/foo");
-        assert_eq!(dir.to_url().serialize_path().unwrap(), "/v1/data/anowell/foo");
+        assert_eq!(dir.to_url().serialize_path().unwrap(), "/v1/connector/data/anowell/foo");
     }
 
     #[test]
@@ -396,6 +396,17 @@ mod tests {
         let dir = mock_client().dir("data://anowell/foo");
         let expected = mock_client().dir("data://anowell");
         assert_eq!(dir.parent().unwrap().path, expected.path);
+
+        let dir = mock_client().dir("dropbox://anowell/foo");
+        let expected = mock_client().dir("dropbox://anowell");
+        assert_eq!(dir.parent().unwrap().path, expected.path);
+
+        let dir = mock_client().dir("data://anowell");
+        let expected = mock_client().dir("data://");
+        assert_eq!(dir.parent().unwrap().path, expected.path);
+
+        let dir = mock_client().dir("data://");
+        assert!(dir.parent().is_none());
     }
 
     #[test]

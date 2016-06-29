@@ -28,7 +28,7 @@ pub trait HasDataPath {
     /// assert_eq!(my_dir.to_data_uri(), "data://.my/my_dir");
     /// ```
     fn to_data_uri(&self) -> String {
-        format!("data://{}", self.path())
+        self.path().splitn(2, "/").collect::<Vec<_>>().join("://")
     }
 
     /// Get the parent off a given Data Object
@@ -38,13 +38,19 @@ pub trait HasDataPath {
     /// # use algorithmia::data::HasDataPath;
     /// # let client = Algorithmia::client("111112222233333444445555566");
     /// let my_file = client.file("data://.my/my_dir/my_file");
-    /// assert_eq!(my_file.parent().unwrap().path(), ".my/my_dir");
+    /// assert_eq!(my_file.parent().unwrap().to_data_uri(), "data://.my/my_dir");
     /// ```
     fn parent(&self) -> Option<DataDir>{
-        match self.path().rsplitn(2, "/").nth(1) {
-            Some(path) => Some(DataDir::new(self.client().clone(), &*path)),
-            None => None
-        }
+        // Remove trailing slash and split
+        let parts: Vec<&str> = self.path().split_terminator("/").collect();
+        // Reformat using protocol while dropping last part
+        let parent_uri = match parts.len() {
+            0 | 1 => None,
+            2 => Some(format!("{}://", parts[0])),
+            len => Some(format!("{}://{}", parts[0], parts[1..(len-1)].join("/"))),
+        };
+        // Initialize new DataDir from the parent_uri
+        parent_uri.map( |uri| DataDir::new(self.client().clone(), &uri))
     }
 
     /// Get the basename from the Data Object's path (i.e. unix `basename`)
@@ -57,10 +63,10 @@ pub trait HasDataPath {
     /// assert_eq!(my_dir.basename().unwrap(), "my_dir");
     /// ```
     fn basename(&self) -> Option<String> {
-        match self.path().rsplitn(2, "/").next() {
-            Some(s) => Some(s.to_string()),
-            None => None
-        }
+        self.path()
+            .rsplitn(2, "/")
+            .next()
+            .map(String::from)
     }
 
 
