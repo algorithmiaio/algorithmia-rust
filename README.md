@@ -123,14 +123,95 @@ if let Some(ref stdout) = response.metadata.stdout {
 
 Note: `enable_stdout()` is ignored if you do not have access to the algorithm source.
 
+## Managing data
+
+The Algorithmia Rust client also provides a way to manage both Algorithmia hosted data
+and data from Dropbox or S3 accounts that you've connected to you Algorithmia account.
+
+This client provides a `DataFile` type (generally created by `client.file(uri)`)
+and a `DataDir` type (generally created by `client.dir(uri)`) that provide methods for managing your data.
+
+### Create directories
+
+Create directories by instantiating a `DataDir` object and calling `create()` with a `DataAcl`:
+
+```rust
+let robots = client.dir("data://.my/robots");
+robots.create(DataAcl::default())
+
+let robots = client.dir("dropbox://robots");
+robots.create(DataAcl::default())
+```
+
+### Upload files to a directory
+
+Upload files by calling `put` on a `DataFile` object, or by calling `put_file` on a `DataDir` object.
+
+```rust
+let robots = client.dir("data://.my/robots");
+
+// Upload local file
+robots.put_file("/path/to/Optimus_Prime.png");
+// Write a text file
+robots.child::<DataFile>("Optimus_Prime.txt").put("Leader of the Autobots");
+// Write a binary file
+robots.child::<DataFile>("Optimus_Prime.key").put(b"transform");
+```
+
+### Download contents of file
+
+Download files by calling `get` on a `DataFile` object
+which returns a `Result`-wrapped `DataResponse` that implements `Read`:
+
+```rust
+// Download and locally save file
+let mut t800_png_reader = client.file("data://.my/robots/T-800.png").get().unwrap();
+let mut t800_png = File::create("/path/to/save/t800.png").unwrap();
+std::io::copy(&mut t800_png_reader, &mut t800_png);
+
+// Get the file's contents as a string
+let mut t800_text_reader = robots.file("data://.my/robots/T-800.txt").get().unwrap();
+let mut t800_text = String::new();
+t800_text_reader.read_to_string(&mut t800_text);
+
+// Get the file's contents as a byte array
+let mut t800_png_reader = robots.file("data://.my/robots/T-800.png").get().unwrap();
+let mut t800_bytes = Vec::new();
+t800_png_reader.read_to_end(&mut t800_bytes);
+```
+
+### Delete files and directories
+
+Delete files and directories by calling delete on their respective `DataFile` or `DataDir` object.
+DataDirectories take a `force` parameter that indicates whether the directory should be deleted if it contains files or other directories.
+
+```rust
+client.file("data://.my/robots/C-3PO.txt").delete();
+client.dir("data://.my/robots").delete(false);
+```
+
+### List directory contents
+
+Iterate over the contents of a directory using the iterator returned by calling `list` on a `DataDir` object:
+
+```
+let my_robots = client.dir("data://.my/robots");
+for entry in my_robots.list() {
+    match entry {
+        Ok(DirEntry::Dir(dir)) => println!("Directory {}", dir.to_data_uri()),
+        Ok(DirEntry::File(file)) => println!("File {}", file.to_data_uri()),
+        Err(err) => println!("Error listing my robots: {}", err),
+    }
+}
+```
 
 ## Examples
 
-For examples of using this client, see:
+For examples that use this client, see:
 
 - Basic test [examples](https://github.com/algorithmiaio/algorithmia-rust/tree/master/examples)
-- [Algorithmia CLI](https://github.com/algorithmiaio/algorithmia-cli) built with this client
-- [Algorithmia FUSE](https://github.com/anowell/algorithmia-fuse) built with this client
+- [Algorithmia CLI](https://github.com/algorithmiaio/algorithmia-cli) - CLI build with this client
+- [Algorithmia FUSE](https://github.com/anowell/algorithmia-fuse) - experimental filesystem build with this client
 
 ## Build & Test
 
