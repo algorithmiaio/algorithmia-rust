@@ -194,7 +194,7 @@ client.dir("data://.my/robots").delete(false);
 
 Iterate over the contents of a directory using the iterator returned by calling `list` on a `DataDir` object:
 
-```
+```rust
 let my_robots = client.dir("data://.my/robots");
 for entry in my_robots.list() {
     match entry {
