@@ -121,7 +121,8 @@ mod tests {
         assert_eq!(parse_data_uri("dropbox://"), "dropbox");
         assert_eq!(parse_data_uri("dropbox://foo"), "dropbox/foo");
         assert_eq!(parse_data_uri("dropbox://foo/"), "dropbox/foo/");
-        assert_eq!(parse_data_uri("dropbox://foo/bar"), "dropbox/foo/bar");    }
+        assert_eq!(parse_data_uri("dropbox://foo/bar"), "dropbox/foo/bar");
+    }
 
     #[test]
     fn test_parse_leading_slash() {

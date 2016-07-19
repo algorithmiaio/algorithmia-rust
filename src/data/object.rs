@@ -64,12 +64,12 @@ impl DataObject {
 
 impl <'a> From<&'a DataObject> for DataDir {
     fn from(d: &'a DataObject) -> Self {
-        DataDir::new(d.client().clone(), d.path())
+        DataDir::new(d.client().clone(), &d.to_data_uri())
     }
 }
 
 impl <'a> From<&'a DataObject> for DataFile {
     fn from(d: &'a DataObject) -> Self {
-        DataFile::new(d.client().clone(), d.path())
+        DataFile::new(d.client().clone(), &d.to_data_uri())
     }
 }
