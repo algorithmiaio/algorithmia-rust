@@ -22,13 +22,13 @@ use super::{parse_headers, parse_data_uri};
 /// Response when creating a file via the Data API
 #[derive(Deserialize, Debug)]
 pub struct FileAdded {
-    pub result: String
+    pub result: String,
 }
 
 /// Response when deleting a file from the Data API
 #[derive(Deserialize, Debug)]
 pub struct FileDeleted {
-    pub result: DeletedResult
+    pub result: DeletedResult,
 }
 
 pub struct DataResponse {
@@ -51,12 +51,21 @@ pub struct DataFile {
 }
 
 impl HasDataPath for DataFile {
-    fn new(client: HttpClient, path: &str) -> Self { DataFile { client: client, path: parse_data_uri(path).to_string() } }
-    fn path(&self) -> &str { &self.path }
-    fn client(&self) -> &HttpClient { &self.client }
+    fn new(client: HttpClient, path: &str) -> Self {
+        DataFile {
+            client: client,
+            path: parse_data_uri(path).to_string(),
+        }
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn client(&self) -> &HttpClient {
+        &self.client
+    }
 }
 
-impl DataFile  {
+impl DataFile {
     /// Write to the Algorithmia Data API
     ///
     /// # Examples
@@ -108,7 +117,7 @@ impl DataFile  {
     ///   Err(err) => println!("Error downloading file: {}", err),
     /// };
     /// ```
-    pub fn get(&self) -> Result<DataResponse, Error>  {
+    pub fn get(&self) -> Result<DataResponse, Error> {
         let url = self.to_url();
 
         let req = self.client.get(url);
@@ -119,17 +128,23 @@ impl DataFile  {
             match metadata.data_type {
                 DataType::File => (),
                 DataType::Dir => {
-                    return Err(Error::DataTypeError("Expected file, Received directory".to_string()));
+                    return Err(Error::DataTypeError("Expected file, Received directory"
+                        .to_string()));
                 }
             }
 
-            Ok(DataResponse{
+            Ok(DataResponse {
                 size: metadata.content_length.unwrap_or(0),
-                last_modified: metadata.last_modified.unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
+                last_modified: metadata.last_modified
+                    .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
                 data: Box::new(res),
             })
         } else {
-            Err(ApiError{message: res.status.to_string(), stacktrace: None}.into())
+            Err(ApiError {
+                    message: res.status.to_string(),
+                    stacktrace: None,
+                }
+                .into())
         }
     }
 
@@ -161,5 +176,4 @@ impl DataFile  {
             false => Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into()),
         }
     }
-
 }

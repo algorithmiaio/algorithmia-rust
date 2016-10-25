@@ -76,7 +76,6 @@ impl StdError for Error {
 }
 
 
-//
 // Implement Display trait
 //
 
@@ -93,7 +92,6 @@ impl fmt::Display for ApiError {
 }
 
 
-//
 // Implement From trait (used by try! macro)
 //
 

@@ -21,8 +21,10 @@
 
 #![feature(proc_macro)]
 
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate hyper;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate hyper;
 
 extern crate base64;
 extern crate serde;
@@ -43,10 +45,10 @@ pub use hyper::{mime, Url};
 pub use client::ApiAuth::{self, SimpleAuth, NoAuth};
 
 pub mod prelude {
-   pub use ::Algorithmia;
-   pub use ::client::ApiAuth::{self, SimpleAuth, NoAuth};
-   pub use ::algo::{EntryPoint, DecodedEntryPoint};
-   pub use ::data::HasDataPath;
+    pub use ::Algorithmia;
+    pub use ::client::ApiAuth::{self, SimpleAuth, NoAuth};
+    pub use ::algo::{EntryPoint, DecodedEntryPoint};
+    pub use ::data::HasDataPath;
 }
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
@@ -73,16 +75,12 @@ impl<'a, 'c> Algorithmia {
     /// ```
     pub fn client<A: Into<ApiAuth>>(api_key: A) -> Algorithmia {
         let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
-        Algorithmia {
-            http_client: HttpClient::new(api_key.into(), api_address),
-        }
+        Algorithmia { http_client: HttpClient::new(api_key.into(), api_address) }
     }
 
     /// Instantiate a new client against alternate API servers
     pub fn alt_client<A: Into<ApiAuth>>(base_url: Url, api_key: A) -> Algorithmia {
-        Algorithmia {
-            http_client: HttpClient::new(api_key.into(), base_url.serialize()),
-        }
+        Algorithmia { http_client: HttpClient::new(api_key.into(), base_url.serialize()) }
     }
 
     /// Instantiate an [`Algorithm`](algo/algorithm.struct.html) from this client
@@ -141,15 +139,12 @@ impl<'a, 'c> Algorithmia {
     pub fn data(&self, path: &'a str) -> DataObject {
         DataObject::new(self.http_client.clone(), path)
     }
-
 }
 
 
 /// Allow cloning in order to reuse http client (and API key) for multiple connections
 impl clone::Clone for Algorithmia {
     fn clone(&self) -> Algorithmia {
-        Algorithmia {
-            http_client: self.http_client.clone(),
-        }
+        Algorithmia { http_client: self.http_client.clone() }
     }
 }

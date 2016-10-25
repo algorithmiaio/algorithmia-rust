@@ -69,31 +69,31 @@ struct FileItem {
 /// See also: [ReadAcl](enum.ReadAcl.html) enum to construct a DataACL
 #[derive(Deserialize, Serialize, Debug)]
 pub struct DataAcl {
-    pub read: Vec<String>
+    pub read: Vec<String>,
 }
 
 pub enum ReadAcl {
-  /// Readable only by owner
-  Private,
-  /// Readable by owner's algorithms (regardless of caller)
-  MyAlgorithms,
-  /// Readable by any user
-  Public,
+    /// Readable only by owner
+    Private,
+    /// Readable by owner's algorithms (regardless of caller)
+    MyAlgorithms,
+    /// Readable by any user
+    Public,
 }
 
 impl Default for DataAcl {
-  fn default() -> Self {
-    ReadAcl::MyAlgorithms.into()
-  }
+    fn default() -> Self {
+        ReadAcl::MyAlgorithms.into()
+    }
 }
 
 impl From<ReadAcl> for DataAcl {
     fn from(acl: ReadAcl) -> Self {
-      match acl {
-        ReadAcl::Private => DataAcl { read: vec![] },
-        ReadAcl::MyAlgorithms => DataAcl { read: vec!["algo://.my/*".into()] },
-        ReadAcl::Public => DataAcl { read: vec!["user://*".into()] },
-      }
+        match acl {
+            ReadAcl::Private => DataAcl { read: vec![] },
+            ReadAcl::MyAlgorithms => DataAcl { read: vec!["algo://.my/*".into()] },
+            ReadAcl::Public => DataAcl { read: vec!["user://*".into()] },
+        }
     }
 }
 
@@ -116,7 +116,7 @@ pub struct DirectoryListing<'a> {
     query_count: u32,
 }
 
-impl <'a> DirectoryListing<'a> {
+impl<'a> DirectoryListing<'a> {
     fn new(dir: &'a DataDir) -> DirectoryListing<'a> {
         DirectoryListing {
             acl: None,
@@ -129,41 +129,39 @@ impl <'a> DirectoryListing<'a> {
     }
 }
 
-impl <'a> Iterator for DirectoryListing<'a> {
+impl<'a> Iterator for DirectoryListing<'a> {
     type Item = Result<DataItem, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
             // Return folders first
-            Some(d) => Some(Ok(DataItem::Dir(
-                DataDirItem{
-                    dir: self.dir.child(&d.name)
-                }
-            ))),
-            None => match self.files.next() {
-                // Return files second
-                Some(f) => Some(Ok(DataItem::File(
-                    DataFileItem{
-                        size: f.size,
-                        last_modified: f.last_modified,
-                        file: self.dir.child(&f.filename),
+            Some(d) => Some(Ok(DataItem::Dir(DataDirItem { dir: self.dir.child(&d.name) }))),
+            None => {
+                match self.files.next() {
+                    // Return files second
+                    Some(f) => {
+                        Some(Ok(DataItem::File(DataFileItem {
+                            size: f.size,
+                            last_modified: f.last_modified,
+                            file: self.dir.child(&f.filename),
+                        })))
                     }
-                ))),
-                None => {
-                    // Query if there is another page of files/folders
-                    if self.query_count == 0 || self.marker.is_some() {
-                        self.query_count = self.query_count + 1;
-                        match get_directory(self.dir, self.marker.clone()) {
-                            Ok(ds) => {
-                                self.folders = ds.folders.unwrap_or(Vec::new()).into_iter();
-                                self.files = ds.files.unwrap_or(Vec::new()).into_iter();
-                                self.marker = ds.marker;
-                                self.next()
+                    None => {
+                        // Query if there is another page of files/folders
+                        if self.query_count == 0 || self.marker.is_some() {
+                            self.query_count = self.query_count + 1;
+                            match get_directory(self.dir, self.marker.clone()) {
+                                Ok(ds) => {
+                                    self.folders = ds.folders.unwrap_or(Vec::new()).into_iter();
+                                    self.files = ds.files.unwrap_or(Vec::new()).into_iter();
+                                    self.marker = ds.marker;
+                                    self.next()
+                                }
+                                Err(err) => Some(Err(err)),
                             }
-                            Err(err) => Some(Err(err)),
+                        } else {
+                            None
                         }
-                    } else {
-                        None
                     }
                 }
             }
@@ -183,7 +181,8 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     if res.status.is_success() {
         if let Some(data_type) = res.headers.get::<XDataType>() {
             if "directory" != data_type.to_string() {
-                return Err(Error::DataTypeError(format!("Expected directory, Received {}", data_type)));
+                return Err(Error::DataTypeError(format!("Expected directory, Received {}",
+                                                        data_type)));
             }
         }
     }
@@ -198,9 +197,18 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 }
 
 impl HasDataPath for DataDir {
-    fn new(client: HttpClient, path: &str) -> Self { DataDir { client: client, path: parse_data_uri(path).to_string() } }
-    fn path(&self) -> &str { &self.path }
-    fn client(&self) -> &HttpClient { &self.client }
+    fn new(client: HttpClient, path: &str) -> Self {
+        DataDir {
+            client: client,
+            path: parse_data_uri(path).to_string(),
+        }
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn client(&self) -> &HttpClient {
+        &self.client
+    }
 }
 
 impl DataDir {
@@ -246,13 +254,15 @@ impl DataDir {
 
         // TODO: address complete abuse of this structure
         let input_data = FolderItem {
-            name: try!(self.basename().ok_or(Error::DataPathError("has no basename".into()))).into(),
+            name: try!(self.basename().ok_or(Error::DataPathError("has no basename".into())))
+                .into(),
             acl: Some(acl.into()),
         };
         let raw_input = try!(serde_json::to_string(&input_data));
 
         // POST request
-        let req = self.client.post(url)
+        let req = self.client
+            .post(url)
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .body(&raw_input);
 
@@ -317,9 +327,8 @@ impl DataDir {
         // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
         let url_string = format!("{}/{}",
-            self.to_url(),
-            path_ref.file_name().unwrap().to_str().unwrap()
-        );
+                                 self.to_url(),
+                                 path_ref.file_name().unwrap().to_str().unwrap());
         let url = Url::parse(&url_string).unwrap();
 
         let mut file = File::open(path_ref).unwrap();
@@ -351,12 +360,15 @@ mod tests {
     use super::*;
     use Algorithmia;
 
-    fn mock_client() -> Algorithmia { Algorithmia::client("") }
+    fn mock_client() -> Algorithmia {
+        Algorithmia::client("")
+    }
 
     #[test]
     fn test_to_url() {
         let dir = mock_client().dir("data://anowell/foo");
-        assert_eq!(dir.to_url().serialize_path().unwrap(), "/v1/connector/data/anowell/foo");
+        assert_eq!(dir.to_url().serialize_path().unwrap(),
+                   "/v1/connector/data/anowell/foo");
     }
 
     #[test]

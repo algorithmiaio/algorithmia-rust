@@ -13,13 +13,21 @@ pub struct DataObject {
 }
 
 impl HasDataPath for DataObject {
-    fn new(client: HttpClient, path: &str) -> Self { DataObject { client: client, path: parse_data_uri(path).to_string() } }
-    fn path(&self) -> &str { &self.path }
-    fn client(&self) -> &HttpClient { &self.client }
+    fn new(client: HttpClient, path: &str) -> Self {
+        DataObject {
+            client: client,
+            path: parse_data_uri(path).to_string(),
+        }
+    }
+    fn path(&self) -> &str {
+        &self.path
+    }
+    fn client(&self) -> &HttpClient {
+        &self.client
+    }
 }
 
 impl DataObject {
-
     /// Determine if a particular data URI is for a file or directory
     ///
     /// ```no_run
@@ -39,7 +47,13 @@ impl DataObject {
 
         match res.status {
             StatusCode::Ok => Ok(metadata.data_type),
-            status => Err(ApiError{message: status.to_string(), stacktrace: None}.into()),
+            status => {
+                Err(ApiError {
+                        message: status.to_string(),
+                        stacktrace: None,
+                    }
+                    .into())
+            }
         }
     }
 
@@ -61,27 +75,27 @@ impl DataObject {
         let metadata = try!(parse_headers(&res.headers));
 
         match metadata.data_type {
-            DataType::Dir => Ok(DataItem::Dir(DataDirItem{
-                dir: self.into()
-            })),
-            DataType::File => Ok(DataItem::File(DataFileItem{
-                size: metadata.content_length.unwrap_or(0),
-                last_modified: metadata.last_modified.unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
-                file: self.into()
-            })),
+            DataType::Dir => Ok(DataItem::Dir(DataDirItem { dir: self.into() })),
+            DataType::File => {
+                Ok(DataItem::File(DataFileItem {
+                    size: metadata.content_length.unwrap_or(0),
+                    last_modified: metadata.last_modified
+                        .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
+                    file: self.into(),
+                }))
+            }
         }
     }
-
 }
 
 
-impl <'a> From<&'a DataObject> for DataDir {
+impl<'a> From<&'a DataObject> for DataDir {
     fn from(d: &'a DataObject) -> Self {
         DataDir::new(d.client().clone(), &d.to_data_uri())
     }
 }
 
-impl <'a> From<&'a DataObject> for DataFile {
+impl<'a> From<&'a DataObject> for DataFile {
     fn from(d: &'a DataObject) -> Self {
         DataFile::new(d.client().clone(), &d.to_data_uri())
     }

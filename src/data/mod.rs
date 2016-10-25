@@ -46,7 +46,9 @@ pub struct DataFileItem {
 
 impl Deref for DataFileItem {
     type Target = DataFile;
-    fn deref(&self) -> &DataFile {&self.file}
+    fn deref(&self) -> &DataFile {
+        &self.file
+    }
 }
 
 /// `DataDir` wrapper (currently no metadata)
@@ -56,7 +58,9 @@ pub struct DataDirItem {
 
 impl Deref for DataDirItem {
     type Target = DataDir;
-    fn deref(&self) -> &DataDir {&self.dir}
+    fn deref(&self) -> &DataDir {
+        &self.dir
+    }
 }
 
 // Shared by results for deleting both files and directories
@@ -72,25 +76,29 @@ struct HeaderData {
 }
 
 fn parse_headers(headers: &Headers) -> Result<HeaderData, Error> {
-    if let Some(err_header) = headers.get::<XErrorMessage>()  {
-        return Err(ApiError{ message: err_header.to_string(), stacktrace: None }.into())
+    if let Some(err_header) = headers.get::<XErrorMessage>() {
+        return Err(ApiError {
+                message: err_header.to_string(),
+                stacktrace: None,
+            }
+            .into());
     };
 
     let data_type = try!(match headers.get::<XDataType>() {
         Some(dt) if &*dt.to_string() == "directory" => Ok(DataType::Dir),
-        Some(dt) if &*dt.to_string() == "file"  => Ok(DataType::File),
+        Some(dt) if &*dt.to_string() == "file" => Ok(DataType::File),
         Some(dt) => Err(Error::DataTypeError(format!("Unknown DataType: {}", dt.to_string()))),
         None => Err(Error::DataTypeError("Unspecified DataType".to_string())),
     });
 
     let content_length = headers.get::<ContentLength>().map(|c| c.0);
     let last_modified = headers.get::<Date>()
-                            .map(|d| {
-                                let hdt = d.0;
-                                let ts = hdt.0.to_timespec();
-                                let naive_datetime = NaiveDateTime::from_timestamp(ts.sec, ts.nsec as u32);
-                                UTC.from_utc_datetime(&naive_datetime)
-                            });
+        .map(|d| {
+            let hdt = d.0;
+            let ts = hdt.0.to_timespec();
+            let naive_datetime = NaiveDateTime::from_timestamp(ts.sec, ts.nsec as u32);
+            UTC.from_utc_datetime(&naive_datetime)
+        });
 
     Ok(HeaderData {
         data_type: data_type,

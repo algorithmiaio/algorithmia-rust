@@ -13,7 +13,7 @@ pub enum Version {
 }
 
 
-impl <'a> From<&'a str> for Version {
+impl<'a> From<&'a str> for Version {
     fn from(version: &'a str) -> Self {
         match version.split('.').map(|p| p.parse::<u32>()).collect() {
             Ok(parts) => {
@@ -23,7 +23,7 @@ impl <'a> From<&'a str> for Version {
                     2 => Version::Minor(ver_parts[0], ver_parts[1]),
                     _ => Version::Hash(version.into()),
                 }
-            },
+            }
             _ => Version::Hash(version.into()),
         }
     }
@@ -47,7 +47,9 @@ impl fmt::Display for Version {
         match *self {
             Version::Latest => write!(f, "latest"),
             Version::Minor(major, minor) => write!(f, "{}.{}", major, minor),
-            Version::Revision(major, minor, revision) => write!(f, "{}.{}.{}", major, minor, revision),
+            Version::Revision(major, minor, revision) => {
+                write!(f, "{}.{}.{}", major, minor, revision)
+            }
             Version::Hash(ref hash) => write!(f, "{}", hash),
         }
     }
@@ -67,14 +69,14 @@ mod tests {
 
     #[test]
     fn test_revision_string() {
-        let version = Version::Revision(1,2,3);
+        let version = Version::Revision(1, 2, 3);
         assert_eq!(version.to_string(), format!("{}", version));
         assert_eq!(&*version.to_string(), "1.2.3");
     }
 
     #[test]
     fn test_minor_string() {
-        let version = Version::Minor(1,2);
+        let version = Version::Minor(1, 2);
         assert_eq!(version.to_string(), format!("{}", version));
         assert_eq!(&*version.to_string(), "1.2");
     }

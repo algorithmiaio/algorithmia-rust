@@ -69,11 +69,11 @@ pub struct Algorithm {
 
 /// Options used to alter the algorithm call, e.g. configuring the timeout
 pub struct AlgoOptions {
-    opts: HashMap<String, String>
+    opts: HashMap<String, String>,
 }
 
 pub struct AlgoRef {
-    pub path: String
+    pub path: String,
 }
 
 /// Metadata returned from the API
@@ -115,16 +115,17 @@ pub trait DecodedEntryPoint: Default {
     ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
     #[allow(unused_variables)]
     fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<std::error::Error>>;
-
 }
 
-impl<T> EntryPoint for T where T: DecodedEntryPoint {
+impl<T> EntryPoint for T
+    where T: DecodedEntryPoint
+{
     fn apply<'a>(&self, input: AlgoInput<'a>) -> Result<AlgoOutput, Box<std::error::Error>> {
         match input.as_json() {
             Some(obj) => {
                 let decoded = try!(serde_json::from_value(obj.into_owned()));
                 self.apply_decoded(decoded)
-            },
+            }
             None => Err(Error::UnsupportedInput.into()),
         }
     }
@@ -160,28 +161,40 @@ pub trait EntryPoint: Default {
     ///   - `AlgoInput::Json` input will be parse to see it can call `apply_str`
     fn apply<'a>(&self, input: AlgoInput<'a>) -> Result<AlgoOutput, Box<std::error::Error>> {
         match &input {
-            &AlgoInput::Text(ref text) => match self.apply_str(&text) {
-                Err(err) => match err.downcast::<Error>().map(|b| *b) {
-                    Ok(Error::UnsupportedInput) =>  match input.as_json() {
-                        Some(json) => self.apply_json(&json),
-                        None => Err(Error::UnsupportedInput.into()),
-                    },
-                    Ok(err) => Err(err.into()),
-                    Err(err) => Err(err.into()),
-                },
-                ret => ret,
-            },
-            &AlgoInput::Json(ref json) => match self.apply_json(&json) {
-                Err(err) => match err.downcast::<Error>().map(|b| *b) {
-                    Ok(Error::UnsupportedInput) =>  match input.as_string() {
-                        Some(text) => self.apply_str(&text),
-                        None => Err(Error::UnsupportedInput.into()).into(),
-                    },
-                    Ok(err) => Err(err.into()),
-                    Err(err) => Err(err.into()),
-                },
-                ret => ret,
-            },
+            &AlgoInput::Text(ref text) => {
+                match self.apply_str(&text) {
+                    Err(err) => {
+                        match err.downcast::<Error>().map(|b| *b) {
+                            Ok(Error::UnsupportedInput) => {
+                                match input.as_json() {
+                                    Some(json) => self.apply_json(&json),
+                                    None => Err(Error::UnsupportedInput.into()),
+                                }
+                            }
+                            Ok(err) => Err(err.into()),
+                            Err(err) => Err(err.into()),
+                        }
+                    }
+                    ret => ret,
+                }
+            }
+            &AlgoInput::Json(ref json) => {
+                match self.apply_json(&json) {
+                    Err(err) => {
+                        match err.downcast::<Error>().map(|b| *b) {
+                            Ok(Error::UnsupportedInput) => {
+                                match input.as_string() {
+                                    Some(text) => self.apply_str(&text),
+                                    None => Err(Error::UnsupportedInput.into()).into(),
+                                }
+                            }
+                            Ok(err) => Err(err.into()),
+                            Err(err) => Err(err.into()),
+                        }
+                    }
+                    ret => ret,
+                }
+            }
             &AlgoInput::Binary(ref bytes) => self.apply_bytes(bytes),
         }
     }
@@ -203,7 +216,10 @@ impl Algorithm {
 
     /// Get the API Endpoint URL for this Algorithm
     pub fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}", self.client.base_url, ALGORITHM_BASE_PATH, self.path);
+        let url_string = format!("{}/{}/{}",
+                                 self.client.base_url,
+                                 ALGORITHM_BASE_PATH,
+                                 self.path);
         Url::parse(&url_string).unwrap()
     }
 
@@ -242,12 +258,20 @@ impl Algorithm {
         where I: Into<AlgoInput<'a>>
     {
         let mut res = try!(match input_data.into() {
-            AlgoInput::Text(text) => self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![])),
+            AlgoInput::Text(text) => {
+                self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![]))
+            }
             AlgoInput::Json(json) => {
                 let encoded = try!(serde_json::to_vec(&json));
-                self.pipe_as(&*encoded, Mime(TopLevel::Application, SubLevel::Json, vec![]))
-            },
-            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![])),
+                self.pipe_as(&*encoded,
+                             Mime(TopLevel::Application, SubLevel::Json, vec![]))
+            }
+            AlgoInput::Binary(bytes) => {
+                self.pipe_as(&*bytes,
+                             Mime(TopLevel::Application,
+                                  SubLevel::Ext("octet-stream".into()),
+                                  vec![]))
+            }
         });
 
         let mut res_json = String::new();
@@ -273,7 +297,8 @@ impl Algorithm {
     ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
-        let mut res = try!(self.pipe_as(json_input, Mime(TopLevel::Application, SubLevel::Json, vec![])));
+        let mut res = try!(self.pipe_as(json_input,
+                                        Mime(TopLevel::Application, SubLevel::Json, vec![])));
 
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
@@ -281,7 +306,9 @@ impl Algorithm {
     }
 
 
-    pub fn pipe_as<'a, B>(&'a self, input_data: B, content_type: Mime)
+    pub fn pipe_as<'a, B>(&'a self,
+                          input_data: B,
+                          content_type: Mime)
                           -> Result<Response, hyper::error::Error>
         where B: Into<Body<'a>>
     {
@@ -298,14 +325,15 @@ impl Algorithm {
         }
 
         if !self.options.is_empty() {
-            for (k,v) in self.options.iter() {
+            for (k, v) in self.options.iter() {
                 final_params.insert(&*k, &*v);
             }
             // update query since AlgoOptions were provided
-            url.set_query_from_pairs(final_params.iter().map(|(k,v)|(*k,*v)));
+            url.set_query_from_pairs(final_params.iter().map(|(k, v)| (*k, *v)));
         }
 
-        let req = self.client.post(url)
+        let req = self.client
+            .post(url)
             .header(ContentType(content_type))
             .body(input_data);
 
@@ -344,7 +372,7 @@ impl Algorithm {
     }
 }
 
-impl <'a> AlgoInput<'a> {
+impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
     pub fn as_string(&'a self) -> Option<&'a str> {
         match self {
@@ -356,13 +384,15 @@ impl <'a> AlgoInput<'a> {
         }
     }
 
-    /// If the `AlgoInput` is Json (or text that can be JSON encoded), returns the associated JSON string
+    /// If the `AlgoInput` is Json (or JSON encodable text), returns the associated JSON string
     ///
     /// For `AlgoInput::Json`, this returns the borrowed `Json`.
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
     pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
         match self {
-            &AlgoInput::Text(ref text) => Some(Cow::Owned(Value::String(text.clone().into_owned()))),
+            &AlgoInput::Text(ref text) => {
+                Some(Cow::Owned(Value::String(text.clone().into_owned())))
+            }
             &AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             &AlgoInput::Binary(_) => None,
         }
@@ -395,7 +425,7 @@ impl AlgoResponse {
         }
     }
 
-    /// If the result is JSON (or text that can be JSON encoded), returns the associated JSON `Value`
+    /// If the result is JSON (or JSON encodable text), returns the associated JSON `Value`
     pub fn as_json(self) -> Option<Value> {
         match self.result {
             AlgoOutput::Json(json) => Some(json),
@@ -423,7 +453,7 @@ impl AlgoResponse {
 
 impl AlgoOptions {
     pub fn new() -> AlgoOptions {
-        AlgoOptions{ opts: HashMap::new() }
+        AlgoOptions { opts: HashMap::new() }
     }
 
     /// Configure timeout in seconds
@@ -441,11 +471,15 @@ impl AlgoOptions {
 
 impl Deref for AlgoOptions {
     type Target = HashMap<String, String>;
-    fn deref(&self) -> &HashMap<String, String> { &self.opts }
+    fn deref(&self) -> &HashMap<String, String> {
+        &self.opts
+    }
 }
 
 impl DerefMut for AlgoOptions {
-    fn deref_mut(&mut self) -> &mut Self::Target { &mut self.opts }
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.opts
+    }
 }
 
 impl FromStr for AlgoResponse {
@@ -453,7 +487,7 @@ impl FromStr for AlgoResponse {
     fn from_str(json_str: &str) -> Result<Self, Self::Err> {
         // Early return if the response decodes into ApiErrorResponse
         if let Ok(err_res) = serde_json::from_str::<ApiErrorResponse>(json_str) {
-            return Err(err_res.error.into())
+            return Err(err_res.error.into());
         }
 
         // Parse into Json object
@@ -463,9 +497,10 @@ impl FromStr for AlgoResponse {
         let metadata = match data.search("metadata") {
             Some(meta_json) => try!(serde_json::from_str::<AlgoMetadata>(&meta_json.to_string())),
             None => {
-                return Err(JsonError::Syntax(
-                    serde_json::ErrorCode::MissingField("metadata"), 0, 0
-                ).into());
+                return Err(JsonError::Syntax(serde_json::ErrorCode::MissingField("metadata"),
+                                             0,
+                                             0)
+                    .into());
             }
         };
 
@@ -473,22 +508,30 @@ impl FromStr for AlgoResponse {
         let result = match (&*metadata.content_type, data.search("result")) {
             ("void", _) => AlgoOutput::Json(Value::Null),
             ("json", Some(json)) => AlgoOutput::Json(json.clone()), // TODO: Consider Cow<'a Json>
-            ("text", Some(json)) => match json.as_str() {
-                Some(text) => AlgoOutput::Text(text.into()),
-                None => return Err(Error::ContentTypeError("invalid text".into())),
-            },
-            ("binary", Some(json)) => match json.as_str() {
-                Some(text) => AlgoOutput::Binary(try!(base64::decode(text))),
-                None => return Err(Error::ContentTypeError("invalid text".into())),
-            },
-            (_, None) => return Err(JsonError::Syntax(
-                serde_json::ErrorCode::MissingField("result"), 0, 0
-            ).into()),
+            ("text", Some(json)) => {
+                match json.as_str() {
+                    Some(text) => AlgoOutput::Text(text.into()),
+                    None => return Err(Error::ContentTypeError("invalid text".into())),
+                }
+            }
+            ("binary", Some(json)) => {
+                match json.as_str() {
+                    Some(text) => AlgoOutput::Binary(try!(base64::decode(text))),
+                    None => return Err(Error::ContentTypeError("invalid text".into())),
+                }
+            }
+            (_, None) => {
+                return Err(JsonError::Syntax(serde_json::ErrorCode::MissingField("result"), 0, 0)
+                    .into())
+            }
             (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
         };
 
         // Construct the AlgoResponse object
-        Ok(AlgoResponse{ metadata: metadata, result: result})
+        Ok(AlgoResponse {
+            metadata: metadata,
+            result: result,
+        })
     }
 }
 
@@ -513,13 +556,13 @@ impl Read for AlgoResponse {
     }
 }
 
-impl <'a> From<&'a str> for AlgoRef {
+impl<'a> From<&'a str> for AlgoRef {
     fn from(path: &'a str) -> Self {
-        AlgoRef{ path:path.into() }
+        AlgoRef { path: path.into() }
     }
 }
 
-impl <'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
+impl<'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
     fn from(path_parts: (&'a str, V)) -> Self {
         let (algo, version) = path_parts;
         let path = match version.into() {
@@ -527,48 +570,48 @@ impl <'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
             ref ver => format!("{}/{}", algo, ver),
         };
 
-        AlgoRef{ path:path }
+        AlgoRef { path: path }
     }
 }
 
 // AlgoInput Conversions
-impl <'a> From<()> for AlgoInput<'a> {
+impl<'a> From<()> for AlgoInput<'a> {
     fn from(_unit: ()) -> Self {
         AlgoInput::Json(Cow::Owned(Value::Null))
     }
 }
 
-impl <'a> From<&'a str> for AlgoInput<'a> {
+impl<'a> From<&'a str> for AlgoInput<'a> {
     fn from(text: &'a str) -> Self {
         AlgoInput::Text(Cow::Borrowed(text))
     }
 }
 
-impl <'a> From<&'a [u8]> for AlgoInput<'a> {
+impl<'a> From<&'a [u8]> for AlgoInput<'a> {
     fn from(bytes: &'a [u8]) -> Self {
         AlgoInput::Binary(Cow::Borrowed(bytes))
     }
 }
 
-impl <'a> From<String> for AlgoInput<'a> {
+impl<'a> From<String> for AlgoInput<'a> {
     fn from(text: String) -> Self {
         AlgoInput::Text(Cow::Owned(text))
     }
 }
 
-impl <'a> From<Vec<u8>> for AlgoInput<'a> {
+impl<'a> From<Vec<u8>> for AlgoInput<'a> {
     fn from(bytes: Vec<u8>) -> Self {
         AlgoInput::Binary(Cow::Owned(bytes))
     }
 }
 
-impl <'a> From<Value> for AlgoInput<'a> {
+impl<'a> From<Value> for AlgoInput<'a> {
     fn from(json: Value) -> Self {
         AlgoInput::Json(Cow::Owned(json))
     }
 }
 
-impl <'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
+impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
     fn from(object: &'a S) -> Self {
         AlgoInput::Json(Cow::Owned(object.to_json()))
     }
@@ -581,7 +624,7 @@ impl From<()> for AlgoOutput {
     }
 }
 
-impl <'a> From<&'a str> for AlgoOutput {
+impl<'a> From<&'a str> for AlgoOutput {
     fn from(text: &'a str) -> Self {
         AlgoOutput::Text(text.into())
     }
@@ -593,7 +636,7 @@ impl From<String> for AlgoOutput {
     }
 }
 
-impl <'a> From<&'a [u8]> for AlgoOutput {
+impl<'a> From<&'a [u8]> for AlgoOutput {
     fn from(bytes: &'a [u8]) -> Self {
         AlgoOutput::Binary(bytes.into())
     }
@@ -611,7 +654,7 @@ impl From<Value> for AlgoOutput {
     }
 }
 
-impl <'a, S: Serialize> From<&'a S> for AlgoOutput {
+impl<'a, S: Serialize> From<&'a S> for AlgoOutput {
     fn from(object: &'a S) -> Self {
         AlgoOutput::Json(object.to_json())
     }
@@ -625,7 +668,7 @@ impl <'a, S: Serialize> From<&'a S> for AlgoOutput {
 // }
 
 // The conversion that makes it easy to pipe output to another algorithm's input
-impl <'a> From<AlgoOutput> for AlgoInput<'a> {
+impl<'a> From<AlgoOutput> for AlgoInput<'a> {
     fn from(output: AlgoOutput) -> Self {
         match output {
             AlgoOutput::Text(text) => AlgoInput::Text(Cow::Owned(text)),
@@ -640,41 +683,53 @@ mod tests {
     use Algorithmia;
     use super::*;
 
-    fn mock_client() -> Algorithmia { Algorithmia::client("") }
+    fn mock_client() -> Algorithmia {
+        Algorithmia::client("")
+    }
 
     #[test]
     fn test_algo_without_version_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("/anowell/Pinky");
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky");
+        assert_eq!(algorithm.to_url().serialize_path().unwrap(),
+                   "/v1/algo/anowell/Pinky");
     }
 
     #[test]
     fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("anowell/Pinky/0.1.0");
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/0.1.0");
+        assert_eq!(algorithm.to_url().serialize_path().unwrap(),
+                   "/v1/algo/anowell/Pinky/0.1.0");
     }
 
     #[test]
     fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("algo://anowell/Pinky/0.1");
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/0.1");
+        assert_eq!(algorithm.to_url().serialize_path().unwrap(),
+                   "/v1/algo/anowell/Pinky/0.1");
     }
 
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo(("anowell/Pinky", "abcdef123456"));
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/abcdef123456");
+        assert_eq!(algorithm.to_url().serialize_path().unwrap(),
+                   "/v1/algo/anowell/Pinky/abcdef123456");
     }
 
 
     #[test]
     fn test_json_decoding() {
-        let json_output = r#"{"metadata":{"duration":0.46739511,"content_type":"json"},"result":[5,41]}"#;
-        let expected_meta = AlgoMetadata { duration: 0.46739511f32, stdout: None, alerts: None, content_type: "json".into()};
+        let json_output =
+            r#"{"metadata":{"duration":0.46739511,"content_type":"json"},"result":[5,41]}"#;
+        let expected_meta = AlgoMetadata {
+            duration: 0.46739511f32,
+            stdout: None,
+            alerts: None,
+            content_type: "json".into(),
+        };
         let expected_result = [5, 41];
         let decoded = json_output.parse::<AlgoResponse>().unwrap();
         assert_eq!(expected_meta.duration, decoded.metadata.duration);
