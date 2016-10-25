@@ -17,6 +17,8 @@
 use client::HttpClient;
 use error::{self, Error};
 use data::*;
+use super::parse_data_uri;
+use super::header::XDataType;
 
 use std::io::Read;
 use std::fs::File;
@@ -29,7 +31,6 @@ use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use hyper::Url;
 use rustc_serialize::{json, Decoder, Decodable};
-
 
 /// Algorithmia Data Directory
 pub struct DataDir {

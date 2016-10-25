@@ -17,6 +17,7 @@ use data::*;
 use std::io::{self, Read};
 use error::{self, Error, ApiError};
 use rustc_serialize::json;
+use super::{parse_headers, parse_data_uri};
 
 /// Response when creating a file via the Data API
 #[derive(RustcDecodable, Debug)]

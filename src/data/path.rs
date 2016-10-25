@@ -1,17 +1,10 @@
 use data::*;
 use error::*;
+use super::header::XErrorMessage;
 
 use client::HttpClient;
 use hyper::Url;
 use hyper::status::StatusCode;
-
-pub fn parse_data_uri(data_uri: &str) -> String {
-    match data_uri {
-        p if p.contains("://") => p.split_terminator("://").collect::<Vec<_>>().join("/"),
-        p if p.starts_with("/") => format!("data/{}", &p[1..]),
-        p => format!("data/{}", p),
-    }
-}
 
 pub trait HasDataPath {
     fn new(client: HttpClient, path: &str) -> Self;
@@ -105,36 +98,5 @@ pub trait HasDataPath {
                 Err(ApiError{message: msg, stacktrace: None}.into())
             },
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use data::*;
-
-    #[test]
-    fn test_parse_protocol() {
-        assert_eq!(parse_data_uri("data://"), "data");
-        assert_eq!(parse_data_uri("data://foo"), "data/foo");
-        assert_eq!(parse_data_uri("data://foo/"), "data/foo/");
-        assert_eq!(parse_data_uri("data://foo/bar"), "data/foo/bar");
-        assert_eq!(parse_data_uri("dropbox://"), "dropbox");
-        assert_eq!(parse_data_uri("dropbox://foo"), "dropbox/foo");
-        assert_eq!(parse_data_uri("dropbox://foo/"), "dropbox/foo/");
-        assert_eq!(parse_data_uri("dropbox://foo/bar"), "dropbox/foo/bar");
-    }
-
-    #[test]
-    fn test_parse_leading_slash() {
-        assert_eq!(parse_data_uri("/foo"), "data/foo");
-        assert_eq!(parse_data_uri("/foo/"), "data/foo/");
-        assert_eq!(parse_data_uri("/foo/bar"), "data/foo/bar");
-    }
-
-    #[test]
-    fn test_parse_unprefixed() {
-        assert_eq!(parse_data_uri("foo"), "data/foo");
-        assert_eq!(parse_data_uri("foo/"), "data/foo/");
-        assert_eq!(parse_data_uri("foo/bar"), "data/foo/bar");
     }
 }

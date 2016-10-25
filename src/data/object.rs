@@ -2,9 +2,11 @@ use data::*;
 use client::HttpClient;
 use error::*;
 use chrono::{UTC, TimeZone};
-
 use hyper::status::StatusCode;
+use super::{parse_headers, parse_data_uri};
 
+
+/// Algorithmia data object (file or directory)
 pub struct DataObject {
     path: String,
     client: HttpClient,
@@ -41,7 +43,18 @@ impl DataObject {
         }
     }
 
-
+    /// Determine if a data URI is for a file or directory and convert into the appropriate type
+    ///
+    /// ```no_run
+    /// # use algorithmia::Algorithmia;
+    /// # use algorithmia::data::{DataItem, HasDataPath};
+    /// # let client = Algorithmia::client("111112222233333444445555566");
+    /// let my_obj = client.data("data://.my/some/path");
+    /// match my_obj.into_type().ok().unwrap() {
+    ///     DataItem::File(f) => println!("{} is a file", f.to_data_uri()),
+    ///     DataItem::Dir(d) => println!("{} is a directory", d.to_data_uri()),
+    /// }
+    /// ```
     pub fn into_type(&self) -> Result<DataItem, Error> {
         let req = self.client.head(self.to_url());
         let res = try!(req.send());
