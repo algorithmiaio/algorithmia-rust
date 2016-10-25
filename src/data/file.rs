@@ -81,7 +81,9 @@ impl DataFile {
     /// let data_file = client.clone().file(".my/my_dir/stdin.txt");
     /// data_file.put(&mut stdin);
     /// ```
-    pub fn put<'a, B>(&'a self, body: B) -> Result<FileAdded, Error> where B: Into<Body<'a>> {
+    pub fn put<'a, B>(&'a self, body: B) -> Result<FileAdded, Error>
+        where B: Into<Body<'a>>
+    {
         let url = self.to_url();
 
         let req = self.client.put(url).body(body);
@@ -129,8 +131,7 @@ impl DataFile {
             match metadata.data_type {
                 DataType::File => (),
                 DataType::Dir => {
-                    return Err(Error::DataTypeError("Expected file, Received directory"
-                        .to_string()));
+                    return Err(Error::UnexpectedDataType("file", "directory".to_string()));
                 }
             }
 

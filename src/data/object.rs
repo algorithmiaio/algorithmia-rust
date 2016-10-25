@@ -40,7 +40,7 @@ impl DataObject {
     ///     DataType::Dir => println!("{} is a directory", my_obj.to_data_uri()),
     /// }
     /// ```
-    pub fn get_type(&self) -> Result<DataType, Error> {
+    pub fn get_type(&self) -> Result<DataType> {
         let req = self.client.head(self.to_url());
         let res = try!(req.send());
         let metadata = try!(parse_headers(&res.headers));
@@ -69,7 +69,7 @@ impl DataObject {
     ///     DataItem::Dir(d) => println!("{} is a directory", d.to_data_uri()),
     /// }
     /// ```
-    pub fn into_type(self) -> Result<DataItem, Error> {
+    pub fn into_type(self) -> Result<DataItem> {
         let metadata = {
             let req = self.client.head(self.to_url());
             let res = try!(req.send());

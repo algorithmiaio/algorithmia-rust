@@ -21,7 +21,7 @@ use client::{Body, HttpClient};
 use error::{Error, ApiErrorResponse};
 use super::version::Version;
 
-use serde_json::{self, Value, Error as JsonError};
+use serde_json::{self, Value, Error as JsonError, ErrorCode as JsonErrorCode};
 use serde_json::value::ToJson;
 use serde::{Deserialize, Serialize};
 use base64;
@@ -34,7 +34,8 @@ use hyper::client::response::Response;
 use std::borrow::Cow;
 use std::io::{self, Read, Write};
 use std::str::FromStr;
-use std::{self, fmt};
+use std::error::Error as StdError;
+use std::fmt;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
@@ -96,13 +97,14 @@ pub struct AlgoResponse {
 ///
 /// # Examples
 /// ```no_run
-/// # use algorithmia::algo::*;
+/// # use algorithmia::prelude::*;
+/// # use std::error::Error;
 /// # #[derive(Default)]
 /// # struct Algo;
 /// impl DecodedEntryPoint for Algo {
 ///     // Expect input to be an array of 2 strings
 ///     type Input = (String, String);
-///     fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<std::error::Error>> {
+///     fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<Error>> {
 ///         let msg = format!("{} - {}", input.0, input.1);
 ///         Ok(msg.into())
 ///     }
@@ -114,13 +116,13 @@ pub trait DecodedEntryPoint: Default {
     /// This method is an apply variant that will receive the decoded form of JSON input.
     ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
     #[allow(unused_variables)]
-    fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<std::error::Error>>;
+    fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<StdError>>;
 }
 
 impl<T> EntryPoint for T
     where T: DecodedEntryPoint
 {
-    fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<std::error::Error>> {
+    fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input.as_json() {
             Some(obj) => {
                 let decoded = try!(serde_json::from_value(obj.into_owned()));
@@ -134,15 +136,15 @@ impl<T> EntryPoint for T
 /// Implementing an algorithm involves overriding at least one of these methods
 pub trait EntryPoint: Default {
     #[allow(unused_variables)]
-    fn apply_str(&self, name: &str) -> Result<AlgoOutput, Box<std::error::Error>> {
+    fn apply_str(&self, name: &str) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
-    fn apply_json(&self, json: &Value) -> Result<AlgoOutput, Box<std::error::Error>> {
+    fn apply_json(&self, json: &Value) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
-    fn apply_bytes(&self, bytes: &[u8]) -> Result<AlgoOutput, Box<std::error::Error>> {
+    fn apply_bytes(&self, bytes: &[u8]) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::UnsupportedInput.into())
     }
 
@@ -153,18 +155,18 @@ pub trait EntryPoint: Default {
     ///   - `AlgoInput::Json` results in call to  `apply_json`
     ///   - `AlgoInput::Binary` results in call to  `apply_bytes`
     ///
-    /// If that call returns an `UnsupportedInput` error, then this method
+    /// If that call returns anKind `UnsupportedInput` error, then this method
     ///   method will may attempt to coerce the input into another type
     ///   and attempt one more call:
     ///
     ///   - `AlgoInput::Text` input will be JSON-encoded to call `apply_json`
     ///   - `AlgoInput::Json` input will be parse to see it can call `apply_str`
-    fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<std::error::Error>> {
+    fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input {
             AlgoInput::Text(ref text) => {
                 match self.apply_str(text) {
                     Err(err) => {
-                        match err.downcast::<Error>().map(|b| *b) {
+                        match err.downcast::<Error>().map(|err| *err) {
                             Ok(Error::UnsupportedInput) => {
                                 match input.as_json() {
                                     Some(json) => self.apply_json(&json),
@@ -181,7 +183,7 @@ pub trait EntryPoint: Default {
             AlgoInput::Json(ref json) => {
                 match self.apply_json(json) {
                     Err(err) => {
-                        match err.downcast::<Error>().map(|b| *b) {
+                        match err.downcast::<Error>().map(|err| *err) {
                             Ok(Error::UnsupportedInput) => {
                                 match input.as_string() {
                                     Some(text) => self.apply_str(text),
@@ -389,9 +391,7 @@ impl<'a> AlgoInput<'a> {
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
     pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
         match *self {
-            AlgoInput::Text(ref text) => {
-                Some(Cow::Owned(Value::String(text.clone().into_owned())))
-            }
+            AlgoInput::Text(ref text) => Some(Cow::Owned(Value::String(text.clone().into_owned()))),
             AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             AlgoInput::Binary(_) => None,
         }
@@ -400,7 +400,8 @@ impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is binary, returns the associated byte slice
     pub fn as_bytes(&'a self) -> Option<&'a [u8]> {
         match *self {
-            AlgoInput::Text(_) | AlgoInput::Json(_) => None,
+            AlgoInput::Text(_) |
+            AlgoInput::Json(_) => None,
             AlgoInput::Binary(ref bytes) => Some(&*bytes),
         }
     }
@@ -408,7 +409,7 @@ impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
     pub fn decode<D: Deserialize>(&self) -> Result<D, Error> {
         let res_json = try!(self.as_json()
-            .ok_or(Error::ContentTypeError("Input is not JSON".into())));
+            .ok_or(Error::MismatchedContentType("json")));
         serde_json::from_value::<D>(res_json.into_owned()).map_err(|err| err.into())
     }
 }
@@ -417,7 +418,8 @@ impl AlgoResponse {
     /// If the result is text (or a valid JSON string), returns the associated string
     pub fn into_string(self) -> Option<String> {
         match self.result {
-            AlgoOutput::Text(text) | AlgoOutput::Json(Value::String(text)) => Some(text),
+            AlgoOutput::Text(text) |
+            AlgoOutput::Json(Value::String(text)) => Some(text),
             _ => None,
         }
     }
@@ -443,7 +445,7 @@ impl AlgoResponse {
     pub fn decode<D: Deserialize>(self) -> Result<D, Error> {
         let ct = self.metadata.content_type.clone();
         let res_json = try!(self.into_json()
-            .ok_or(Error::ContentTypeError(ct)));
+            .ok_or(Error::UnexpectedContentType("json", ct)));
         serde_json::from_value::<D>(res_json).map_err(|err| err.into())
     }
 }
@@ -496,7 +498,8 @@ impl FromStr for AlgoResponse {
         let metadata = match data.search("metadata") {
             Some(meta_json) => try!(serde_json::from_str::<AlgoMetadata>(&meta_json.to_string())),
             None => {
-                return Err(JsonError::Syntax(serde_json::ErrorCode::MissingField("metadata"),
+                return Err(JsonError::Syntax(JsonErrorCode::MissingField("metadata, ErrorCode \
+                                                                          as JsonErrorCode"),
                                              0,
                                              0)
                     .into());
@@ -510,20 +513,23 @@ impl FromStr for AlgoResponse {
             ("text", Some(json)) => {
                 match json.as_str() {
                     Some(text) => AlgoOutput::Text(text.into()),
-                    None => return Err(Error::ContentTypeError("invalid text".into())),
+                    None => return Err(Error::MismatchedContentType("text").into()),
                 }
             }
             ("binary", Some(json)) => {
                 match json.as_str() {
                     Some(text) => AlgoOutput::Binary(try!(base64::decode(text))),
-                    None => return Err(Error::ContentTypeError("invalid text".into())),
+                    None => return Err(Error::MismatchedContentType("binary")),
                 }
             }
             (_, None) => {
-                return Err(JsonError::Syntax(serde_json::ErrorCode::MissingField("result"), 0, 0)
+                return Err(JsonError::Syntax(JsonErrorCode::MissingField("result, ErrorCode as \
+                                                                          JsonErrorCode"),
+                                             0,
+                                             0)
                     .into())
             }
-            (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
+            (content_type, _) => return Err(Error::InvalidContentType(content_type.into())),
         };
 
         // Construct the AlgoResponse object

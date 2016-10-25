@@ -25,6 +25,8 @@
 extern crate serde_derive;
 #[macro_use]
 extern crate hyper;
+#[macro_use]
+extern crate quick_error;
 
 extern crate base64;
 extern crate serde;
@@ -47,7 +49,7 @@ pub use client::ApiAuth::{self, SimpleAuth, NoAuth};
 pub mod prelude {
     pub use ::Algorithmia;
     pub use ::client::ApiAuth::{self, SimpleAuth, NoAuth};
-    pub use ::algo::{EntryPoint, DecodedEntryPoint};
+    pub use ::algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput};
     pub use ::data::HasDataPath;
 }
 

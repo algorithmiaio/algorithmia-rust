@@ -1,25 +1,97 @@
 //! Error types
-use std::error::Error as StdError;
-use std::{fmt, io, str, string};
+use std::{result, io, str};
 use base64;
 use serde_json;
 use hyper;
 
 
-/// Errors that may be returned by this library
-#[derive(Debug)]
-pub enum Error {
-    ApiError(ApiError),
-    ContentTypeError(String),
-    DataTypeError(String),
-    DataPathError(String),
-    HttpError(hyper::error::Error),
-    JsonError(serde_json::Error),
-    Base64Error(base64::Base64Error),
-    IoError(io::Error),
-    Utf8Error(str::Utf8Error),
-    UnsupportedInput,
+quick_error! {
+    #[derive(Debug)]
+    pub enum Error {
+
+        Http(err: hyper::error::Error) {
+            from()
+            cause(err)
+            description(err.description())
+            display("http error: {}", err)
+        }
+
+        Json(err: serde_json::Error) {
+            from()
+            cause(err)
+            description("json error")
+            display("json error: {}", err)
+        }
+
+        Base64(err: base64::Base64Error) {
+            from()
+            cause(err)
+            description("base64 error")
+            display("base64 error: {}", err)
+        }
+
+        Io(err: io::Error) {
+            from()
+            cause(err)
+            description("io error")
+            display("io error: {}", err)
+        }
+
+        Utf8(err: str::Utf8Error) {
+            from()
+            cause(err)
+            description("utf8 error")
+            display("utf8 error: {}", err)
+        }
+
+        Api(err: ApiError) {
+            from()
+            description("api error")
+            display("api error: {}", err.message)
+        }
+
+        InvalidContentType(t: String) {
+            description("invalid content type")
+            display("invalid content type: '{}'", t)
+        }
+
+        MismatchedContentType(expected: &'static str) {
+            description("mismatched content type")
+            display("content did not match content type: '{}'", expected)
+        }
+
+        UnexpectedContentType(expected: &'static str, actual: String) {
+            description("unexpected content type")
+            display("expected content type '{}', received '{}'", expected, actual)
+        }
+
+        MissingDataType {
+            description("missing data type")
+        }
+
+        InvalidDataType(t: String) {
+            description("invalid data type")
+            display("invalid data type: '{}'", t)
+        }
+
+        UnexpectedDataType(expected: &'static str, actual: String) {
+            description("unexpected data type")
+            display("expected data type '{}', received '{}'", expected, actual)
+        }
+
+        InvalidDataPath(path: String) {
+            description("invalid data path")
+            display("invalid data path: '{}'", path)
+        }
+
+        UnsupportedInput {
+            description("unsupported input type")
+        }
+
+    }
 }
+
+pub type Result<T> = result::Result<T, Error>;
 
 #[derive(Deserialize, Debug)]
 pub struct ApiError {
@@ -37,100 +109,6 @@ pub struct ApiErrorResponse {
 pub fn decode(json_str: &str) -> Error {
     match serde_json::from_str::<ApiErrorResponse>(json_str) {
         Ok(err_res) => err_res.error.into(),
-        Err(err) => Error::JsonError(err),
-    }
-}
-
-impl StdError for ApiError {
-    fn description(&self) -> &str {
-        &self.message
-    }
-}
-
-impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::ApiError(ref e) => e.description(),
-            Error::ContentTypeError(ref msg) | Error::DataTypeError(ref msg) | Error::DataPathError(ref msg) => msg,
-            Error::HttpError(ref e) => e.description(),
-            Error::JsonError(ref e) => e.description(),
-            Error::Base64Error(ref e) => e.description(),
-            Error::IoError(ref e) => e.description(),
-            Error::Utf8Error(ref e) => e.description(),
-            Error::UnsupportedInput => "Unsupported input type",
-        }
-    }
-
-    fn cause(&self) -> Option<&StdError> {
-        match *self {
-            Error::HttpError(ref e) => Some(e),
-            Error::JsonError(ref e) => Some(e),
-            Error::Base64Error(ref e) => Some(e),
-            Error::IoError(ref e) => Some(e),
-            Error::Utf8Error(ref e) => Some(e),
-            _ => None,
-        }
-    }
-}
-
-
-// Implement Display trait
-//
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.description())
-    }
-}
-
-impl fmt::Display for ApiError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.description())
-    }
-}
-
-
-// Implement From trait (used by try! macro)
-//
-
-impl From<ApiError> for Error {
-    fn from(err: ApiError) -> Error {
-        Error::ApiError(err)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::IoError(err)
-    }
-}
-
-impl From<hyper::error::Error> for Error {
-    fn from(err: hyper::error::Error) -> Error {
-        Error::HttpError(err)
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Error {
-        Error::JsonError(err)
-    }
-}
-
-impl From<base64::Base64Error> for Error {
-    fn from(err: base64::Base64Error) -> Error {
-        Error::Base64Error(err)
-    }
-}
-
-impl From<str::Utf8Error> for Error {
-    fn from(err: str::Utf8Error) -> Error {
-        Error::Utf8Error(err)
-    }
-}
-
-impl From<string::FromUtf8Error> for Error {
-    fn from(err: string::FromUtf8Error) -> Error {
-        Error::Utf8Error(err.utf8_error())
+        Err(err) => Error::Json(err),
     }
 }

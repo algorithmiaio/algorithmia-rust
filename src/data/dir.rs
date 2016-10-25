@@ -180,9 +180,8 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 
     if res.status.is_success() {
         if let Some(data_type) = res.headers.get::<XDataType>() {
-            if "directory" != data_type.to_string() {
-                return Err(Error::DataTypeError(format!("Expected directory, Received {}",
-                                                        data_type)));
+            if "directory" != data_type.as_str() {
+                return Err(Error::UnexpectedDataType("directory", data_type.to_string()));
             }
         }
     }
@@ -250,12 +249,12 @@ impl DataDir {
     /// };
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
-        let parent = try!(self.parent().ok_or(Error::DataPathError("has no parent".into())));
+        let parent = try!(self.parent().ok_or_else(|| Error::InvalidDataPath(self.path.clone())));
         let url = parent.to_url();
 
         // TODO: address complete abuse of this structure
         let input_data = FolderItem {
-            name: try!(self.basename().ok_or(Error::DataPathError("has no basename".into())))
+            name: try!(self.basename().ok_or_else(|| Error::InvalidDataPath(self.path.clone())))
                 .into(),
             acl: Some(acl.into()),
         };

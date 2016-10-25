@@ -75,7 +75,7 @@ struct HeaderData {
     pub last_modified: Option<DateTime<UTC>>,
 }
 
-fn parse_headers(headers: &Headers) -> Result<HeaderData, Error> {
+fn parse_headers(headers: &Headers) -> Result<HeaderData> {
     if let Some(err_header) = headers.get::<XErrorMessage>() {
         return Err(ApiError {
                 message: err_header.to_string(),
@@ -87,8 +87,8 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData, Error> {
     let data_type = try!(match headers.get::<XDataType>() {
         Some(dt) if &*dt.to_string() == "directory" => Ok(DataType::Dir),
         Some(dt) if &*dt.to_string() == "file" => Ok(DataType::File),
-        Some(dt) => Err(Error::DataTypeError(format!("Unknown DataType: {}", dt.to_string()))),
-        None => Err(Error::DataTypeError("Unspecified DataType".to_string())),
+        Some(dt) => Err(Error::InvalidDataType(dt.to_string())),
+        None => Err(Error::MissingDataType),
     });
 
     let content_length = headers.get::<ContentLength>().map(|c| c.0);
