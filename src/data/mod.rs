@@ -111,7 +111,7 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData, Error> {
 fn parse_data_uri(data_uri: &str) -> String {
     match data_uri {
         p if p.contains("://") => p.split_terminator("://").collect::<Vec<_>>().join("/"),
-        p if p.starts_with("/") => format!("data/{}", &p[1..]),
+        p if p.starts_with('/') => format!("data/{}", &p[1..]),
         p => format!("data/{}", p),
     }
 }

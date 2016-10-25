@@ -19,7 +19,7 @@ pub enum ApiAuth {
     NoAuth,
 }
 
-/// Internal HttpClient to build requests: wraps `hyper` client
+/// Internal `HttpClient` to build requests: wraps `hyper` client
 pub struct HttpClient {
     pub base_url: String,
     api_auth: ApiAuth,
@@ -28,7 +28,7 @@ pub struct HttpClient {
 }
 
 impl HttpClient {
-    /// Instantiate an HttpClient - creates a new `hyper` client
+    /// Instantiate an `HttpClient` - creates a new `hyper` client
     pub fn new(api_auth: ApiAuth, base_url: String) -> HttpClient {
         let checked_url = match base_url.chars().rev().next() {
             Some(c) if c == '/' => base_url[0..(base_url.len() - 1)].to_string(),

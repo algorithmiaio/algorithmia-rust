@@ -81,7 +81,7 @@ impl DataFile {
     /// let data_file = client.clone().file(".my/my_dir/stdin.txt");
     /// data_file.put(&mut stdin);
     /// ```
-    pub fn put<'a, B: Into<Body<'a>>>(&'a self, body: B) -> Result<FileAdded, Error> {
+    pub fn put<'a, B>(&'a self, body: B) -> Result<FileAdded, Error> where B: Into<Body<'a>> {
         let url = self.to_url();
 
         let req = self.client.put(url).body(body);
@@ -90,9 +90,10 @@ impl DataFile {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match res.status.is_success() {
-            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
-            false => Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into()),
+        if res.status.is_success() {
+            serde_json::from_str(&res_json).map_err(|err| err.into())
+        } else {
+            Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into())
         }
     }
 
@@ -171,9 +172,10 @@ impl DataFile {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match res.status.is_success() {
-            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
-            false => Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into()),
+        if res.status.is_success() {
+            serde_json::from_str(&res_json).map_err(|err| err.into())
+        } else {
+            Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into())
         }
     }
 }

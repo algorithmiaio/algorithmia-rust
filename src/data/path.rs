@@ -30,7 +30,7 @@ pub trait HasDataPath {
     /// assert_eq!(my_dir.to_data_uri(), "data://.my/my_dir");
     /// ```
     fn to_data_uri(&self) -> String {
-        let parts = self.path().splitn(2, "/").collect::<Vec<_>>();
+        let parts = self.path().splitn(2, '/').collect::<Vec<_>>();
         match parts.len() {
             1 => format!("{}://", parts[0]),
             _ => parts.join("://"),
@@ -48,7 +48,7 @@ pub trait HasDataPath {
     /// ```
     fn parent(&self) -> Option<DataDir> {
         // Remove trailing slash and split
-        let parts: Vec<&str> = self.path().split_terminator("/").collect();
+        let parts: Vec<&str> = self.path().split_terminator('/').collect();
         // Reformat using protocol while dropping last part
         let parent_uri = match parts.len() {
             0 | 1 => None,
@@ -70,7 +70,7 @@ pub trait HasDataPath {
     /// ```
     fn basename(&self) -> Option<String> {
         self.path()
-            .rsplitn(2, "/")
+            .rsplitn(2, '/')
             .next()
             .map(String::from)
     }

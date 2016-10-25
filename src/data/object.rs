@@ -69,10 +69,12 @@ impl DataObject {
     ///     DataItem::Dir(d) => println!("{} is a directory", d.to_data_uri()),
     /// }
     /// ```
-    pub fn into_type(&self) -> Result<DataItem, Error> {
-        let req = self.client.head(self.to_url());
-        let res = try!(req.send());
-        let metadata = try!(parse_headers(&res.headers));
+    pub fn into_type(self) -> Result<DataItem, Error> {
+        let metadata = {
+            let req = self.client.head(self.to_url());
+            let res = try!(req.send());
+            try!(parse_headers(&res.headers))
+        };
 
         match metadata.data_type {
             DataType::Dir => Ok(DataItem::Dir(DataDirItem { dir: self.into() })),
@@ -89,14 +91,16 @@ impl DataObject {
 }
 
 
-impl<'a> From<&'a DataObject> for DataDir {
-    fn from(d: &'a DataObject) -> Self {
-        DataDir::new(d.client().clone(), &d.to_data_uri())
+impl From<DataObject> for DataDir {
+    fn from(d: DataObject) -> Self {
+        let uri = d.to_data_uri();
+        DataDir::new(d.client, &uri)
     }
 }
 
-impl<'a> From<&'a DataObject> for DataFile {
-    fn from(d: &'a DataObject) -> Self {
-        DataFile::new(d.client().clone(), &d.to_data_uri())
+impl From<DataObject> for DataFile {
+    fn from(d: DataObject) -> Self {
+        let uri = d.to_data_uri();
+        DataFile::new(d.client, &uri)
     }
 }

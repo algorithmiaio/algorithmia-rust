@@ -65,8 +65,8 @@ struct FileItem {
     pub last_modified: DateTime<UTC>,
 }
 
-/// ACL that indicates permissions for a DataDirectory
-/// See also: [ReadAcl](enum.ReadAcl.html) enum to construct a DataACL
+/// ACL that indicates permissions for a `DataDirectory`
+/// See also: [`ReadAcl`](enum.ReadAcl.html) enum to construct a `DataACL`
 #[derive(Deserialize, Serialize, Debug)]
 pub struct DataAcl {
     pub read: Vec<String>,
@@ -149,11 +149,11 @@ impl<'a> Iterator for DirectoryListing<'a> {
                     None => {
                         // Query if there is another page of files/folders
                         if self.query_count == 0 || self.marker.is_some() {
-                            self.query_count = self.query_count + 1;
+                            self.query_count += 1;
                             match get_directory(self.dir, self.marker.clone()) {
                                 Ok(ds) => {
-                                    self.folders = ds.folders.unwrap_or(Vec::new()).into_iter();
-                                    self.files = ds.files.unwrap_or(Vec::new()).into_iter();
+                                    self.folders = ds.folders.unwrap_or_else(Vec::new).into_iter();
+                                    self.files = ds.files.unwrap_or_else(Vec::new).into_iter();
                                     self.marker = ds.marker;
                                     self.next()
                                 }
@@ -190,9 +190,10 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     let mut res_json = String::new();
     try!(res.read_to_string(&mut res_json));
 
-    match res.status.is_success() {
-        true => serde_json::from_str(&res_json).map_err(|err| err.into()),
-        false => Err(error::decode(&res_json)),
+    if res.status.is_success() {
+        serde_json::from_str(&res_json).map_err(|err| err.into())
+    } else {
+        Err(error::decode(&res_json))
     }
 }
 
@@ -269,13 +270,12 @@ impl DataDir {
         // Parse response
         let mut res = try!(req.send());
 
-        match res.status.is_success() {
-            true => Ok(()),
-            false => {
-                let mut res_json = String::new();
-                try!(res.read_to_string(&mut res_json));
-                Err(error::decode(&res_json))
-            }
+        if res.status.is_success() {
+            Ok(())
+        } else {
+            let mut res_json = String::new();
+            try!(res.read_to_string(&mut res_json));
+            Err(error::decode(&res_json))
         }
     }
 
@@ -303,9 +303,10 @@ impl DataDir {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match res.status.is_success() {
-            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
-            false => Err(error::decode(&res_json)),
+        if res.status.is_success() {
+            serde_json::from_str(&res_json).map_err(|err| err.into())
+        } else {
+            Err(error::decode(&res_json))
         }
     }
 
@@ -338,15 +339,16 @@ impl DataDir {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        match res.status.is_success() {
-            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
-            false => Err(error::decode(&res_json)),
+        if res.status.is_success() {
+            serde_json::from_str(&res_json).map_err(|err| err.into())
+        } else {
+            Err(error::decode(&res_json))
         }
     }
 
     pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
         let new_uri = match self.to_data_uri() {
-            ref uri if uri.ends_with("/") => format!("{}{}", uri, filename),
+            ref uri if uri.ends_with('/') => format!("{}{}", uri, filename),
             uri => format!("{}/{}", uri, filename),
         };
         T::new(self.client.clone(), &new_uri)

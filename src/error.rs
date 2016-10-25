@@ -51,9 +51,7 @@ impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
             Error::ApiError(ref e) => e.description(),
-            Error::ContentTypeError(ref msg) => &msg,
-            Error::DataTypeError(ref msg) => &msg,
-            Error::DataPathError(ref msg) => &msg,
+            Error::ContentTypeError(ref msg) | Error::DataTypeError(ref msg) | Error::DataPathError(ref msg) => msg,
             Error::HttpError(ref e) => e.description(),
             Error::JsonError(ref e) => e.description(),
             Error::Base64Error(ref e) => e.description(),
