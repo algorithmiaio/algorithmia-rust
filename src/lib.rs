@@ -42,6 +42,13 @@ pub mod client;
 pub use hyper::{mime, Url};
 pub use client::ApiAuth::{self, SimpleAuth, NoAuth};
 
+pub mod prelude {
+   pub use ::Algorithmia;
+   pub use ::client::ApiAuth::{self, SimpleAuth, NoAuth};
+   pub use ::algo::{EntryPoint, DecodedEntryPoint};
+   pub use ::data::HasDataPath;
+}
+
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia client endpoints
