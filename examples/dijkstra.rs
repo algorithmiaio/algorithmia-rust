@@ -1,11 +1,10 @@
 extern crate algorithmia;
-extern crate rustc_serialize;
+extern crate serde_json;
 
 use algorithmia::Algorithmia;
 use algorithmia::algo::{AlgoResponse, Version};
 use std::collections::HashMap;
 use std::env;
-use rustc_serialize::{json};
 
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
@@ -42,7 +41,7 @@ impl<'a> RouteMap<'a> {
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);
         // println!("Input: {:?}", input_data);
-        println!("Input:\n{}", json::as_pretty_json(&input_data));
+        println!("Input:\n{}", serde_json::to_string_pretty(&input_data).unwrap());
 
         match dijkstra.pipe(&input_data) {
             Ok(response) => response,

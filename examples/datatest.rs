@@ -1,5 +1,4 @@
 extern crate algorithmia;
-extern crate rustc_serialize;
 
 use algorithmia::Algorithmia;
 use algorithmia::data::ReadAcl;

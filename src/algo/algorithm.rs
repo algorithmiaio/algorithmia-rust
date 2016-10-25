@@ -21,9 +21,11 @@ use client::{Body, HttpClient};
 use error::{Error, ApiErrorResponse};
 use super::version::Version;
 
-use rustc_serialize::{json, Decodable, Encodable};
-use rustc_serialize::json::Json;
-use rustc_serialize::base64::FromBase64;
+use serde_json::{self, Value, Error as JsonError};
+use serde_json::value::ToJson;
+use serde::{Deserialize, Serialize};
+use base64;
+
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use hyper::{self, Url};
@@ -45,7 +47,7 @@ pub enum AlgoInput<'a> {
     /// Data that will be sent with `Content-Type: application/octet-stream`
     Binary(Cow<'a, [u8]>),
     /// Data that will be sent with `Content-Type: application/json`
-    Json(Cow<'a, Json>),
+    Json(Cow<'a, Value>),
 }
 
 /// Types that can store the output of an algorithm
@@ -53,7 +55,7 @@ pub enum AlgoOutput {
     /// Representation of result when `metadata.content_type` is 'text'
     Text(String),
     /// Representation of result when `metadata.content_type` is 'json'
-    Json(Json),
+    Json(Value),
     /// Representation of result when `metadata.content_type` is 'binary'
     Binary(Vec<u8>),
 }
@@ -75,7 +77,7 @@ pub struct AlgoRef {
 }
 
 /// Metadata returned from the API
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct AlgoMetadata {
     pub duration: f32,
     pub stdout: Option<String>,
@@ -107,7 +109,7 @@ pub struct AlgoResponse {
 /// }
 /// ```
 pub trait DecodedEntryPoint: Default {
-    type Input: Decodable;
+    type Input: Deserialize;
 
     /// This method is an apply variant that will receive the decoded form of JSON input.
     ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
@@ -120,8 +122,7 @@ impl<T> EntryPoint for T where T: DecodedEntryPoint {
     fn apply<'a>(&self, input: AlgoInput<'a>) -> Result<AlgoOutput, Box<std::error::Error>> {
         match input.as_json() {
             Some(obj) => {
-                let encoded = try!(json::encode(&obj));
-                let decoded = try!(json::decode(&encoded));
+                let decoded = try!(serde_json::from_value(obj.into_owned()));
                 self.apply_decoded(decoded)
             },
             None => Err(Error::UnsupportedInput.into()),
@@ -136,7 +137,7 @@ pub trait EntryPoint: Default {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
-    fn apply_json(&self, json: &Json) -> Result<AlgoOutput, Box<std::error::Error>> {
+    fn apply_json(&self, json: &Value) -> Result<AlgoOutput, Box<std::error::Error>> {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
@@ -243,7 +244,7 @@ impl Algorithm {
         let mut res = try!(match input_data.into() {
             AlgoInput::Text(text) => self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![])),
             AlgoInput::Json(json) => {
-                let encoded = try!(json::encode(&json));
+                let encoded = try!(serde_json::to_vec(&json));
                 self.pipe_as(&*encoded, Mime(TopLevel::Application, SubLevel::Json, vec![]))
             },
             AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, Mime(TopLevel::Application, SubLevel::Ext("octet-stream".into()), vec![])),
@@ -349,8 +350,8 @@ impl <'a> AlgoInput<'a> {
         match self {
             &AlgoInput::Text(ref text) => Some(&*text),
             &AlgoInput::Binary(_) => None,
-            &AlgoInput::Json(Cow::Borrowed(&Json::String(ref text))) => Some(&*text),
-            &AlgoInput::Json(Cow::Owned(Json::String(ref text))) => Some(&*text),
+            &AlgoInput::Json(Cow::Borrowed(&Value::String(ref text))) => Some(&*text),
+            &AlgoInput::Json(Cow::Owned(Value::String(ref text))) => Some(&*text),
             _ => None,
         }
     }
@@ -359,9 +360,9 @@ impl <'a> AlgoInput<'a> {
     ///
     /// For `AlgoInput::Json`, this returns the borrowed `Json`.
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
-    pub fn as_json(&'a self) -> Option<Cow<'a, Json>> {
+    pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
         match self {
-            &AlgoInput::Text(ref text) => Some(Cow::Owned(Json::String(text.clone().into_owned()))),
+            &AlgoInput::Text(ref text) => Some(Cow::Owned(Value::String(text.clone().into_owned()))),
             &AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             &AlgoInput::Binary(_) => None,
         }
@@ -377,11 +378,10 @@ impl <'a> AlgoInput<'a> {
     }
 
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
-    pub fn decode<D: Decodable>(&self) -> Result<D, Error> {
+    pub fn decode<D: Deserialize>(&self) -> Result<D, Error> {
         let res_json = try!(self.as_json()
             .ok_or(Error::ContentTypeError("Input is not JSON".into())));
-        let encoded = try!(json::encode(&res_json));
-        json::decode::<D>(&encoded).map_err(|err| err.into())
+        serde_json::from_value::<D>(res_json.into_owned()).map_err(|err| err.into())
     }
 }
 
@@ -390,16 +390,16 @@ impl AlgoResponse {
     pub fn as_string(self) -> Option<String> {
         match self.result {
             AlgoOutput::Text(text) => Some(text),
-            AlgoOutput::Json(Json::String(text)) => Some(text),
+            AlgoOutput::Json(Value::String(text)) => Some(text),
             _ => None,
         }
     }
 
-    /// If the result is Json (or text that can be JSON encoded), returns the associated JSON string
-    pub fn as_json(self) -> Option<Json> {
+    /// If the result is JSON (or text that can be JSON encoded), returns the associated JSON `Value`
+    pub fn as_json(self) -> Option<Value> {
         match self.result {
             AlgoOutput::Json(json) => Some(json),
-            AlgoOutput::Text(text) => Some(Json::String(text)),
+            AlgoOutput::Text(text) => Some(Value::String(text)),
             _ => None,
         }
     }
@@ -413,12 +413,11 @@ impl AlgoResponse {
     }
 
     /// If the result is valid JSON, decode it to a particular type
-    pub fn decode<D: Decodable>(self) -> Result<D, Error> {
+    pub fn decode<D: Deserialize>(self) -> Result<D, Error> {
         let ct = self.metadata.content_type.clone();
         let res_json = try!(self.as_json()
             .ok_or(Error::ContentTypeError(ct)));
-        let encoded = try!(json::encode(&res_json));
-        json::decode::<D>(&encoded).map_err(|err| err.into())
+        serde_json::from_value::<D>(res_json).map_err(|err| err.into())
     }
 }
 
@@ -453,38 +452,38 @@ impl FromStr for AlgoResponse {
     type Err = Error;
     fn from_str(json_str: &str) -> Result<Self, Self::Err> {
         // Early return if the response decodes into ApiErrorResponse
-        if let Ok(err_res) = json::decode::<ApiErrorResponse>(json_str) {
+        if let Ok(err_res) = serde_json::from_str::<ApiErrorResponse>(json_str) {
             return Err(err_res.error.into())
         }
 
         // Parse into Json object
-        let data = match Json::from_str(json_str) {
-            Ok(d) => d,
-            Err(err) => return Err(json::DecoderError::ParseError(err).into()),
-        };
+        let data = try!(Value::from_str(json_str));
 
         // Construct the AlgoMetadata object
         let metadata = match data.search("metadata") {
-            Some(meta_json) => match json::decode::<AlgoMetadata>(&meta_json.to_string()) {
-                Ok(meta) => meta,
-                Err(err) => return Err(err.into()),
-            },
-            None => return Err(json::DecoderError::MissingFieldError("metadata".into()).into()),
+            Some(meta_json) => try!(serde_json::from_str::<AlgoMetadata>(&meta_json.to_string())),
+            None => {
+                return Err(JsonError::Syntax(
+                    serde_json::ErrorCode::MissingField("metadata"), 0, 0
+                ).into());
+            }
         };
 
         // Construct the AlgoOutput object
         let result = match (&*metadata.content_type, data.search("result")) {
-            ("void", _) => AlgoOutput::Json(Json::Null),
+            ("void", _) => AlgoOutput::Json(Value::Null),
             ("json", Some(json)) => AlgoOutput::Json(json.clone()), // TODO: Consider Cow<'a Json>
-            ("text", Some(json)) => match json.as_string() {
+            ("text", Some(json)) => match json.as_str() {
                 Some(text) => AlgoOutput::Text(text.into()),
                 None => return Err(Error::ContentTypeError("invalid text".into())),
             },
-            ("binary", Some(json)) => match json.as_string() {
-                Some(text) => AlgoOutput::Binary(try!(text.from_base64())),
+            ("binary", Some(json)) => match json.as_str() {
+                Some(text) => AlgoOutput::Binary(try!(base64::decode(text))),
                 None => return Err(Error::ContentTypeError("invalid text".into())),
             },
-            (_, None) => return Err(json::DecoderError::MissingFieldError("result".into()).into()),
+            (_, None) => return Err(JsonError::Syntax(
+                serde_json::ErrorCode::MissingField("result"), 0, 0
+            ).into()),
             (content_type, _) => return Err(Error::ContentTypeError(content_type.into())),
         };
 
@@ -535,7 +534,7 @@ impl <'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
 // AlgoInput Conversions
 impl <'a> From<()> for AlgoInput<'a> {
     fn from(_unit: ()) -> Self {
-        AlgoInput::Json(Cow::Owned(Json::Null))
+        AlgoInput::Json(Cow::Owned(Value::Null))
     }
 }
 
@@ -563,25 +562,22 @@ impl <'a> From<Vec<u8>> for AlgoInput<'a> {
     }
 }
 
-impl <'a> From<Json> for AlgoInput<'a> {
-    fn from(json: Json) -> Self {
+impl <'a> From<Value> for AlgoInput<'a> {
+    fn from(json: Value) -> Self {
         AlgoInput::Json(Cow::Owned(json))
     }
 }
 
-impl <'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
-    fn from(encodable: &'a E) -> Self {
-        // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
-        //       or store a result and let pipe() do error handling
-        let encoded = json::encode(&encodable).unwrap();
-        AlgoInput::Json(Cow::Owned(Json::from_str(&encoded).unwrap()))
+impl <'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
+    fn from(object: &'a S) -> Self {
+        AlgoInput::Json(Cow::Owned(object.to_json()))
     }
 }
 
 // AlgoOutput conversions - could probably combine with fancier implementations
 impl From<()> for AlgoOutput {
     fn from(_unit: ()) -> Self {
-        AlgoOutput::Json(Json::Null)
+        AlgoOutput::Json(Value::Null)
     }
 }
 
@@ -609,20 +605,24 @@ impl From<Vec<u8>> for AlgoOutput {
     }
 }
 
-impl From<Json> for AlgoOutput {
-    fn from(json: Json) -> Self {
+impl From<Value> for AlgoOutput {
+    fn from(json: Value) -> Self {
         AlgoOutput::Json(json)
     }
 }
 
-impl <'a, E: Encodable> From<&'a E> for AlgoOutput {
-    fn from(encodable: &'a E) -> Self {
-        // TODO: remove unwrap - either find a way to Box the encodable object and let pipe() encode it
-        //       or store a result and let pipe() do error handling
-        let encoded = json::encode(&encodable).unwrap();
-        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
+impl <'a, S: Serialize> From<&'a S> for AlgoOutput {
+    fn from(object: &'a S) -> Self {
+        AlgoOutput::Json(object.to_json())
     }
 }
+
+// Add when overlapping specialization is possible
+// impl <S: Serialize> From<S> for AlgoOutput {
+//     fn from(object: S) -> Self {
+//         AlgoOutput::Json(object.to_json())
+//     }
+// }
 
 // The conversion that makes it easy to pipe output to another algorithm's input
 impl <'a> From<AlgoOutput> for AlgoInput<'a> {

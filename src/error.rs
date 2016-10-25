@@ -1,7 +1,8 @@
 //! Error types
 use std::error::Error as StdError;
 use std::{fmt, io, str, string};
-use rustc_serialize::{json, base64};
+use base64;
+use serde_json;
 use hyper;
 
 
@@ -13,31 +14,30 @@ pub enum Error {
     DataTypeError(String),
     DataPathError(String),
     HttpError(hyper::error::Error),
-    DecoderError(json::DecoderError),
-    EncoderError(json::EncoderError),
-    FromBase64Error(base64::FromBase64Error),
+    JsonError(serde_json::Error),
+    Base64Error(base64::Base64Error),
     IoError(io::Error),
     Utf8Error(str::Utf8Error),
     UnsupportedInput,
 }
 
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct ApiError {
     pub message: String,
     pub stacktrace: Option<String>,
 }
 
 /// Struct for decoding Algorithmia API error responses
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct ApiErrorResponse {
     pub error: ApiError,
 }
 
 
 pub fn decode(json_str: &str) -> Error {
-    match json::decode::<ApiErrorResponse>(json_str) {
+    match serde_json::from_str::<ApiErrorResponse>(json_str) {
         Ok(err_res) => err_res.error.into(),
-        Err(err) => Error::DecoderError(err),
+        Err(err) => Error::JsonError(err),
     }
 }
 
@@ -55,9 +55,8 @@ impl StdError for Error {
             Error::DataTypeError(ref msg) => &msg,
             Error::DataPathError(ref msg) => &msg,
             Error::HttpError(ref e) => e.description(),
-            Error::DecoderError(ref e) => e.description(),
-            Error::EncoderError(ref e) => e.description(),
-            Error::FromBase64Error(ref e) => e.description(),
+            Error::JsonError(ref e) => e.description(),
+            Error::Base64Error(ref e) => e.description(),
             Error::IoError(ref e) => e.description(),
             Error::Utf8Error(ref e) => e.description(),
             Error::UnsupportedInput => "Unsupported input type",
@@ -67,9 +66,8 @@ impl StdError for Error {
     fn cause(&self) -> Option<&StdError> {
         match *self {
             Error::HttpError(ref e) => Some(e),
-            Error::DecoderError(ref e) => Some(e),
-            Error::EncoderError(ref e) => Some(e),
-            Error::FromBase64Error(ref e) => Some(e),
+            Error::JsonError(ref e) => Some(e),
+            Error::Base64Error(ref e) => Some(e),
             Error::IoError(ref e) => Some(e),
             Error::Utf8Error(ref e) => Some(e),
             _ => None,
@@ -117,21 +115,15 @@ impl From<hyper::error::Error> for Error {
     }
 }
 
-impl From<json::DecoderError> for Error {
-    fn from(err: json::DecoderError) -> Error {
-        Error::DecoderError(err)
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Error {
+        Error::JsonError(err)
     }
 }
 
-impl From<json::EncoderError> for Error {
-    fn from(err: json::EncoderError) -> Error {
-        Error::EncoderError(err)
-    }
-}
-
-impl From<base64::FromBase64Error> for Error {
-    fn from(err: base64::FromBase64Error) -> Error {
-        Error::FromBase64Error(err)
+impl From<base64::Base64Error> for Error {
+    fn from(err: base64::Base64Error) -> Error {
+        Error::Base64Error(err)
     }
 }
 

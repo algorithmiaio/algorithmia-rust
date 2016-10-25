@@ -19,10 +19,15 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
 
-#[macro_use]
-extern crate hyper;
+#![feature(proc_macro)]
+
+#[macro_use] extern crate serde_derive;
+#[macro_use] extern crate hyper;
+
+extern crate base64;
+extern crate serde;
+extern crate serde_json;
 extern crate chrono;
-extern crate rustc_serialize;
 
 use algo::{Algorithm, AlgoRef};
 use data::{DataDir, DataFile, DataObject, HasDataPath};

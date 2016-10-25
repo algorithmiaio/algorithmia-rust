@@ -24,13 +24,13 @@ use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use std::vec::IntoIter;
-use std::error::Error as StdError;
 
+use serde_json;
 use chrono::{DateTime, UTC};
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use hyper::Url;
-use rustc_serialize::{json, Decoder, Decodable};
+
 
 /// Algorithmia Data Directory
 pub struct DataDir {
@@ -39,55 +39,35 @@ pub struct DataDir {
 }
 
 
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct DirectoryUpdated {
     pub acl: Option<DataAcl>,
 }
 
 
 /// Response when deleting a new Directory
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct DirectoryDeleted {
     // Omitting deleted.number and error.number for now
     pub result: DeletedResult,
 }
 
-#[derive(RustcDecodable, RustcEncodable, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 struct FolderItem {
     pub name: String,
     pub acl: Option<DataAcl>,
 }
 
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
 struct FileItem {
     pub filename: String,
     pub size: u64,
     pub last_modified: DateTime<UTC>,
 }
 
-// Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
-impl Decodable for FileItem {
-    fn decode<D: Decoder>(d: &mut D) -> Result<FileItem, D::Error> {
-        d.read_struct("root", 0, |d| {
-            Ok(FileItem{
-                filename: try!(d.read_struct_field("filename", 0, |d| Decodable::decode(d))),
-                size: try!(d.read_struct_field("size", 0, |d| Decodable::decode(d))),
-                last_modified: {
-                    let json_str: String = try!(d.read_struct_field("last_modified", 0, |d| Decodable::decode(d)));
-                    match json_str.parse() {
-                        Ok(datetime) => datetime,
-                        Err(err) => return Err(d.error(err.description())),
-                    }
-                },
-            })
-        })
-    }
-}
-
-
 /// ACL that indicates permissions for a DataDirectory
 /// See also: [ReadAcl](enum.ReadAcl.html) enum to construct a DataACL
-#[derive(RustcDecodable, RustcEncodable, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct DataAcl {
     pub read: Vec<String>
 }
@@ -118,7 +98,7 @@ impl From<ReadAcl> for DataAcl {
 }
 
 /// Response when querying an existing Directory
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 struct DirectoryShow {
     pub acl: Option<DataAcl>,
     pub folders: Option<Vec<FolderItem>>,
@@ -212,7 +192,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     try!(res.read_to_string(&mut res_json));
 
     match res.status.is_success() {
-        true => json::decode(&res_json).map_err(|err| err.into()),
+        true => serde_json::from_str(&res_json).map_err(|err| err.into()),
         false => Err(error::decode(&res_json)),
     }
 }
@@ -269,7 +249,7 @@ impl DataDir {
             name: try!(self.basename().ok_or(Error::DataPathError("has no basename".into()))).into(),
             acl: Some(acl.into()),
         };
-        let raw_input = try!(json::encode(&input_data));
+        let raw_input = try!(serde_json::to_string(&input_data));
 
         // POST request
         let req = self.client.post(url)
@@ -314,7 +294,7 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json::decode(&res_json).map_err(|err| err.into()),
+            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
             false => Err(error::decode(&res_json)),
         }
     }
@@ -350,7 +330,7 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json::decode(&res_json).map_err(|err| err.into()),
+            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
             false => Err(error::decode(&res_json)),
         }
     }

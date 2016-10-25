@@ -15,18 +15,18 @@ use chrono::{DateTime, UTC, TimeZone};
 use client::{Body, HttpClient};
 use data::*;
 use std::io::{self, Read};
-use error::{self, Error, ApiError};
-use rustc_serialize::json;
+use serde_json;
+use error::{Error, ApiError, ApiErrorResponse};
 use super::{parse_headers, parse_data_uri};
 
 /// Response when creating a file via the Data API
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct FileAdded {
     pub result: String
 }
 
 /// Response when deleting a file from the Data API
-#[derive(RustcDecodable, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct FileDeleted {
     pub result: DeletedResult
 }
@@ -82,8 +82,8 @@ impl DataFile  {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json::decode(&res_json).map_err(|err| err.into()),
-            false => Err(error::decode(&res_json)),
+            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
+            false => Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into()),
         }
     }
 
@@ -157,8 +157,8 @@ impl DataFile  {
         try!(res.read_to_string(&mut res_json));
 
         match res.status.is_success() {
-            true => json::decode(&res_json).map_err(|err| err.into()),
-            false => Err(error::decode(&res_json)),
+            true => serde_json::from_str(&res_json).map_err(|err| err.into()),
+            false => Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into()),
         }
     }
 
