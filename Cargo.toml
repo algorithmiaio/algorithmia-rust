@@ -11,7 +11,7 @@ readme = "README.md"
 keywords = ["algorithmia", "algorithm", "client"]
 
 [dependencies]
-hyper = "0.8"
+hyper = "0.9"
 serde = "0.8"
 serde_json = "0.8"
 serde_derive = "0.8"

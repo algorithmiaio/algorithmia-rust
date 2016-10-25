@@ -368,8 +368,7 @@ mod tests {
     #[test]
     fn test_to_url() {
         let dir = mock_client().dir("data://anowell/foo");
-        assert_eq!(dir.to_url().serialize_path().unwrap(),
-                   "/v1/connector/data/anowell/foo");
+        assert_eq!(dir.to_url().path(), "/v1/connector/data/anowell/foo");
     }
 
     #[test]
