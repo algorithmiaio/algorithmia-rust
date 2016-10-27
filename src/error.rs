@@ -1,5 +1,6 @@
 //! Error types
-use std::{result, io, str};
+use std::{result, fmt, io, str};
+use std::fmt::Display;
 use base64;
 use serde_json;
 use hyper;
@@ -47,7 +48,7 @@ quick_error! {
         Api(err: ApiError) {
             from()
             description("api error")
-            display("api error: {}", err.message)
+            display("api error: {}", err)
         }
 
         InvalidContentType(t: String) {
@@ -97,6 +98,15 @@ pub type Result<T> = result::Result<T, Error>;
 pub struct ApiError {
     pub message: String,
     pub stacktrace: Option<String>,
+}
+
+impl Display for ApiError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.stacktrace {
+            Some(ref trace) => write!(f, "{}\n{}", self.message, trace),
+            None => write!(f, "{}", self.message),
+        }
+    }
 }
 
 /// Struct for decoding Algorithmia API error responses
