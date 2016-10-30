@@ -77,17 +77,17 @@ impl DataFile {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use std::io::{self, Read};
+    /// # use std::fs::File;
     /// let client = Algorithmia::client("111112222233333444445555566");
     ///
     /// client.clone().file(".my/my_dir/string.txt").put("file_contents");
     /// client.clone().file(".my/my_dir/bytes.txt").put("file_contents".as_bytes());
     ///
-    /// let mut stdin = io::stdin();
-    /// let data_file = client.clone().file(".my/my_dir/stdin.txt");
-    /// data_file.put(&mut stdin);
+    /// let file = File::open("/path/to/file.jpg").unwrap();
+    /// client.clone().file(".my/my_dir/file.jpg").put(file);
     /// ```
-    pub fn put<'a, B>(&'a self, body: B) -> Result<FileAdded, Error>
-        where B: Into<Body<'a>>
+    pub fn put<B>(&self, body: B) -> Result<FileAdded, Error>
+        where B: Into<Body>
     {
         let url = try!(self.to_url());
         let req = try!(self.client.put(url)).body(body);
@@ -96,7 +96,7 @@ impl DataFile {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        if res.status.is_success() {
+        if res.status().is_success() {
             json::decode_str(&res_json).map_err(|err| err.into())
         } else {
             Err(try!(json::decode_str::<ApiErrorResponse>(&res_json)).error.into())
@@ -128,9 +128,9 @@ impl DataFile {
         let url = try!(self.to_url());
         let req = try!(self.client.get(url));
         let res = try!(req.send());
-        let metadata = try!(parse_headers(&res.headers));
+        let metadata = try!(parse_headers(res.headers()));
 
-        if res.status.is_success() {
+        if res.status().is_success() {
             match metadata.data_type {
                 DataType::File => (),
                 DataType::Dir => {
@@ -146,7 +146,7 @@ impl DataFile {
             })
         } else {
             Err(ApiError {
-                    message: res.status.to_string(),
+                    message: res.status().to_string(),
                     stacktrace: None,
                 }
                 .into())
@@ -174,7 +174,7 @@ impl DataFile {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        if res.status.is_success() {
+        if res.status().is_success() {
             json::decode_str(&res_json).map_err(|err| err.into())
         } else {
             Err(try!(json::decode_str::<ApiErrorResponse>(&res_json)).error.into())

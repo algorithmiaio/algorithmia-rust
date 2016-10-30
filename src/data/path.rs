@@ -3,8 +3,7 @@ use error::*;
 use super::header::XErrorMessage;
 
 use client::HttpClient;
-use hyper::Url;
-use hyper::status::StatusCode;
+use reqwest::{Url, StatusCode};
 
 pub trait HasDataPath {
     fn new(client: HttpClient, path: &str) -> Self;
@@ -93,11 +92,11 @@ pub trait HasDataPath {
         let req = try!(client.head(url));
 
         let res = try!(req.send());
-        match res.status {
+        match *res.status() {
             StatusCode::Ok => Ok(true),
             StatusCode::NotFound => Ok(false),
             status => {
-                let msg = match res.headers.get::<XErrorMessage>() {
+                let msg = match res.headers().get::<XErrorMessage>() {
                     Some(err_header) => format!("{}: {}", status, err_header),
                     None => format!("{}", status),
                 };

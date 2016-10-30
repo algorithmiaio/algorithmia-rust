@@ -66,10 +66,11 @@ pub type JsonValue = Value;
 pub type JsonValue = Json;
 
 use base64;
-use hyper::header::ContentType;
-use hyper::mime::{Mime, TopLevel, SubLevel};
-use hyper::Url;
-use hyper::client::response::Response;
+use reqwest::header::ContentType;
+use reqwest::Url;
+use mime::{Mime, TopLevel, SubLevel};
+#[doc(hidden)]
+pub use reqwest::Response;
 
 use std::borrow::Cow;
 use std::io::{self, Read, Write};
@@ -356,8 +357,11 @@ impl Algorithm {
 
 
     #[doc(hidden)]
-    pub fn pipe_as<'a, B>(&'a self, input_data: B, content_type: Mime) -> Result<Response, Error>
-        where B: Into<Body<'a>>
+    pub fn pipe_as<B>(&self,
+                          input_data: B,
+                          content_type: Mime)
+                          -> Result<Response, Error>
+        where B: Into<Body>
     {
 
         // Append options to URL as query parameters

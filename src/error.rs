@@ -3,17 +3,17 @@ use std::{result, fmt, io, str};
 use std::fmt::Display;
 use ::json;
 use base64;
-use hyper;
 use url;
+use reqwest;
 
 
 quick_error! {
     #[derive(Debug)]
     pub enum Error {
 
-        Http(err: hyper::Error) {
+        Http(err: reqwest::Error) {
             from()
-            from(e: url::ParseError) -> (hyper::Error::from(e))
+            from(e: url::ParseError) -> (reqwest::Error::from(e))
             cause(err)
             description(err.description())
             display("http error: {}", err)
@@ -72,7 +72,7 @@ quick_error! {
             description("missing data type")
         }
 
-        NotFound(url: hyper::Url) {
+        NotFound(url: reqwest::Url) {
             description("404 not found")
             display("404 not found: {}", url)
         }

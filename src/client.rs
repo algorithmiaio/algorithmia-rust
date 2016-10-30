@@ -1,15 +1,14 @@
 //! Internal client
 //!
 //! Do not use directly - use the [`Algorithmia`](../struct.Algorithmia.html) struct instead
-use hyper::{Client, Url};
-use hyper::client::IntoUrl;
-use hyper::client::RequestBuilder;
-use hyper::header::{Authorization, UserAgent};
-use hyper::method::Method;
+use reqwest::{Client, Method, RequestBuilder, Url, IntoUrl};
+use reqwest::header::{Authorization, UserAgent};
 use ::Error;
 
 use url::ParseError;
 use std::sync::Arc;
+
+pub use reqwest::Body;
 
 /// Represent the different ways to auth with the API
 #[derive(Clone)]
@@ -18,22 +17,22 @@ pub enum ApiAuth {
     None,
 }
 
-/// Internal `HttpClient` to build requests: wraps `hyper` client
+/// Internal `HttpClient` to build requests: wraps `reqwest` client
 #[derive(Clone)]
 pub struct HttpClient {
     pub base_url: Result<Url, ParseError>,
     api_auth: ApiAuth,
-    hyper_client: Arc<Client>,
+    inner_client: Arc<Client>,
     user_agent: String,
 }
 
 impl HttpClient {
-    /// Instantiate an `HttpClient` - creates a new `hyper` client
+    /// Instantiate an `HttpClient` - creates a new `reqwest` client
     pub fn new<U: IntoUrl>(api_auth: ApiAuth, base_url: U) -> HttpClient {
         HttpClient {
             api_auth: api_auth,
             base_url: base_url.into_url(),
-            hyper_client: Arc::new(Client::new()),
+            inner_client: Arc::new(Client::new().expect("Failed to init client")),
             user_agent: format!("algorithmia-rust/{} (Rust {}",
                                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
                                 ::version::RUSTC_VERSION),
@@ -67,7 +66,7 @@ impl HttpClient {
 
 
     fn build_request(&self, verb: Method, url: Url) -> Result<RequestBuilder, Error> {
-        let mut req = self.hyper_client.request(verb, url);
+        let mut req = self.inner_client.request(verb, url);
 
         req = req.header(UserAgent(self.user_agent.clone()));
         if let ApiAuth::ApiKey(ref api_key) = self.api_auth {

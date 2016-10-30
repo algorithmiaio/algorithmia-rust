@@ -10,7 +10,7 @@ pub use self::object::*;
 use error::*;
 use chrono::{DateTime, UTC, NaiveDateTime, TimeZone};
 use std::ops::Deref;
-use hyper::header::{Headers, ContentLength, Date};
+use reqwest::header::{Headers, ContentLength, Date};
 
 mod dir;
 mod file;

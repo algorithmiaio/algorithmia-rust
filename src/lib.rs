@@ -27,6 +27,8 @@
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
+extern crate mime;
+#[macro_use]
 extern crate hyper;
 #[macro_use]
 extern crate quick_error;
@@ -37,6 +39,7 @@ extern crate serde;
 extern crate serde_json;
 #[cfg(feature="with-rustc-serialize")]
 extern crate rustc_serialize;
+extern crate reqwest;
 extern crate base64;
 extern crate chrono;
 extern crate url;
@@ -50,10 +53,9 @@ pub mod data;
 pub mod error;
 mod client;
 pub use error::Error;
-pub use hyper::Url;
-use hyper::client::IntoUrl;
+pub use reqwest::{Url, IntoUrl};
 pub use client::ApiAuth;
-pub use hyper::client::Body;
+pub use reqwest::Body;
 
 #[cfg(feature="with-serde")]
 #[path = "json-serde.rs"]

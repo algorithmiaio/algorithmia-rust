@@ -2,7 +2,7 @@ use data::*;
 use client::HttpClient;
 use error::*;
 use chrono::{UTC, TimeZone};
-use hyper::status::StatusCode;
+use reqwest::StatusCode;
 use super::{parse_headers, parse_data_uri};
 
 
@@ -45,9 +45,9 @@ impl DataObject {
         let req = try!(self.client.head(url));
         let res = try!(req.send());
 
-        match res.status {
+        match *res.status() {
             StatusCode::Ok => {
-                let metadata = try!(parse_headers(&res.headers));
+                let metadata = try!(parse_headers(res.headers()));
                 Ok(metadata.data_type)
             }
             StatusCode::NotFound => Err(Error::NotFound(self.to_url().unwrap())),
@@ -78,10 +78,10 @@ impl DataObject {
             let url = try!(self.to_url());
             let req = try!(self.client.head(url));
             let res = try!(req.send());
-            if res.status == StatusCode::NotFound {
+            if *res.status() == StatusCode::NotFound {
                 return Err(Error::NotFound(self.to_url().unwrap()));
             }
-            try!(parse_headers(&res.headers))
+            try!(parse_headers(res.headers()))
         };
 
         match metadata.data_type {

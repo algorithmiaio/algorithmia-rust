@@ -45,7 +45,10 @@ impl<'a> RouteMap<'a> {
 
         match dijkstra.pipe(&input_data) {
             Ok(response) => response,
-            Err(err) => panic!("{}", err),
+            Err(err) => {
+                println!("{}", err);
+                std::process::exit(1);
+            }
         }
     }
 }

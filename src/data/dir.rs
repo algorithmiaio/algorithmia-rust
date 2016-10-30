@@ -27,8 +27,8 @@ use std::path::Path;
 use std::vec::IntoIter;
 
 use chrono::{DateTime, UTC};
-use hyper::header::ContentType;
-use hyper::mime::{Mime, TopLevel, SubLevel};
+use reqwest::header::ContentType;
+use mime::{Mime, TopLevel, SubLevel};
 
 #[cfg(feature="with-rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder};
@@ -211,8 +211,8 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     let req = try!(dir.client.get(url));
     let mut res = try!(req.send());
 
-    if res.status.is_success() {
-        if let Some(data_type) = res.headers.get::<XDataType>() {
+    if res.status().is_success() {
+        if let Some(data_type) = res.headers().get::<XDataType>() {
             if "directory" != data_type.as_str() {
                 return Err(Error::UnexpectedDataType("directory", data_type.to_string()));
             }
@@ -222,7 +222,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     let mut res_json = String::new();
     try!(res.read_to_string(&mut res_json));
 
-    if res.status.is_success() {
+    if res.status().is_success() {
         json::decode_str(&res_json).map_err(|err| err.into())
     } else {
         Err(error::decode(&res_json))
@@ -296,12 +296,12 @@ impl DataDir {
         // POST request
         let req = try!(self.client.post(parent_url))
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
-            .body(&*raw_input);
+            .body(raw_input);
 
         // Parse response
         let mut res = try!(req.send());
 
-        if res.status.is_success() {
+        if res.status().is_success() {
             Ok(())
         } else {
             let mut res_json = String::new();
@@ -337,7 +337,7 @@ impl DataDir {
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
 
-        if res.status.is_success() {
+        if res.status().is_success() {
             json::decode_str(&res_json).map_err(|err| err.into())
         } else {
             Err(error::decode(&res_json))
@@ -362,10 +362,10 @@ impl DataDir {
         // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
         let filename = path_ref.file_name().unwrap().to_str().unwrap();
-        let mut file = try!(File::open(path_ref));
+        let file = try!(File::open(path_ref));
 
         let data_file: DataFile = self.child(filename);
-        data_file.put(&mut file)
+        data_file.put(file)
     }
 
     pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
