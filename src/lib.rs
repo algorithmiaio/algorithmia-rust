@@ -43,6 +43,7 @@ pub mod algo;
 pub mod data;
 pub mod error;
 pub mod client;
+pub use error::Error;
 pub use hyper::{mime, Url};
 pub use client::ApiAuth::{self, SimpleAuth, NoAuth};
 
