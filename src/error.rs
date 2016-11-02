@@ -70,6 +70,11 @@ quick_error! {
             description("missing data type")
         }
 
+        NotFound(url: hyper::Url) {
+            description("404 not found")
+            display("404 not found: {}", url)
+        }
+
         InvalidDataType(t: String) {
             description("invalid data type")
             display("invalid data type: '{}'", t)

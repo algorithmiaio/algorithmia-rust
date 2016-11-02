@@ -43,10 +43,13 @@ impl DataObject {
     pub fn get_type(&self) -> Result<DataType> {
         let req = self.client.head(self.to_url());
         let res = try!(req.send());
-        let metadata = try!(parse_headers(&res.headers));
 
         match res.status {
-            StatusCode::Ok => Ok(metadata.data_type),
+            StatusCode::Ok => {
+                let metadata = try!(parse_headers(&res.headers));
+                Ok(metadata.data_type)
+            }
+            StatusCode::NotFound => Err(Error::NotFound(self.to_url())),
             status => {
                 Err(ApiError {
                         message: status.to_string(),
@@ -73,6 +76,9 @@ impl DataObject {
         let metadata = {
             let req = self.client.head(self.to_url());
             let res = try!(req.send());
+            if res.status == StatusCode::NotFound {
+               return Err(Error::NotFound(self.to_url()));
+            }
             try!(parse_headers(&res.headers))
         };
 
