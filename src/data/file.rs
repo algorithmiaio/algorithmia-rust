@@ -15,18 +15,23 @@ use chrono::{DateTime, UTC, TimeZone};
 use client::{Body, HttpClient};
 use data::*;
 use std::io::{self, Read};
-use serde_json;
+use ::json;
 use error::{Error, ApiError, ApiErrorResponse};
 use super::{parse_headers, parse_data_uri};
 
+
 /// Response when creating a file via the Data API
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct FileAdded {
     pub result: String,
 }
 
 /// Response when deleting a file from the Data API
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct FileDeleted {
     pub result: DeletedResult,
 }
@@ -93,9 +98,9 @@ impl DataFile {
         try!(res.read_to_string(&mut res_json));
 
         if res.status.is_success() {
-            serde_json::from_str(&res_json).map_err(|err| err.into())
+            json::decode_str(&res_json).map_err(|err| err.into())
         } else {
-            Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into())
+            Err(try!(json::decode_str::<ApiErrorResponse>(&res_json)).error.into())
         }
     }
 
@@ -174,9 +179,9 @@ impl DataFile {
         try!(res.read_to_string(&mut res_json));
 
         if res.status.is_success() {
-            serde_json::from_str(&res_json).map_err(|err| err.into())
+            json::decode_str(&res_json).map_err(|err| err.into())
         } else {
-            Err(try!(serde_json::from_str::<ApiErrorResponse>(&res_json)).error.into())
+            Err(try!(json::decode_str::<ApiErrorResponse>(&res_json)).error.into())
         }
     }
 }

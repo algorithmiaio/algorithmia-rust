@@ -1,8 +1,8 @@
 //! Error types
 use std::{result, fmt, io, str};
 use std::fmt::Display;
+use ::json;
 use base64;
-use serde_json;
 use hyper;
 
 
@@ -17,7 +17,7 @@ quick_error! {
             display("http error: {}", err)
         }
 
-        Json(err: serde_json::Error) {
+        Json(err: json::JsonError) {
             from()
             cause(err)
             description("json error")
@@ -94,7 +94,10 @@ quick_error! {
 
 pub type Result<T> = result::Result<T, Error>;
 
-#[derive(Deserialize, Debug)]
+
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct ApiError {
     pub message: String,
     pub stacktrace: Option<String>,
@@ -110,15 +113,17 @@ impl Display for ApiError {
 }
 
 /// Struct for decoding Algorithmia API error responses
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct ApiErrorResponse {
     pub error: ApiError,
 }
 
 
 pub fn decode(json_str: &str) -> Error {
-    match serde_json::from_str::<ApiErrorResponse>(json_str) {
+    match json::decode_str::<ApiErrorResponse>(json_str) {
         Ok(err_res) => err_res.error.into(),
-        Err(err) => Error::Json(err),
+        Err(err) => err,
     }
 }

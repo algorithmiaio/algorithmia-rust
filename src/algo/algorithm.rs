@@ -20,12 +20,31 @@
 use client::{Body, HttpClient};
 use error::{Error, ApiErrorResponse};
 use super::version::Version;
+use ::json;
 
-use serde_json::{self, Value, Error as JsonError, ErrorCode as JsonErrorCode};
-use serde_json::value::ToJson;
-use serde::{Deserialize, Serialize};
+#[cfg(feature="with-serde")] use serde_json::{self, Value   };
+#[cfg(feature="with-serde")] use serde_json::value::ToJson;
+#[cfg(feature="with-serde")] use serde::{Deserialize, Serialize};
+#[cfg(feature="with-rustc-serialize")] use rustc_serialize::{self, Decodable, Encodable};
+#[cfg(feature="with-rustc-serialize")] use rustc_serialize::json::Json;
+
+#[cfg(feature="with-serde")]
+macro_rules! JsonValue {
+    () => { serde_json::Value };
+    ($i:ident) => { serde_json::Value::$i };
+    ($i:ident, $e:expr) => { serde_json::Value::$i($e) };
+}
+
+
+#[cfg(feature="with-rustc-serialize")]
+macro_rules! JsonValue {
+    () => { rustc_serialize::json::Json };
+    ($i:ident) => { rustc_serialize::json::Json::$i };
+    ($i:ident, $e:expr) => { rustc_serialize::json::Json::$i($e) };
+}
+
+
 use base64;
-
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 use hyper::{self, Url};
@@ -48,7 +67,7 @@ pub enum AlgoInput<'a> {
     /// Data that will be sent with `Content-Type: application/octet-stream`
     Binary(Cow<'a, [u8]>),
     /// Data that will be sent with `Content-Type: application/json`
-    Json(Cow<'a, Value>),
+    Json(Cow<'a, JsonValue!()>),
 }
 
 /// Types that can store the output of an algorithm
@@ -56,7 +75,7 @@ pub enum AlgoOutput {
     /// Representation of result when `metadata.content_type` is 'text'
     Text(String),
     /// Representation of result when `metadata.content_type` is 'json'
-    Json(Value),
+    Json(JsonValue!()),
     /// Representation of result when `metadata.content_type` is 'binary'
     Binary(Vec<u8>),
 }
@@ -78,7 +97,9 @@ pub struct AlgoRef {
 }
 
 /// Metadata returned from the API
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct AlgoMetadata {
     pub duration: f32,
     pub stdout: Option<String>,
@@ -111,7 +132,8 @@ pub struct AlgoResponse {
 /// }
 /// ```
 pub trait DecodedEntryPoint: Default {
-    type Input: Deserialize;
+    #[cfg(feature="with-serde")] type Input: Deserialize;
+    #[cfg(feature="with-rustc-serialize")] type Input: Decodable;
 
     /// This method is an apply variant that will receive the decoded form of JSON input.
     ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
@@ -125,7 +147,7 @@ impl<T> EntryPoint for T
     fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input.as_json() {
             Some(obj) => {
-                let decoded = try!(serde_json::from_value(obj.into_owned()));
+                let decoded = try!(json::decode_value(obj.into_owned()));
                 self.apply_decoded(decoded)
             }
             None => Err(Error::UnsupportedInput.into()),
@@ -140,7 +162,7 @@ pub trait EntryPoint: Default {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
-    fn apply_json(&self, json: &Value) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply_json(&self, json: &JsonValue!()) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
@@ -264,7 +286,7 @@ impl Algorithm {
                 self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![]))
             }
             AlgoInput::Json(json) => {
-                let encoded = try!(serde_json::to_vec(&json));
+                let encoded = try!(json::encode(&json));
                 self.pipe_as(&*encoded,
                              Mime(TopLevel::Application, SubLevel::Json, vec![]))
             }
@@ -364,13 +386,14 @@ impl Algorithm {
     }
 }
 
+
 impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
     pub fn as_string(&'a self) -> Option<&'a str> {
         match *self {
             AlgoInput::Text(ref text) => Some(&*text),
-            AlgoInput::Json(Cow::Borrowed(&Value::String(ref text))) => Some(&*text),
-            AlgoInput::Json(Cow::Owned(Value::String(ref text))) => Some(&*text),
+            AlgoInput::Json(Cow::Borrowed(ref json)) => json::value_as_str(json),
+            AlgoInput::Json(Cow::Owned(ref json)) => json::value_as_str(json),
             _ => None,
         }
     }
@@ -379,9 +402,9 @@ impl<'a> AlgoInput<'a> {
     ///
     /// For `AlgoInput::Json`, this returns the borrowed `Json`.
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
-    pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
+    pub fn as_json(&'a self) -> Option<Cow<'a, JsonValue!()>> {
         match *self {
-            AlgoInput::Text(ref text) => Some(Cow::Owned(Value::String(text.clone().into_owned()))),
+            AlgoInput::Text(ref text) => Some(Cow::Owned(JsonValue!(String, text.clone().into_owned()))),
             AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             AlgoInput::Binary(_) => None,
         }
@@ -396,11 +419,21 @@ impl<'a> AlgoInput<'a> {
         }
     }
 
+
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
+    #[cfg(feature="with-serde")]
     pub fn decode<D: Deserialize>(&self) -> Result<D, Error> {
         let res_json = try!(self.as_json()
             .ok_or(Error::MismatchedContentType("json")));
-        serde_json::from_value::<D>(res_json.into_owned()).map_err(|err| err.into())
+        json::decode_value::<D>(res_json.into_owned()).map_err(|err| err.into())
+    }
+
+    /// If the `AlgoInput` is valid JSON, decode it to a particular type
+    #[cfg(feature="with-rustc-serialize")]
+    pub fn decode<D: Decodable>(&self) -> Result<D, Error> {
+        let res_json = try!(self.as_json()
+            .ok_or(Error::MismatchedContentType("json")));
+        json::decode_value::<D>(res_json.into_owned()).map_err(|err| err.into())
     }
 }
 
@@ -408,17 +441,18 @@ impl AlgoResponse {
     /// If the result is text (or a valid JSON string), returns the associated string
     pub fn into_string(self) -> Option<String> {
         match self.result {
-            AlgoOutput::Text(text) |
-            AlgoOutput::Json(Value::String(text)) => Some(text),
+            AlgoOutput::Text(text) => Some(text),
+            #[cfg(feature="with-serde")] AlgoOutput::Json(Value::String(text)) => Some(text),
+            #[cfg(feature="with-rustc-serialize")] AlgoOutput::Json(Json::String(text)) => Some(text),
             _ => None,
         }
     }
 
-    /// If the result is JSON (or JSON encodable text), returns the associated JSON `Value`
-    pub fn into_json(self) -> Option<Value> {
+    /// If the result is JSON (or JSON encodable text), returns the associated JSON type
+    pub fn into_json(self) -> Option<JsonValue!()> {
         match self.result {
             AlgoOutput::Json(json) => Some(json),
-            AlgoOutput::Text(text) => Some(Value::String(text)),
+            AlgoOutput::Text(text) => Some(JsonValue!(String, text)),
             _ => None,
         }
     }
@@ -432,12 +466,22 @@ impl AlgoResponse {
     }
 
     /// If the result is valid JSON, decode it to a particular type
+    #[cfg(feature="serde")]
     pub fn decode<D: Deserialize>(self) -> Result<D, Error> {
         let ct = self.metadata.content_type.clone();
         let res_json = try!(self.into_json()
             .ok_or(Error::UnexpectedContentType("json", ct)));
-        serde_json::from_value::<D>(res_json).map_err(|err| err.into())
+        json::decode_value::<D>(res_json).map_err(|err| err.into())
     }
+
+    #[cfg(feature="with-rustc-serialize")]
+    pub fn decode<D: Decodable>(self) -> Result<D, Error> {
+        let ct = self.metadata.content_type.clone();
+        let res_json = try!(self.into_json()
+            .ok_or(Error::UnexpectedContentType("json", ct)));
+        json::decode_value::<D>(res_json).map_err(|err| err.into())
+    }
+
 }
 
 impl AlgoOptions {
@@ -477,47 +521,39 @@ impl FromStr for AlgoResponse {
     type Err = Error;
     fn from_str(json_str: &str) -> Result<Self, Self::Err> {
         // Early return if the response decodes into ApiErrorResponse
-        if let Ok(err_res) = serde_json::from_str::<ApiErrorResponse>(json_str) {
+        if let Ok(err_res) = json::decode_str::<ApiErrorResponse>(json_str) {
             return Err(err_res.error.into());
         }
 
         // Parse into Json object
-        let data = try!(Value::from_str(json_str));
+        let data = try!(json::value_from_str(json_str));
 
         // Construct the AlgoMetadata object
         let metadata = match data.search("metadata") {
-            Some(meta_json) => try!(serde_json::from_str::<AlgoMetadata>(&meta_json.to_string())),
+            Some(meta_json) => try!(json::decode_str::<AlgoMetadata>(&meta_json.to_string())),
             None => {
-                return Err(JsonError::Syntax(JsonErrorCode::MissingField("metadata, ErrorCode \
-                                                                          as JsonErrorCode"),
-                                             0,
-                                             0)
-                    .into());
+                return Err(json::missing_field_error("metadata"));
             }
         };
 
         // Construct the AlgoOutput object
         let result = match (&*metadata.content_type, data.search("result")) {
-            ("void", _) => AlgoOutput::Json(Value::Null),
-            ("json", Some(json)) => AlgoOutput::Json(json.clone()), // TODO: Consider Cow<'a Json>
-            ("text", Some(json)) => {
-                match json.as_str() {
+            ("void", _) => AlgoOutput::Json(JsonValue!(Null)),
+            ("json", Some(value)) => AlgoOutput::Json(value.clone()), // TODO: Consider Cow<'a Json>
+            ("text", Some(value)) => {
+                match json::value_as_str(value) {
                     Some(text) => AlgoOutput::Text(text.into()),
                     None => return Err(Error::MismatchedContentType("text").into()),
                 }
             }
-            ("binary", Some(json)) => {
-                match json.as_str() {
+            ("binary", Some(value)) => {
+                match json::value_as_str(value) {
                     Some(text) => AlgoOutput::Binary(try!(base64::decode(text))),
                     None => return Err(Error::MismatchedContentType("binary")),
                 }
             }
             (_, None) => {
-                return Err(JsonError::Syntax(JsonErrorCode::MissingField("result, ErrorCode as \
-                                                                          JsonErrorCode"),
-                                             0,
-                                             0)
-                    .into())
+                return Err(json::missing_field_error("result"))
             }
             (content_type, _) => return Err(Error::InvalidContentType(content_type.into())),
         };
@@ -572,7 +608,7 @@ impl<'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
 // AlgoInput Conversions
 impl<'a> From<()> for AlgoInput<'a> {
     fn from(_unit: ()) -> Self {
-        AlgoInput::Json(Cow::Owned(Value::Null))
+        AlgoInput::Json(Cow::Owned(JsonValue!(Null)))
     }
 }
 
@@ -600,22 +636,32 @@ impl<'a> From<Vec<u8>> for AlgoInput<'a> {
     }
 }
 
-impl<'a> From<Value> for AlgoInput<'a> {
-    fn from(json: Value) -> Self {
+impl<'a> From<JsonValue!()> for AlgoInput<'a> {
+    fn from(json: JsonValue!()) -> Self {
         AlgoInput::Json(Cow::Owned(json))
     }
 }
 
+#[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
     fn from(object: &'a S) -> Self {
         AlgoInput::Json(Cow::Owned(object.to_json()))
     }
 }
 
+#[cfg(feature="with-rustc-serialize")]
+impl<'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
+    fn from(object: &'a E) -> Self {
+        // Not great - but serde is the longer-term story anyway
+        let encoded = json::encode(&object).unwrap();
+        AlgoInput::Json(Cow::Owned(Json::from_str(&encoded).unwrap()))
+    }
+}
+
 // AlgoOutput conversions - could probably combine with fancier implementations
 impl From<()> for AlgoOutput {
     fn from(_unit: ()) -> Self {
-        AlgoOutput::Json(Value::Null)
+        AlgoOutput::Json(JsonValue!(Null))
     }
 }
 
@@ -643,15 +689,25 @@ impl From<Vec<u8>> for AlgoOutput {
     }
 }
 
-impl From<Value> for AlgoOutput {
-    fn from(json: Value) -> Self {
+impl From<JsonValue!()> for AlgoOutput {
+    fn from(json: JsonValue!()) -> Self {
         AlgoOutput::Json(json)
     }
 }
 
+#[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoOutput {
     fn from(object: &'a S) -> Self {
         AlgoOutput::Json(object.to_json())
+    }
+}
+
+#[cfg(feature="with-rustc-serialize")]
+impl<'a, E: Encodable> From<&'a E> for AlgoOutput {
+    fn from(object: &'a E) -> Self {
+        // Not great - but serde is the longer-term story anyway
+        let encoded = json::encode(&object).unwrap();
+        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
     }
 }
 

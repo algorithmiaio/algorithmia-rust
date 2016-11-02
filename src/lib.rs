@@ -17,20 +17,18 @@
 //! println!("Completed with result: {:?}", result);
 //! ```
 
-#![doc(html_logo_url = "https://algorithmia.com/assets/images/apple-touch-icon.png")]
+#![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 
-#![feature(proc_macro)]
+#![cfg_attr(feature="with-serde", feature(proc_macro))]
 
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate hyper;
-#[macro_use]
-extern crate quick_error;
+#[cfg(feature="with-serde")] #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate hyper;
+#[macro_use] extern crate quick_error;
 
 extern crate base64;
-extern crate serde;
-extern crate serde_json;
+#[cfg(feature="with-serde")] extern crate serde;
+#[cfg(feature="with-serde")] extern crate serde_json;
+#[cfg(feature="with-rustc-serialize")] extern crate rustc_serialize;
 extern crate chrono;
 
 use algo::{Algorithm, AlgoRef};
@@ -45,6 +43,10 @@ pub mod error;
 pub mod client;
 pub use hyper::{mime, Url};
 pub use client::ApiAuth::{self, SimpleAuth, NoAuth};
+
+#[cfg_attr(feature="with-serde", path = "json-serde.rs")]
+#[cfg_attr(feature="with-rustc-serialize", path = "json-rustc-serialize.rs")]
+mod json;
 
 pub mod prelude {
     pub use ::Algorithmia;

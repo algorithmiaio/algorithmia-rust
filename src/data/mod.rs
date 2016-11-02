@@ -64,7 +64,9 @@ impl Deref for DataDirItem {
 }
 
 // Shared by results for deleting both files and directories
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct DeletedResult {
     pub deleted: u64,
 }

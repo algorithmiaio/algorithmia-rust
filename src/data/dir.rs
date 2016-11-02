@@ -19,13 +19,13 @@ use error::{self, Error};
 use data::*;
 use super::parse_data_uri;
 use super::header::XDataType;
+use ::json;
 
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use std::vec::IntoIter;
 
-use serde_json;
 use chrono::{DateTime, UTC};
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
@@ -39,26 +39,34 @@ pub struct DataDir {
 }
 
 
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct DirectoryUpdated {
     pub acl: Option<DataAcl>,
 }
 
 
 /// Response when deleting a new Directory
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 pub struct DirectoryDeleted {
     // Omitting deleted.number and error.number for now
     pub result: DeletedResult,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
+#[derive(Debug)]
 struct FolderItem {
     pub name: String,
     pub acl: Option<DataAcl>,
 }
 
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 struct FileItem {
     pub filename: String,
     pub size: u64,
@@ -67,7 +75,9 @@ struct FileItem {
 
 /// ACL that indicates permissions for a `DataDirectory`
 /// See also: [`ReadAcl`](enum.ReadAcl.html) enum to construct a `DataACL`
-#[derive(Deserialize, Serialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
+#[derive(Debug)]
 pub struct DataAcl {
     pub read: Vec<String>,
 }
@@ -98,7 +108,9 @@ impl From<ReadAcl> for DataAcl {
 }
 
 /// Response when querying an existing Directory
-#[derive(Deserialize, Debug)]
+#[cfg_attr(feature="with-serde", derive(Deserialize))]
+#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug)]
 struct DirectoryShow {
     pub acl: Option<DataAcl>,
     pub folders: Option<Vec<FolderItem>>,
@@ -190,7 +202,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     try!(res.read_to_string(&mut res_json));
 
     if res.status.is_success() {
-        serde_json::from_str(&res_json).map_err(|err| err.into())
+        json::decode_str(&res_json).map_err(|err| err.into())
     } else {
         Err(error::decode(&res_json))
     }
@@ -258,13 +270,13 @@ impl DataDir {
                 .into(),
             acl: Some(acl.into()),
         };
-        let raw_input = try!(serde_json::to_string(&input_data));
+        let raw_input = try!(json::encode(&input_data));
 
         // POST request
         let req = self.client
             .post(url)
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
-            .body(&raw_input);
+            .body(&*raw_input);
 
         // Parse response
         let mut res = try!(req.send());
@@ -303,7 +315,7 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         if res.status.is_success() {
-            serde_json::from_str(&res_json).map_err(|err| err.into())
+            json::decode_str(&res_json).map_err(|err| err.into())
         } else {
             Err(error::decode(&res_json))
         }
@@ -339,7 +351,7 @@ impl DataDir {
         try!(res.read_to_string(&mut res_json));
 
         if res.status.is_success() {
-            serde_json::from_str(&res_json).map_err(|err| err.into())
+            json::decode_str(&res_json).map_err(|err| err.into())
         } else {
             Err(error::decode(&res_json))
         }
