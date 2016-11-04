@@ -10,6 +10,8 @@ repository = "https://github.com/algorithmiaio/algorithmia-rust"
 readme = "README.md"
 keywords = ["algorithmia", "algorithm", "client"]
 
+build = "build.rs"
+
 [dependencies]
 hyper = "0.9"
 serde = "0.8"
@@ -18,3 +20,6 @@ serde_derive = "0.8"
 base64 = "0.2.1"
 quick-error = "1.1.0"
 chrono = { version = "0.2", features = ["serde"] }
+
+[build-dependencies]
+rustc_version = "0.1.7"

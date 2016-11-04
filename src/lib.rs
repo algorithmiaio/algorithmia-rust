@@ -54,6 +54,8 @@ pub mod prelude {
     pub use ::data::HasDataPath;
 }
 
+mod version;
+
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia client endpoints

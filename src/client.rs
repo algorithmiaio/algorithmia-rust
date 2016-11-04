@@ -40,7 +40,7 @@ impl HttpClient {
             hyper_client: Arc::new(Client::new()),
             user_agent: format!("algorithmia-rust/{} (Rust {}",
                                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
-                                option_env!("CFG_RELEASE").unwrap_or("unknown")),
+                                ::version::RUSTC_VERSION),
         }
     }
 
