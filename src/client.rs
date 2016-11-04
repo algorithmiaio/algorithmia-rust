@@ -30,9 +30,13 @@ pub struct HttpClient{
 impl HttpClient {
     /// Instantiate an HttpClient - creates a new `hyper` client
     pub fn new(api_auth: ApiAuth, base_url: String) -> HttpClient {
+        let checked_url = match base_url.chars().rev().next() {
+            Some(c) if c == '/' => base_url[0..(base_url.len() - 1)].to_string(),
+            _ => base_url.clone(),
+        };
         HttpClient {
             api_auth: api_auth,
-            base_url: base_url,
+            base_url: checked_url,
             hyper_client: Arc::new(Client::new()),
             user_agent: format!("algorithmia-rust/{} (Rust {}", option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"), option_env!("CFG_RELEASE").unwrap_or("unknown")),
         }
