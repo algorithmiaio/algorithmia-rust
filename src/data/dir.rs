@@ -358,7 +358,7 @@ impl DataDir {
         );
         let url = Url::parse(&url_string).unwrap();
 
-        let mut file = File::open(path_ref).unwrap();
+        let mut file = try!(File::open(path_ref));
         let req = self.client.put(url).body(&mut file);
 
         let mut res = try!(req.send());
