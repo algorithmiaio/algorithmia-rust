@@ -325,8 +325,8 @@ impl Algorithm {
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::algo::Algorithm;
     /// let client = Algorithmia::client("111112222233333444445555566");
-    /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1").timeout(3);
-    /// minmax.pipe(vec![2,3,4]);
+    /// let mut minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
+    /// minmax.timeout(3).pipe(vec![2,3,4]);
     /// ```
     pub fn timeout(&mut self, timeout: u32) -> &mut Algorithm {
         self.options.timeout(timeout);
