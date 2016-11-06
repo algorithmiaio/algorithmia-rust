@@ -30,19 +30,33 @@ use ::{json, Body};
 
 #[cfg(feature="with-serde")]
 macro_rules! JsonValue {
-    () => { serde_json::Value };
     ($i:ident) => { serde_json::Value::$i };
     ($i:ident, $e:expr) => { serde_json::Value::$i($e) };
 }
 
-
 #[cfg(feature="with-rustc-serialize")]
 macro_rules! JsonValue {
-    () => { rustc_serialize::json::Json };
     ($i:ident) => { rustc_serialize::json::Json::$i };
     ($i:ident, $e:expr) => { rustc_serialize::json::Json::$i($e) };
 }
 
+/// Feature-specific alias to a JSON enum type
+///
+/// This type alias varies by compilation feature to use the
+///   JSON enum type of the underlying JSON crate.
+///
+/// - `feature="with-rustc-serialze"` uses `rustc-serialize::json::Json`
+/// - `feature="with-serde"` uses `serde_json::Value`
+#[cfg(feature="with-serde")] pub type JsonValue = Value;
+
+/// Feature-specific alias to a JSON enum type
+///
+/// This type alias varies by compilation feature to use the
+///   JSON enum type of the underlying JSON crate.
+///
+/// - `feature="with-rustc-serialze"` uses `rustc-serialize::json::Json`
+/// - `feature="with-serde"` uses `serde_json::Value`
+#[cfg(feature="with-rustc-serialize")] pub type JsonValue = Json;
 
 use base64;
 use hyper::header::ContentType;
@@ -68,7 +82,7 @@ pub enum AlgoInput<'a> {
     /// Data that will be sent with `Content-Type: application/octet-stream`
     Binary(Cow<'a, [u8]>),
     /// Data that will be sent with `Content-Type: application/json`
-    Json(Cow<'a, JsonValue!()>),
+    Json(Cow<'a, JsonValue>),
 }
 
 /// Types that can store the output of an algorithm
@@ -76,7 +90,7 @@ pub enum AlgoOutput {
     /// Representation of result when `metadata.content_type` is 'text'
     Text(String),
     /// Representation of result when `metadata.content_type` is 'json'
-    Json(JsonValue!()),
+    Json(JsonValue),
     /// Representation of result when `metadata.content_type` is 'binary'
     Binary(Vec<u8>),
 }
@@ -163,7 +177,7 @@ pub trait EntryPoint: Default {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
-    fn apply_json(&self, json: &JsonValue!()) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply_json(&self, json: &JsonValue) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::UnsupportedInput.into())
     }
     #[allow(unused_variables)]
@@ -408,7 +422,7 @@ impl<'a> AlgoInput<'a> {
     ///
     /// For `AlgoInput::Json`, this returns the borrowed `Json`.
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
-    pub fn as_json(&'a self) -> Option<Cow<'a, JsonValue!()>> {
+    pub fn as_json(&'a self) -> Option<Cow<'a, JsonValue>> {
         match *self {
             AlgoInput::Text(ref text) => Some(Cow::Owned(JsonValue!(String, text.clone().into_owned()))),
             AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
@@ -455,7 +469,7 @@ impl AlgoResponse {
     }
 
     /// If the result is JSON (or JSON encodable text), returns the associated JSON type
-    pub fn into_json(self) -> Option<JsonValue!()> {
+    pub fn into_json(self) -> Option<JsonValue> {
         match self.result {
             AlgoOutput::Json(json) => Some(json),
             AlgoOutput::Text(text) => Some(JsonValue!(String, text)),
@@ -642,8 +656,8 @@ impl<'a> From<Vec<u8>> for AlgoInput<'a> {
     }
 }
 
-impl<'a> From<JsonValue!()> for AlgoInput<'a> {
-    fn from(json: JsonValue!()) -> Self {
+impl<'a> From<JsonValue> for AlgoInput<'a> {
+    fn from(json: JsonValue) -> Self {
         AlgoInput::Json(Cow::Owned(json))
     }
 }
@@ -695,8 +709,8 @@ impl From<Vec<u8>> for AlgoOutput {
     }
 }
 
-impl From<JsonValue!()> for AlgoOutput {
-    fn from(json: JsonValue!()) -> Self {
+impl From<JsonValue> for AlgoOutput {
+    fn from(json: JsonValue) -> Self {
         AlgoOutput::Json(json)
     }
 }
