@@ -48,8 +48,12 @@ use hyper::client::IntoUrl;
 pub use client::ApiAuth;
 pub use hyper::client::Body;
 
-#[cfg_attr(feature="with-serde", path = "json-serde.rs")]
-#[cfg_attr(feature="with-rustc-serialize", path = "json-rustc-serialize.rs")]
+#[cfg(feature="with-serde")]
+#[path = "json-serde.rs"]
+mod json;
+
+#[cfg(feature="with-rustc-serialize")]
+#[path = "json-rustc-serialize.rs"]
 mod json;
 
 /// Reexports of the most common types and traits
