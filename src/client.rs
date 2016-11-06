@@ -41,38 +41,32 @@ impl HttpClient {
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn get(&self, path: &str) -> Result<RequestBuilder, Error> {
-        self.build_request(Method::Get, path)
+    pub fn get(&self, url: Url) -> Result<RequestBuilder, Error> {
+        self.build_request(Method::Get, url)
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn head(&self, path: &str) -> Result<RequestBuilder, Error> {
-        self.build_request(Method::Head, path)
+    pub fn head(&self, url: Url) -> Result<RequestBuilder, Error> {
+        self.build_request(Method::Head, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn post(&self, path: &str) -> Result<RequestBuilder, Error> {
-        self.build_request(Method::Post, path)
+    pub fn post(&self, url: Url) -> Result<RequestBuilder, Error> {
+        self.build_request(Method::Post, url)
     }
 
     /// Helper to make Algorithmia PUT requests with the API key
-    pub fn put(&self, path: &str) -> Result<RequestBuilder, Error> {
-        self.build_request(Method::Put, path)
+    pub fn put(&self, url: Url) -> Result<RequestBuilder, Error> {
+        self.build_request(Method::Put, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn delete(&self, path: &str) -> Result<RequestBuilder, Error> {
-        self.build_request(Method::Delete, path)
+    pub fn delete(&self, url: Url) -> Result<RequestBuilder, Error> {
+        self.build_request(Method::Delete, url)
     }
 
 
-    fn build_request(&self, verb: Method, path: &str) -> Result<RequestBuilder, Error> {
-        let base_url = match self.base_url {
-            Ok(ref u) => u,
-            Err(e) => return Err(e.into()),
-        };
-
-        let url = try!(base_url.join(path));
+    fn build_request(&self, verb: Method, url: Url) -> Result<RequestBuilder, Error> {
         let mut req = self.hyper_client.request(verb, url);
 
         req = req.header(UserAgent(self.user_agent.clone()));

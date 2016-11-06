@@ -89,7 +89,8 @@ impl DataFile {
     pub fn put<'a, B>(&'a self, body: B) -> Result<FileAdded, Error>
         where B: Into<Body<'a>>
     {
-        let req = try!(self.client.put(&self.path)).body(body);
+        let url = try!(self.to_url());
+        let req = try!(self.client.put(url)).body(body);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -124,7 +125,8 @@ impl DataFile {
     /// };
     /// ```
     pub fn get(&self) -> Result<DataResponse, Error> {
-        let req = try!(self.client.get(&self.path));
+        let url = try!(self.to_url());
+        let req = try!(self.client.get(url));
         let res = try!(req.send());
         let metadata = try!(parse_headers(&res.headers));
 
@@ -166,7 +168,8 @@ impl DataFile {
     /// };
     /// ```
     pub fn delete(&self) -> Result<FileDeleted, Error> {
-        let req = try!(self.client.delete(&self.path));
+        let url = try!(self.to_url());
+        let req = try!(self.client.delete(url));
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));

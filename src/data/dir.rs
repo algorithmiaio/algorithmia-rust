@@ -30,6 +30,8 @@ use chrono::{DateTime, UTC};
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
 
+#[cfg(feature="with-rustc-serialize")]
+use rustc_serialize::{Decodable, Decoder};
 
 /// Algorithmia Data Directory
 pub struct DataDir {
@@ -64,12 +66,32 @@ struct FolderItem {
 }
 
 #[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
 #[derive(Debug)]
 struct FileItem {
     pub filename: String,
     pub size: u64,
     pub last_modified: DateTime<UTC>,
+}
+
+// Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
+#[cfg(feature="with-rustc-serialize")]
+impl Decodable for FileItem {
+    fn decode<D: Decoder>(d: &mut D) -> Result<FileItem, D::Error> {
+        use std::error::Error;
+        d.read_struct("root", 0, |d| {
+            Ok(FileItem{
+                filename: try!(d.read_struct_field("filename", 0, |d| Decodable::decode(d))),
+                size: try!(d.read_struct_field("size", 0, |d| Decodable::decode(d))),
+                last_modified: {
+                    let json_str: String = try!(d.read_struct_field("last_modified", 0, |d| Decodable::decode(d)));
+                    match json_str.parse() {
+                        Ok(datetime) => datetime,
+                        Err(err) => return Err(d.error(err.description())),
+                    }
+                },
+            })
+        })
+    }
 }
 
 /// ACL that indicates permissions for a `DataDirectory`
@@ -181,12 +203,12 @@ impl<'a> Iterator for DirectoryListing<'a> {
 }
 
 fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, Error> {
-    let url_fragment = match marker {
-        Some(m) => format!("{}?marker={}", dir.path(), m),
-        None => dir.path.to_owned(),
-    };
+    let mut url = try!(dir.to_url());
+    if let Some(ref m) = marker {
+        url.query_pairs_mut().append_pair("marker", m);
+    }
 
-    let req = try!(dir.client.get(&url_fragment));
+    let req = try!(dir.client.get(url));
     let mut res = try!(req.send());
 
     if res.status.is_success() {
@@ -261,6 +283,7 @@ impl DataDir {
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
         let parent = try!(self.parent().ok_or_else(|| Error::InvalidDataPath(self.path.clone())));
+        let parent_url = try!(parent.to_url());
 
         // TODO: address complete abuse of this structure
         let input_data = FolderItem {
@@ -271,7 +294,7 @@ impl DataDir {
         let raw_input = try!(json::encode(&input_data));
 
         // POST request
-        let req = try!(self.client.post(&parent.path))
+        let req = try!(self.client.post(parent_url))
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .body(&*raw_input);
 
@@ -302,8 +325,12 @@ impl DataDir {
     /// ```
     pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
         // DELETE request
-        let url_fragment = format!("{}?force={}", self.path, force.to_string());
-        let req = try!(self.client.delete(&url_fragment));
+        let mut url = try!(self.to_url());
+        if force {
+            url.query_pairs_mut().append_pair("force", "true");
+        }
+
+        let req = try!(self.client.delete(url));
 
         // Parse response
         let mut res = try!(req.send());
@@ -334,22 +361,11 @@ impl DataDir {
     pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<FileAdded, Error> {
         // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
-        let url_fragment = format!("{}/{}",
-                                   self.path,
-                                   path_ref.file_name().unwrap().to_str().unwrap());
-
+        let filename = path_ref.file_name().unwrap().to_str().unwrap();
         let mut file = try!(File::open(path_ref));
-        let req = try!(self.client.put(&url_fragment)).body(&mut file);
 
-        let mut res = try!(req.send());
-        let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
-
-        if res.status.is_success() {
-            json::decode_str(&res_json).map_err(|err| err.into())
-        } else {
-            Err(error::decode(&res_json))
-        }
+        let data_file: DataFile = self.child(filename);
+        data_file.put(&mut file)
     }
 
     pub fn child<T: HasDataPath>(&self, filename: &str) -> T {

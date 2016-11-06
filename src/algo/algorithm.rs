@@ -370,11 +370,7 @@ impl Algorithm {
         }
 
         // We just need the path and query string
-        let path = match url.query() {
-            None => self.path.clone(),
-            Some(q) => format!("{}?{}", self.path, q),
-        };
-        let req = try!(self.client.post(&path))
+        let req = try!(self.client.post(url))
             .header(ContentType(content_type))
             .body(input_data);
 

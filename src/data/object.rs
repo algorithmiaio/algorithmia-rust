@@ -41,7 +41,8 @@ impl DataObject {
     /// }
     /// ```
     pub fn get_type(&self) -> Result<DataType> {
-        let req = try!(self.client.head(&self.path));
+        let url = try!(self.to_url());
+        let req = try!(self.client.head(url));
         let res = try!(req.send());
 
         match res.status {
@@ -74,7 +75,8 @@ impl DataObject {
     /// ```
     pub fn into_type(self) -> Result<DataItem> {
         let metadata = {
-            let req = try!(self.client.head(&self.path));
+            let url = try!(self.to_url());
+            let req = try!(self.client.head(url));
             let res = try!(req.send());
             if res.status == StatusCode::NotFound {
                 return Err(Error::NotFound(self.to_url().unwrap()));
@@ -88,6 +90,7 @@ impl DataObject {
                 Ok(DataItem::File(DataFileItem {
                     size: metadata.content_length.unwrap_or(0),
                     last_modified: metadata.last_modified
+                        // Fallback to Algorithmia public launch date :-)
                         .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
                     file: self.into(),
                 }))
