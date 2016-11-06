@@ -21,13 +21,22 @@
 
 #![cfg_attr(feature="with-serde", feature(proc_macro))]
 
-#[cfg(feature="with-serde")] #[macro_use] extern crate serde_derive;
-#[macro_use] extern crate hyper;
-#[macro_use] extern crate quick_error;
+#![allow(unknown_lints)]
 
-#[cfg(feature="with-serde")] extern crate serde;
-#[cfg(feature="with-serde")] extern crate serde_json;
-#[cfg(feature="with-rustc-serialize")] extern crate rustc_serialize;
+#[cfg(feature="with-serde")]
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate hyper;
+#[macro_use]
+extern crate quick_error;
+
+#[cfg(feature="with-serde")]
+extern crate serde;
+#[cfg(feature="with-serde")]
+extern crate serde_json;
+#[cfg(feature="with-rustc-serialize")]
+extern crate rustc_serialize;
 extern crate base64;
 extern crate chrono;
 extern crate url;
@@ -167,7 +176,8 @@ impl Clone for Algorithmia {
 impl Default for Algorithmia {
     fn default() -> Algorithmia {
         let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
-        let api_key = std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
+        let api_key =
+            std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
         Algorithmia { http_client: Rc::new(HttpClient::new(api_key, &api_address)) }
     }
 }

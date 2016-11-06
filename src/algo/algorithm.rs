@@ -22,11 +22,16 @@ use error::{Error, ApiErrorResponse};
 use super::version::Version;
 use ::{json, Body};
 
-#[cfg(feature="with-serde")] use serde_json::{self, Value   };
-#[cfg(feature="with-serde")] use serde_json::value::ToJson;
-#[cfg(feature="with-serde")] use serde::{Deserialize, Serialize};
-#[cfg(feature="with-rustc-serialize")] use rustc_serialize::{self, Decodable, Encodable};
-#[cfg(feature="with-rustc-serialize")] use rustc_serialize::json::Json;
+#[cfg(feature="with-serde")]
+use serde_json::{self, Value};
+#[cfg(feature="with-serde")]
+use serde_json::value::ToJson;
+#[cfg(feature="with-serde")]
+use serde::{Deserialize, Serialize};
+#[cfg(feature="with-rustc-serialize")]
+use rustc_serialize::{self, Decodable, Encodable};
+#[cfg(feature="with-rustc-serialize")]
+use rustc_serialize::json::Json;
 
 #[cfg(feature="with-serde")]
 macro_rules! JsonValue {
@@ -47,7 +52,8 @@ macro_rules! JsonValue {
 ///
 /// - `feature="with-rustc-serialze"` uses `rustc-serialize::json::Json`
 /// - `feature="with-serde"` uses `serde_json::Value`
-#[cfg(feature="with-serde")] pub type JsonValue = Value;
+#[cfg(feature="with-serde")]
+pub type JsonValue = Value;
 
 /// Feature-specific alias to a JSON enum type
 ///
@@ -56,7 +62,8 @@ macro_rules! JsonValue {
 ///
 /// - `feature="with-rustc-serialze"` uses `rustc-serialize::json::Json`
 /// - `feature="with-serde"` uses `serde_json::Value`
-#[cfg(feature="with-rustc-serialize")] pub type JsonValue = Json;
+#[cfg(feature="with-rustc-serialize")]
+pub type JsonValue = Json;
 
 use base64;
 use hyper::header::ContentType;
@@ -147,8 +154,10 @@ pub struct AlgoResponse {
 /// }
 /// ```
 pub trait DecodedEntryPoint: Default {
-    #[cfg(feature="with-serde")] type Input: Deserialize;
-    #[cfg(feature="with-rustc-serialize")] type Input: Decodable;
+    #[cfg(feature="with-serde")]
+    type Input: Deserialize;
+    #[cfg(feature="with-rustc-serialize")]
+    type Input: Decodable;
 
     /// This method is an apply variant that will receive the decoded form of JSON input.
     ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
@@ -240,6 +249,7 @@ pub trait EntryPoint: Default {
 }
 
 impl Algorithm {
+    #[doc(hidden)]
     pub fn new(client: Rc<HttpClient>, algo_ref: AlgoRef) -> Algorithm {
         let path: String = match algo_ref.path {
             ref p if p.starts_with("algo://") => p[7..].into(),
@@ -257,7 +267,7 @@ impl Algorithm {
     pub fn to_url(&self) -> Result<Url, Error> {
         let base_url = match self.client.base_url {
             Ok(ref u) => u,
-            Err(e) => { return Err(e.into()) }
+            Err(e) => return Err(e.into()),
         };
         let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.path);
         base_url.join(&path).map_err(Error::from)
@@ -346,10 +356,7 @@ impl Algorithm {
     }
 
 
-    pub fn pipe_as<'a, B>(&'a self,
-                          input_data: B,
-                          content_type: Mime)
-                          -> Result<Response, Error>
+    pub fn pipe_as<'a, B>(&'a self, input_data: B, content_type: Mime) -> Result<Response, Error>
         where B: Into<Body<'a>>
     {
 
@@ -365,7 +372,7 @@ impl Algorithm {
         // We just need the path and query string
         let path = match url.query() {
             None => self.path.clone(),
-            Some(q) => format!("{}?{}", self.path, q)
+            Some(q) => format!("{}?{}", self.path, q),
         };
         let req = try!(self.client.post(&path))
             .header(ContentType(content_type))
@@ -409,10 +416,11 @@ impl Algorithm {
 
 impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
+    #[allow(match_same_arms)]
     pub fn as_string(&'a self) -> Option<&'a str> {
         match *self {
             AlgoInput::Text(ref text) => Some(&*text),
-            AlgoInput::Json(Cow::Borrowed(ref json)) => json::value_as_str(json),
+            AlgoInput::Json(Cow::Borrowed(json)) => json::value_as_str(json),
             AlgoInput::Json(Cow::Owned(ref json)) => json::value_as_str(json),
             _ => None,
         }
@@ -424,7 +432,9 @@ impl<'a> AlgoInput<'a> {
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
     pub fn as_json(&'a self) -> Option<Cow<'a, JsonValue>> {
         match *self {
-            AlgoInput::Text(ref text) => Some(Cow::Owned(JsonValue!(String, text.clone().into_owned()))),
+            AlgoInput::Text(ref text) => {
+                Some(Cow::Owned(JsonValue!(String, text.clone().into_owned())))
+            }
             AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             AlgoInput::Binary(_) => None,
         }
@@ -459,6 +469,7 @@ impl<'a> AlgoInput<'a> {
 
 impl AlgoResponse {
     /// If the result is text (or a valid JSON string), returns the associated string
+    #[allow(match_same_arms)]
     pub fn into_string(self) -> Option<String> {
         match self.result {
             AlgoOutput::Text(text) => Some(text),
@@ -501,7 +512,6 @@ impl AlgoResponse {
             .ok_or(Error::UnexpectedContentType("json", ct)));
         json::decode_value::<D>(res_json).map_err(|err| err.into())
     }
-
 }
 
 impl AlgoOptions {
@@ -572,9 +582,7 @@ impl FromStr for AlgoResponse {
                     None => return Err(Error::MismatchedContentType("binary")),
                 }
             }
-            (_, None) => {
-                return Err(json::missing_field_error("result"))
-            }
+            (_, None) => return Err(json::missing_field_error("result")),
             (content_type, _) => return Err(Error::InvalidContentType(content_type.into())),
         };
 
@@ -769,21 +777,24 @@ mod tests {
     fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("anowell/Pinky/0.1.0");
-        assert_eq!(algorithm.to_url().unwrap().path(), "/v1/algo/anowell/Pinky/0.1.0");
+        assert_eq!(algorithm.to_url().unwrap().path(),
+                   "/v1/algo/anowell/Pinky/0.1.0");
     }
 
     #[test]
     fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("algo://anowell/Pinky/0.1");
-        assert_eq!(algorithm.to_url().unwrap().path(), "/v1/algo/anowell/Pinky/0.1");
+        assert_eq!(algorithm.to_url().unwrap().path(),
+                   "/v1/algo/anowell/Pinky/0.1");
     }
 
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo(("anowell/Pinky", "abcdef123456"));
-        assert_eq!(algorithm.to_url().unwrap().path(), "/v1/algo/anowell/Pinky/abcdef123456");
+        assert_eq!(algorithm.to_url().unwrap().path(),
+                   "/v1/algo/anowell/Pinky/abcdef123456");
     }
 
 

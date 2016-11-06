@@ -67,7 +67,7 @@ impl HttpClient {
     fn build_request(&self, verb: Method, path: &str) -> Result<RequestBuilder, Error> {
         let base_url = match self.base_url {
             Ok(ref u) => u,
-            Err(e) => { return Err(e.into()) }
+            Err(e) => return Err(e.into()),
         };
 
         let url = try!(base_url.join(path));

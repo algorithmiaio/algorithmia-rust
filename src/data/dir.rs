@@ -336,8 +336,8 @@ impl DataDir {
         // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
         let url_fragment = format!("{}/{}",
-                                 self.path,
-                                 path_ref.file_name().unwrap().to_str().unwrap());
+                                   self.path,
+                                   path_ref.file_name().unwrap().to_str().unwrap());
 
         let mut file = try!(File::open(path_ref));
         let req = try!(self.client.put(&url_fragment)).body(&mut file);
@@ -376,7 +376,8 @@ mod tests {
     #[test]
     fn test_to_url() {
         let dir = mock_client().dir("data://anowell/foo");
-        assert_eq!(dir.to_url().unwrap().path(), "/v1/connector/data/anowell/foo");
+        assert_eq!(dir.to_url().unwrap().path(),
+                   "/v1/connector/data/anowell/foo");
     }
 
     #[test]

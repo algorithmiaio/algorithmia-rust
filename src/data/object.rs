@@ -78,7 +78,7 @@ impl DataObject {
             let req = try!(self.client.head(&self.path));
             let res = try!(req.send());
             if res.status == StatusCode::NotFound {
-               return Err(Error::NotFound(self.to_url().unwrap()));
+                return Err(Error::NotFound(self.to_url().unwrap()));
             }
             try!(parse_headers(&res.headers))
         };

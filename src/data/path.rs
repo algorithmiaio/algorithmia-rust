@@ -17,7 +17,7 @@ pub trait HasDataPath {
         let client = self.client();
         let base_url = match client.base_url {
             Ok(ref u) => u,
-            Err(e) => { return Err(e.into()) }
+            Err(e) => return Err(e.into()),
         };
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
         base_url.join(&path).map_err(Error::from)
