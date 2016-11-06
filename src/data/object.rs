@@ -4,16 +4,17 @@ use error::*;
 use chrono::{UTC, TimeZone};
 use hyper::status::StatusCode;
 use super::{parse_headers, parse_data_uri};
+use std::rc::Rc;
 
 
 /// Algorithmia data object (file or directory)
 pub struct DataObject {
     path: String,
-    client: HttpClient,
+    client: Rc<HttpClient>,
 }
 
 impl HasDataPath for DataObject {
-    fn new(client: HttpClient, path: &str) -> Self {
+    fn new(client: Rc<HttpClient>, path: &str) -> Self {
         DataObject {
             client: client,
             path: parse_data_uri(path).to_string(),
@@ -22,8 +23,8 @@ impl HasDataPath for DataObject {
     fn path(&self) -> &str {
         &self.path
     }
-    fn client(&self) -> &HttpClient {
-        &self.client
+    fn client(&self) -> Rc<HttpClient> {
+        self.client.clone()
     }
 }
 
@@ -41,7 +42,7 @@ impl DataObject {
     /// }
     /// ```
     pub fn get_type(&self) -> Result<DataType> {
-        let req = self.client.head(self.to_url());
+        let req = try!(self.client.head(&self.path));
         let res = try!(req.send());
 
         match res.status {
@@ -49,7 +50,7 @@ impl DataObject {
                 let metadata = try!(parse_headers(&res.headers));
                 Ok(metadata.data_type)
             }
-            StatusCode::NotFound => Err(Error::NotFound(self.to_url())),
+            StatusCode::NotFound => Err(Error::NotFound(self.to_url().unwrap())),
             status => {
                 Err(ApiError {
                         message: status.to_string(),
@@ -74,10 +75,10 @@ impl DataObject {
     /// ```
     pub fn into_type(self) -> Result<DataItem> {
         let metadata = {
-            let req = self.client.head(self.to_url());
+            let req = try!(self.client.head(&self.path));
             let res = try!(req.send());
             if res.status == StatusCode::NotFound {
-               return Err(Error::NotFound(self.to_url()));
+               return Err(Error::NotFound(self.to_url().unwrap()));
             }
             try!(parse_headers(&res.headers))
         };

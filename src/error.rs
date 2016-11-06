@@ -4,14 +4,16 @@ use std::fmt::Display;
 use ::json;
 use base64;
 use hyper;
+use url;
 
 
 quick_error! {
     #[derive(Debug)]
     pub enum Error {
 
-        Http(err: hyper::error::Error) {
+        Http(err: hyper::Error) {
             from()
+            from(e: url::ParseError) -> (hyper::Error::from(e))
             cause(err)
             description(err.description())
             display("http error: {}", err)

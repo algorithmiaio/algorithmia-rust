@@ -36,7 +36,7 @@ impl<'a> RouteMap<'a> {
         let client = Algorithmia::client(&*api_key);
         let dijkstra = client.algo(("anowell/Dijkstra", Version::Latest));
 
-        println!("Making request to: {}", dijkstra.to_url());
+        println!("Making request to: {}", dijkstra.to_url().unwrap());
 
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);

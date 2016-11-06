@@ -5,19 +5,22 @@ use super::header::XErrorMessage;
 use client::HttpClient;
 use hyper::Url;
 use hyper::status::StatusCode;
+use std::rc::Rc;
 
 pub trait HasDataPath {
-    fn new(client: HttpClient, path: &str) -> Self;
+    fn new(client: Rc<HttpClient>, path: &str) -> Self;
     fn path(&self) -> &str;
-    fn client(&self) -> &HttpClient;
+    fn client(&self) -> Rc<HttpClient>;
 
     /// Get the API Endpoint URL for a particular data URI
-    fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}",
-                                 self.client().base_url,
-                                 super::DATA_BASE_PATH,
-                                 self.path());
-        Url::parse(&url_string).unwrap()
+    fn to_url(&self) -> Result<Url> {
+        let client = self.client();
+        let base_url = match client.base_url {
+            Ok(ref u) => u,
+            Err(e) => { return Err(e.into()) }
+        };
+        let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
+        base_url.join(&path).map_err(Error::from)
     }
 
     /// Get the Algorithmia data URI a given Data Object
@@ -86,7 +89,8 @@ pub trait HasDataPath {
     /// assert_eq!(my_file.exists().unwrap(), true);
     /// ```
     fn exists(&self) -> Result<bool> {
-        let req = self.client().head(self.to_url());
+        let client = self.client();
+        let req = try!(client.head(self.path()));
 
         let res = try!(req.send());
         match res.status {

@@ -17,10 +17,10 @@
 //! println!("Completed with result: {:?}", result);
 //! ```
 
-use client::{Body, HttpClient};
+use client::HttpClient;
 use error::{Error, ApiErrorResponse};
 use super::version::Version;
-use ::json;
+use ::{json, Body};
 
 #[cfg(feature="with-serde")] use serde_json::{self, Value   };
 #[cfg(feature="with-serde")] use serde_json::value::ToJson;
@@ -47,7 +47,7 @@ macro_rules! JsonValue {
 use base64;
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
-use hyper::{self, Url};
+use hyper::Url;
 use hyper::client::response::Response;
 
 use std::borrow::Cow;
@@ -56,6 +56,7 @@ use std::str::FromStr;
 use std::error::Error as StdError;
 use std::fmt;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::ops::{Deref, DerefMut};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
@@ -84,7 +85,7 @@ pub enum AlgoOutput {
 pub struct Algorithm {
     pub path: String,
     options: AlgoOptions,
-    client: HttpClient,
+    client: Rc<HttpClient>,
 }
 
 /// Options used to alter the algorithm call, e.g. configuring the timeout
@@ -225,7 +226,7 @@ pub trait EntryPoint: Default {
 }
 
 impl Algorithm {
-    pub fn new(client: HttpClient, algo_ref: AlgoRef) -> Algorithm {
+    pub fn new(client: Rc<HttpClient>, algo_ref: AlgoRef) -> Algorithm {
         let path: String = match algo_ref.path {
             ref p if p.starts_with("algo://") => p[7..].into(),
             ref p if p.starts_with('/') => p[1..].into(),
@@ -239,12 +240,13 @@ impl Algorithm {
     }
 
     /// Get the API Endpoint URL for this Algorithm
-    pub fn to_url(&self) -> Url {
-        let url_string = format!("{}/{}/{}",
-                                 self.client.base_url,
-                                 ALGORITHM_BASE_PATH,
-                                 self.path);
-        Url::parse(&url_string).unwrap()
+    pub fn to_url(&self) -> Result<Url, Error> {
+        let base_url = match self.client.base_url {
+            Ok(ref u) => u,
+            Err(e) => { return Err(e.into()) }
+        };
+        let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.path);
+        base_url.join(&path).map_err(Error::from)
     }
 
     /// Get the Algorithmia algo URI for this Algorithm
@@ -333,12 +335,12 @@ impl Algorithm {
     pub fn pipe_as<'a, B>(&'a self,
                           input_data: B,
                           content_type: Mime)
-                          -> Result<Response, hyper::error::Error>
+                          -> Result<Response, Error>
         where B: Into<Body<'a>>
     {
-        let mut url = self.to_url();
 
         // Append options to URL as query parameters
+        let mut url = try!(self.to_url());
         if !self.options.is_empty() {
             let mut query_params = url.query_pairs_mut();
             for (k, v) in self.options.iter() {
@@ -346,12 +348,16 @@ impl Algorithm {
             }
         }
 
-        let req = self.client
-            .post(url)
+        // We just need the path and query string
+        let path = match url.query() {
+            None => self.path.clone(),
+            Some(q) => format!("{}?{}", self.path, q)
+        };
+        let req = try!(self.client.post(&path))
             .header(ContentType(content_type))
             .body(input_data);
 
-        req.send()
+        req.send().map_err(Error::from)
     }
 
     /// Builder method to explicitly configure options
@@ -742,28 +748,28 @@ mod tests {
     fn test_algo_without_version_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("/anowell/Pinky");
-        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky");
+        assert_eq!(algorithm.to_url().unwrap().path(), "/v1/algo/anowell/Pinky");
     }
 
     #[test]
     fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("anowell/Pinky/0.1.0");
-        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky/0.1.0");
+        assert_eq!(algorithm.to_url().unwrap().path(), "/v1/algo/anowell/Pinky/0.1.0");
     }
 
     #[test]
     fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("algo://anowell/Pinky/0.1");
-        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky/0.1");
+        assert_eq!(algorithm.to_url().unwrap().path(), "/v1/algo/anowell/Pinky/0.1");
     }
 
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo(("anowell/Pinky", "abcdef123456"));
-        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky/abcdef123456");
+        assert_eq!(algorithm.to_url().unwrap().path(), "/v1/algo/anowell/Pinky/abcdef123456");
     }
 
 

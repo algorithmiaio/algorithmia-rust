@@ -25,17 +25,17 @@ use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use std::vec::IntoIter;
+use std::rc::Rc;
 
 use chrono::{DateTime, UTC};
 use hyper::header::ContentType;
 use hyper::mime::{Mime, TopLevel, SubLevel};
-use hyper::Url;
 
 
 /// Algorithmia Data Directory
 pub struct DataDir {
     path: String,
-    client: HttpClient,
+    client: Rc<HttpClient>,
 }
 
 
@@ -182,12 +182,12 @@ impl<'a> Iterator for DirectoryListing<'a> {
 }
 
 fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, Error> {
-    let url = match marker {
-        Some(m) => Url::parse(&format!("{}?marker={}", dir.to_url(), m)).unwrap(),
-        None => dir.to_url(),
+    let url_fragment = match marker {
+        Some(m) => format!("{}?marker={}", dir.path(), m),
+        None => dir.path.to_owned(),
     };
 
-    let req = dir.client.get(url);
+    let req = try!(dir.client.get(&url_fragment));
     let mut res = try!(req.send());
 
     if res.status.is_success() {
@@ -209,7 +209,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 }
 
 impl HasDataPath for DataDir {
-    fn new(client: HttpClient, path: &str) -> Self {
+    fn new(client: Rc<HttpClient>, path: &str) -> Self {
         DataDir {
             client: client,
             path: parse_data_uri(path).to_string(),
@@ -218,8 +218,8 @@ impl HasDataPath for DataDir {
     fn path(&self) -> &str {
         &self.path
     }
-    fn client(&self) -> &HttpClient {
-        &self.client
+    fn client(&self) -> Rc<HttpClient> {
+        self.client.clone()
     }
 }
 
@@ -262,7 +262,6 @@ impl DataDir {
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
         let parent = try!(self.parent().ok_or_else(|| Error::InvalidDataPath(self.path.clone())));
-        let url = parent.to_url();
 
         // TODO: address complete abuse of this structure
         let input_data = FolderItem {
@@ -273,8 +272,7 @@ impl DataDir {
         let raw_input = try!(json::encode(&input_data));
 
         // POST request
-        let req = self.client
-            .post(url)
+        let req = try!(self.client.post(&parent.path))
             .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
             .body(&*raw_input);
 
@@ -305,9 +303,8 @@ impl DataDir {
     /// ```
     pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
         // DELETE request
-        let url_string = format!("{}?force={}", self.to_url(), force.to_string());
-        let url = Url::parse(&url_string).unwrap();
-        let req = self.client.delete(url);
+        let url_fragment = format!("{}?force={}", self.path, force.to_string());
+        let req = try!(self.client.delete(&url_fragment));
 
         // Parse response
         let mut res = try!(req.send());
@@ -338,13 +335,12 @@ impl DataDir {
     pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<FileAdded, Error> {
         // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
-        let url_string = format!("{}/{}",
-                                 self.to_url(),
+        let url_fragment = format!("{}/{}",
+                                 self.path,
                                  path_ref.file_name().unwrap().to_str().unwrap());
-        let url = Url::parse(&url_string).unwrap();
 
         let mut file = try!(File::open(path_ref));
-        let req = self.client.put(url).body(&mut file);
+        let req = try!(self.client.put(&url_fragment)).body(&mut file);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -380,7 +376,7 @@ mod tests {
     #[test]
     fn test_to_url() {
         let dir = mock_client().dir("data://anowell/foo");
-        assert_eq!(dir.to_url().path(), "/v1/connector/data/anowell/foo");
+        assert_eq!(dir.to_url().unwrap().path(), "/v1/connector/data/anowell/foo");
     }
 
     #[test]

@@ -25,33 +25,37 @@
 #[macro_use] extern crate hyper;
 #[macro_use] extern crate quick_error;
 
-extern crate base64;
 #[cfg(feature="with-serde")] extern crate serde;
 #[cfg(feature="with-serde")] extern crate serde_json;
 #[cfg(feature="with-rustc-serialize")] extern crate rustc_serialize;
+extern crate base64;
 extern crate chrono;
+extern crate url;
 
 use algo::{Algorithm, AlgoRef};
 use data::{DataDir, DataFile, DataObject, HasDataPath};
 use client::HttpClient;
 
-use std::clone;
+use std::rc::Rc;
 
 pub mod algo;
 pub mod data;
 pub mod error;
-pub mod client;
+mod client;
 pub use error::Error;
 pub use hyper::{mime, Url};
-pub use client::ApiAuth::{self, SimpleAuth, NoAuth};
+use hyper::client::IntoUrl;
+pub use client::ApiAuth;
+pub use hyper::client::Body;
 
 #[cfg_attr(feature="with-serde", path = "json-serde.rs")]
 #[cfg_attr(feature="with-rustc-serialize", path = "json-rustc-serialize.rs")]
 mod json;
 
+/// Reexports of the most common types and traits
 pub mod prelude {
     pub use ::Algorithmia;
-    pub use ::client::ApiAuth::{self, SimpleAuth, NoAuth};
+    pub use ::client::ApiAuth;
     pub use ::algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput};
     pub use ::data::HasDataPath;
 }
@@ -62,7 +66,7 @@ static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia client endpoints
 pub struct Algorithmia {
-    http_client: HttpClient,
+    http_client: Rc<HttpClient>,
 }
 
 impl<'a, 'c> Algorithmia {
@@ -78,16 +82,16 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client("simUseYourApiKey");
     ///
     /// // Initialize a client (for algorithms running on the Algorithmia platform)
-    /// let client = Algorithmia::client(NoAuth);
+    /// let client = Algorithmia::client(ApiAuth::None);
     /// ```
     pub fn client<A: Into<ApiAuth>>(api_key: A) -> Algorithmia {
         let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
-        Algorithmia { http_client: HttpClient::new(api_key.into(), api_address) }
+        Algorithmia { http_client: Rc::new(HttpClient::new(api_key.into(), &api_address)) }
     }
 
     /// Instantiate a new client against alternate API servers
-    pub fn alt_client<A: Into<ApiAuth>>(base_url: Url, api_key: A) -> Algorithmia {
-        Algorithmia { http_client: HttpClient::new(api_key.into(), base_url.into_string()) }
+    pub fn alt_client<A: Into<ApiAuth>, U: IntoUrl>(base_url: U, api_key: A) -> Algorithmia {
+        Algorithmia { http_client: Rc::new(HttpClient::new(api_key.into(), base_url)) }
     }
 
     /// Instantiate an [`Algorithm`](algo/algorithm.struct.html) from this client
@@ -150,8 +154,16 @@ impl<'a, 'c> Algorithmia {
 
 
 /// Allow cloning in order to reuse http client (and API key) for multiple connections
-impl clone::Clone for Algorithmia {
+impl Clone for Algorithmia {
     fn clone(&self) -> Algorithmia {
         Algorithmia { http_client: self.http_client.clone() }
+    }
+}
+
+impl Default for Algorithmia {
+    fn default() -> Algorithmia {
+        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
+        let api_key = std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
+        Algorithmia { http_client: Rc::new(HttpClient::new(api_key, &api_address)) }
     }
 }

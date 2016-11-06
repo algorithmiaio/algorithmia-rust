@@ -12,10 +12,11 @@
 //! ```
 
 use chrono::{DateTime, UTC, TimeZone};
-use client::{Body, HttpClient};
+use client::HttpClient;
 use data::*;
 use std::io::{self, Read};
-use ::json;
+use std::rc::Rc;
+use ::{json, Body};
 use error::{Error, ApiError, ApiErrorResponse};
 use super::{parse_headers, parse_data_uri};
 
@@ -52,11 +53,11 @@ impl Read for DataResponse {
 /// Algorithmia data file
 pub struct DataFile {
     path: String,
-    client: HttpClient,
+    client: Rc<HttpClient>,
 }
 
 impl HasDataPath for DataFile {
-    fn new(client: HttpClient, path: &str) -> Self {
+    fn new(client: Rc<HttpClient>, path: &str) -> Self {
         DataFile {
             client: client,
             path: parse_data_uri(path).to_string(),
@@ -65,8 +66,8 @@ impl HasDataPath for DataFile {
     fn path(&self) -> &str {
         &self.path
     }
-    fn client(&self) -> &HttpClient {
-        &self.client
+    fn client(&self) -> Rc<HttpClient> {
+        self.client.clone()
     }
 }
 
@@ -89,9 +90,7 @@ impl DataFile {
     pub fn put<'a, B>(&'a self, body: B) -> Result<FileAdded, Error>
         where B: Into<Body<'a>>
     {
-        let url = self.to_url();
-
-        let req = self.client.put(url).body(body);
+        let req = try!(self.client.put(&self.path)).body(body);
 
         let mut res = try!(req.send());
         let mut res_json = String::new();
@@ -126,9 +125,7 @@ impl DataFile {
     /// };
     /// ```
     pub fn get(&self) -> Result<DataResponse, Error> {
-        let url = self.to_url();
-
-        let req = self.client.get(url);
+        let req = try!(self.client.get(&self.path));
         let res = try!(req.send());
         let metadata = try!(parse_headers(&res.headers));
 
@@ -170,10 +167,7 @@ impl DataFile {
     /// };
     /// ```
     pub fn delete(&self) -> Result<FileDeleted, Error> {
-        let url = self.to_url();
-
-        let req = self.client.delete(url);
-
+        let req = try!(self.client.delete(&self.path));
         let mut res = try!(req.send());
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
