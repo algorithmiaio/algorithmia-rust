@@ -45,14 +45,12 @@ use algo::{Algorithm, AlgoRef};
 use data::{DataDir, DataFile, DataObject, HasDataPath};
 use client::HttpClient;
 
-use std::rc::Rc;
-
 pub mod algo;
 pub mod data;
 pub mod error;
 mod client;
 pub use error::Error;
-pub use hyper::{mime, Url};
+pub use hyper::Url;
 use hyper::client::IntoUrl;
 pub use client::ApiAuth;
 pub use hyper::client::Body;
@@ -79,7 +77,7 @@ static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia client endpoints
 pub struct Algorithmia {
-    http_client: Rc<HttpClient>,
+    http_client: HttpClient,
 }
 
 impl<'a, 'c> Algorithmia {
@@ -99,12 +97,12 @@ impl<'a, 'c> Algorithmia {
     /// ```
     pub fn client<A: Into<ApiAuth>>(api_key: A) -> Algorithmia {
         let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
-        Algorithmia { http_client: Rc::new(HttpClient::new(api_key.into(), &api_address)) }
+        Algorithmia { http_client: HttpClient::new(api_key.into(), &api_address) }
     }
 
     /// Instantiate a new client against alternate API servers
     pub fn alt_client<A: Into<ApiAuth>, U: IntoUrl>(base_url: U, api_key: A) -> Algorithmia {
-        Algorithmia { http_client: Rc::new(HttpClient::new(api_key.into(), base_url)) }
+        Algorithmia { http_client: HttpClient::new(api_key.into(), base_url) }
     }
 
     /// Instantiate an [`Algorithm`](algo/algorithm.struct.html) from this client
@@ -178,6 +176,6 @@ impl Default for Algorithmia {
         let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
         let api_key =
             std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
-        Algorithmia { http_client: Rc::new(HttpClient::new(api_key, &api_address)) }
+        Algorithmia { http_client: HttpClient::new(api_key, &api_address) }
     }
 }

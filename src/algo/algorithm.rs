@@ -77,7 +77,6 @@ use std::str::FromStr;
 use std::error::Error as StdError;
 use std::fmt;
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::ops::{Deref, DerefMut};
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
@@ -106,7 +105,7 @@ pub enum AlgoOutput {
 pub struct Algorithm {
     pub path: String,
     options: AlgoOptions,
-    client: Rc<HttpClient>,
+    client: HttpClient,
 }
 
 /// Options used to alter the algorithm call, e.g. configuring the timeout
@@ -250,7 +249,7 @@ pub trait EntryPoint: Default {
 
 impl Algorithm {
     #[doc(hidden)]
-    pub fn new(client: Rc<HttpClient>, algo_ref: AlgoRef) -> Algorithm {
+    pub fn new(client: HttpClient, algo_ref: AlgoRef) -> Algorithm {
         let path: String = match algo_ref.path {
             ref p if p.starts_with("algo://") => p[7..].into(),
             ref p if p.starts_with('/') => p[1..].into(),
@@ -356,6 +355,7 @@ impl Algorithm {
     }
 
 
+    #[doc(hidden)]
     pub fn pipe_as<'a, B>(&'a self, input_data: B, content_type: Mime) -> Result<Response, Error>
         where B: Into<Body<'a>>
     {

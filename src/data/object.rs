@@ -4,17 +4,16 @@ use error::*;
 use chrono::{UTC, TimeZone};
 use hyper::status::StatusCode;
 use super::{parse_headers, parse_data_uri};
-use std::rc::Rc;
 
 
 /// Algorithmia data object (file or directory)
 pub struct DataObject {
     path: String,
-    client: Rc<HttpClient>,
+    client: HttpClient,
 }
 
 impl HasDataPath for DataObject {
-    fn new(client: Rc<HttpClient>, path: &str) -> Self {
+    fn new(client: HttpClient, path: &str) -> Self {
         DataObject {
             client: client,
             path: parse_data_uri(path).to_string(),
@@ -23,8 +22,8 @@ impl HasDataPath for DataObject {
     fn path(&self) -> &str {
         &self.path
     }
-    fn client(&self) -> Rc<HttpClient> {
-        self.client.clone()
+    fn client(&self) -> &HttpClient {
+        &self.client
     }
 }
 

@@ -9,6 +9,7 @@ use hyper::method::Method;
 use ::Error;
 
 use url::ParseError;
+use std::sync::Arc;
 
 /// Represent the different ways to auth with the API
 #[derive(Clone)]
@@ -18,10 +19,11 @@ pub enum ApiAuth {
 }
 
 /// Internal `HttpClient` to build requests: wraps `hyper` client
+#[derive(Clone)]
 pub struct HttpClient {
     pub base_url: Result<Url, ParseError>,
     api_auth: ApiAuth,
-    hyper_client: Client,
+    hyper_client: Arc<Client>,
     user_agent: String,
 }
 
@@ -31,7 +33,7 @@ impl HttpClient {
         HttpClient {
             api_auth: api_auth,
             base_url: base_url.into_url(),
-            hyper_client: Client::new(),
+            hyper_client: Arc::new(Client::new()),
             user_agent: format!("algorithmia-rust/{} (Rust {}",
                                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
                                 ::version::RUSTC_VERSION),

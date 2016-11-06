@@ -15,7 +15,6 @@ use chrono::{DateTime, UTC, TimeZone};
 use client::HttpClient;
 use data::*;
 use std::io::{self, Read};
-use std::rc::Rc;
 use ::{json, Body};
 use error::{Error, ApiError, ApiErrorResponse};
 use super::{parse_headers, parse_data_uri};
@@ -53,11 +52,11 @@ impl Read for DataResponse {
 /// Algorithmia data file
 pub struct DataFile {
     path: String,
-    client: Rc<HttpClient>,
+    client: HttpClient,
 }
 
 impl HasDataPath for DataFile {
-    fn new(client: Rc<HttpClient>, path: &str) -> Self {
+    fn new(client: HttpClient, path: &str) -> Self {
         DataFile {
             client: client,
             path: parse_data_uri(path).to_string(),
@@ -66,8 +65,8 @@ impl HasDataPath for DataFile {
     fn path(&self) -> &str {
         &self.path
     }
-    fn client(&self) -> Rc<HttpClient> {
-        self.client.clone()
+    fn client(&self) -> &HttpClient {
+        &self.client
     }
 }
 

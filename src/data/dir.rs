@@ -25,7 +25,6 @@ use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use std::vec::IntoIter;
-use std::rc::Rc;
 
 use chrono::{DateTime, UTC};
 use hyper::header::ContentType;
@@ -35,7 +34,7 @@ use hyper::mime::{Mime, TopLevel, SubLevel};
 /// Algorithmia Data Directory
 pub struct DataDir {
     path: String,
-    client: Rc<HttpClient>,
+    client: HttpClient,
 }
 
 
@@ -209,7 +208,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
 }
 
 impl HasDataPath for DataDir {
-    fn new(client: Rc<HttpClient>, path: &str) -> Self {
+    fn new(client: HttpClient, path: &str) -> Self {
         DataDir {
             client: client,
             path: parse_data_uri(path).to_string(),
@@ -218,8 +217,8 @@ impl HasDataPath for DataDir {
     fn path(&self) -> &str {
         &self.path
     }
-    fn client(&self) -> Rc<HttpClient> {
-        self.client.clone()
+    fn client(&self) -> &HttpClient {
+        &self.client
     }
 }
 

@@ -5,12 +5,11 @@ use super::header::XErrorMessage;
 use client::HttpClient;
 use hyper::Url;
 use hyper::status::StatusCode;
-use std::rc::Rc;
 
 pub trait HasDataPath {
-    fn new(client: Rc<HttpClient>, path: &str) -> Self;
+    fn new(client: HttpClient, path: &str) -> Self;
     fn path(&self) -> &str;
-    fn client(&self) -> Rc<HttpClient>;
+    fn client(&self) -> &HttpClient;
 
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Result<Url> {
