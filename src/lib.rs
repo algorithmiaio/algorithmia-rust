@@ -141,3 +141,11 @@ impl clone::Clone for Algorithmia {
     }
 }
 
+impl Default for Algorithmia {
+    fn default() -> Algorithmia {
+        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
+        let api_key =
+            std::env::var("ALGORITHMIA_API_KEY").map(|s| SimpleAuth(s)).unwrap_or(NoAuth);
+        Algorithmia { http_client: HttpClient::new(api_key, api_address) }
+    }
+}
