@@ -11,6 +11,6 @@ readme = "README.md"
 keywords = ["algorithmia", "algorithm", "client"]
 
 [dependencies]
-hyper = "0.8.0"
+hyper = "0.9"
 rustc-serialize = "0.3.18"
 chrono = { version = "0.2.21", features = ["rustc-serialize"] }

@@ -284,24 +284,14 @@ impl Algorithm {
                           -> Result<Response, hyper::error::Error>
         where B: Into<Body<'a>>
     {
-
-        // Combine any existing paramaters with any
         let mut url = self.to_url();
-        let original_params = url.query_pairs();
-        let mut final_params: HashMap<&str, &str> = HashMap::new();
 
-        if let Some(ref pairs) = original_params {
-            for pair in pairs {
-                final_params.insert(&*pair.0, &*pair.1);
-            }
-        }
-
+        // Append options to URL as query parameters
         if !self.options.is_empty() {
-            for (k,v) in self.options.iter() {
-                final_params.insert(&*k, &*v);
+            let mut query_params = url.query_pairs_mut();
+            for (k, v) in self.options.iter() {
+                query_params.append_pair(&*k, &*v);
             }
-            // update query since AlgoOptions were provided
-            url.set_query_from_pairs(final_params.iter().map(|(k,v)|(*k,*v)));
         }
 
         let req = self.client.post(url)
@@ -641,28 +631,28 @@ mod tests {
     fn test_algo_without_version_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("/anowell/Pinky");
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky");
+        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky");
     }
 
     #[test]
     fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("anowell/Pinky/0.1.0");
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/0.1.0");
+        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky/0.1.0");
     }
 
     #[test]
     fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("algo://anowell/Pinky/0.1");
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/0.1");
+        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky/0.1");
     }
 
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo(("anowell/Pinky", "abcdef123456"));
-        assert_eq!(algorithm.to_url().serialize_path().unwrap(), "/v1/algo/anowell/Pinky/abcdef123456");
+        assert_eq!(algorithm.to_url().path(), "/v1/algo/anowell/Pinky/abcdef123456");
     }
 
 

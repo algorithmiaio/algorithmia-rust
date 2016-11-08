@@ -68,7 +68,7 @@ impl<'a, 'c> Algorithmia {
     /// Instantiate a new client against alternate API servers
     pub fn alt_client<A: Into<ApiAuth>>(base_url: Url, api_key: A) -> Algorithmia {
         Algorithmia {
-            http_client: HttpClient::new(api_key.into(), base_url.serialize()),
+            http_client: HttpClient::new(api_key.into(), base_url.into_string()),
         }
     }
 
@@ -140,3 +140,4 @@ impl clone::Clone for Algorithmia {
         }
     }
 }
+
