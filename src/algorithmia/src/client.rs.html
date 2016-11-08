@@ -11,6 +11,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
 
     
     
@@ -145,6 +146,10 @@
 <span id="102">102</span>
 <span id="103">103</span>
 <span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Internal client</span>
 <span class='doccomment'>//!</span>
@@ -178,9 +183,13 @@
 <span class='kw'>impl</span> <span class='ident'>HttpClient</span> {
     <span class='doccomment'>/// Instantiate an HttpClient - creates a new `hyper` client</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>(<span class='ident'>api_auth</span>: <span class='ident'>ApiAuth</span>, <span class='ident'>base_url</span>: <span class='ident'>String</span>) <span class='op'>-&gt;</span> <span class='ident'>HttpClient</span> {
+        <span class='kw'>let</span> <span class='ident'>checked_url</span> <span class='op'>=</span> <span class='kw'>match</span> <span class='ident'>base_url</span>.<span class='ident'>chars</span>().<span class='ident'>rev</span>().<span class='ident'>next</span>() {
+            <span class='prelude-val'>Some</span>(<span class='ident'>c</span>) <span class='kw'>if</span> <span class='ident'>c</span> <span class='op'>==</span> <span class='string'>&#39;/&#39;</span> <span class='op'>=&gt;</span> <span class='ident'>base_url</span>[<span class='number'>0</span>..(<span class='ident'>base_url</span>.<span class='ident'>len</span>() <span class='op'>-</span> <span class='number'>1</span>)].<span class='ident'>to_string</span>(),
+            _ <span class='op'>=&gt;</span> <span class='ident'>base_url</span>.<span class='ident'>clone</span>(),
+        };
         <span class='ident'>HttpClient</span> {
             <span class='ident'>api_auth</span>: <span class='ident'>api_auth</span>,
-            <span class='ident'>base_url</span>: <span class='ident'>base_url</span>,
+            <span class='ident'>base_url</span>: <span class='ident'>checked_url</span>,
             <span class='ident'>hyper_client</span>: <span class='ident'>Arc</span>::<span class='ident'>new</span>(<span class='ident'>Client</span>::<span class='ident'>new</span>()),
             <span class='ident'>user_agent</span>: <span class='macro'>format</span><span class='macro'>!</span>(<span class='string'>&quot;algorithmia-rust/{} (Rust {}&quot;</span>, <span class='macro'>option_env</span><span class='macro'>!</span>(<span class='string'>&quot;CARGO_PKG_VERSION&quot;</span>).<span class='ident'>unwrap_or</span>(<span class='string'>&quot;unknown&quot;</span>), <span class='macro'>option_env</span><span class='macro'>!</span>(<span class='string'>&quot;CFG_RELEASE&quot;</span>).<span class='ident'>unwrap_or</span>(<span class='string'>&quot;unknown&quot;</span>)),
         }
@@ -237,7 +246,7 @@
 }
 
 <span class='kw'>impl</span> <span class='op'>&lt;</span><span class='lifetime'>&#39;a</span><span class='op'>&gt;</span> <span class='ident'>From</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span><span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>ApiAuth</span> {
-    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>api_key</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(<span class='ident'>api_key</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;a</span> <span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='self'>Self</span> {
         <span class='kw'>match</span> <span class='ident'>api_key</span>.<span class='ident'>len</span>() {
             <span class='number'>0</span> <span class='op'>=&gt;</span> <span class='ident'>ApiAuth</span>::<span class='ident'>NoAuth</span>,
             _ <span class='op'>=&gt;</span> <span class='ident'>ApiAuth</span>::<span class='ident'>SimpleAuth</span>(<span class='ident'>api_key</span>.<span class='ident'>into</span>()),
@@ -246,7 +255,7 @@
 }
 
 <span class='kw'>impl</span> <span class='ident'>From</span><span class='op'>&lt;</span>()<span class='op'>&gt;</span> <span class='kw'>for</span> <span class='ident'>ApiAuth</span> {
-    <span class='kw'>fn</span> <span class='ident'>from</span>(_: ()) <span class='op'>-&gt;</span> <span class='kw'>Self</span> {
+    <span class='kw'>fn</span> <span class='ident'>from</span>(_: ()) <span class='op'>-&gt;</span> <span class='self'>Self</span> {
         <span class='ident'>ApiAuth</span>::<span class='ident'>NoAuth</span>
     }
 }</pre>
@@ -273,6 +282,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 
@@ -304,11 +315,9 @@
     <script>
         window.rootPath = "../../../";
         window.currentCrate = "algorithmia";
-        window.playgroundUrl = "";
     </script>
     <script src="../../../jquery.js"></script>
     <script src="../../../main.js"></script>
-    
     <script defer src="../../../search-index.js"></script>
 </body>
 </html>

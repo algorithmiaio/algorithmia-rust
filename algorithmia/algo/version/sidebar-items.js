@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["Version","Version of an algorithm"]]});

@@ -11,6 +11,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
 
     
     
@@ -183,6 +184,15 @@
 <span id="140">140</span>
 <span id="141">141</span>
 <span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
 </pre><pre class='rust '>
 <span class='doccomment'>//! Algorithmia client library</span>
 <span class='doccomment'>//!</span>
@@ -254,7 +264,7 @@
     <span class='doccomment'>/// Instantiate a new client against alternate API servers</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>alt_client</span><span class='op'>&lt;</span><span class='ident'>A</span>: <span class='ident'>Into</span><span class='op'>&lt;</span><span class='ident'>ApiAuth</span><span class='op'>&gt;&gt;</span>(<span class='ident'>base_url</span>: <span class='ident'>Url</span>, <span class='ident'>api_key</span>: <span class='ident'>A</span>) <span class='op'>-&gt;</span> <span class='ident'>Algorithmia</span> {
         <span class='ident'>Algorithmia</span> {
-            <span class='ident'>http_client</span>: <span class='ident'>HttpClient</span>::<span class='ident'>new</span>(<span class='ident'>api_key</span>.<span class='ident'>into</span>(), <span class='ident'>base_url</span>.<span class='ident'>serialize</span>()),
+            <span class='ident'>http_client</span>: <span class='ident'>HttpClient</span>::<span class='ident'>new</span>(<span class='ident'>api_key</span>.<span class='ident'>into</span>(), <span class='ident'>base_url</span>.<span class='ident'>into_string</span>()),
         }
     }
 
@@ -326,6 +336,15 @@
         }
     }
 }
+
+<span class='kw'>impl</span> <span class='ident'>Default</span> <span class='kw'>for</span> <span class='ident'>Algorithmia</span> {
+    <span class='kw'>fn</span> <span class='ident'>default</span>() <span class='op'>-&gt;</span> <span class='ident'>Algorithmia</span> {
+        <span class='kw'>let</span> <span class='ident'>api_address</span> <span class='op'>=</span> <span class='ident'>std</span>::<span class='ident'>env</span>::<span class='ident'>var</span>(<span class='string'>&quot;ALGORITHMIA_API&quot;</span>).<span class='ident'>unwrap_or</span>(<span class='ident'>DEFAULT_API_BASE_URL</span>.<span class='ident'>into</span>());
+        <span class='kw'>let</span> <span class='ident'>api_key</span> <span class='op'>=</span>
+            <span class='ident'>std</span>::<span class='ident'>env</span>::<span class='ident'>var</span>(<span class='string'>&quot;ALGORITHMIA_API_KEY&quot;</span>).<span class='ident'>map</span>(<span class='op'>|</span><span class='ident'>s</span><span class='op'>|</span> <span class='ident'>SimpleAuth</span>(<span class='ident'>s</span>)).<span class='ident'>unwrap_or</span>(<span class='ident'>NoAuth</span>);
+        <span class='ident'>Algorithmia</span> { <span class='ident'>http_client</span>: <span class='ident'>HttpClient</span>::<span class='ident'>new</span>(<span class='ident'>api_key</span>, <span class='ident'>api_address</span>) }
+    }
+}
 </pre>
 </section>
     <section id='search' class="content hidden"></section>
@@ -350,6 +369,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 
@@ -381,11 +402,9 @@
     <script>
         window.rootPath = "../../../";
         window.currentCrate = "algorithmia";
-        window.playgroundUrl = "";
     </script>
     <script src="../../../jquery.js"></script>
     <script src="../../../main.js"></script>
-    
     <script defer src="../../../search-index.js"></script>
 </body>
 </html>

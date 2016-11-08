@@ -11,6 +11,7 @@
 
     <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
+    
 
     
     
@@ -43,14 +44,13 @@
 
     <section id='main' class="content struct">
 <h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>algorithmia</a>::<wbr><a class='struct' href=''>Algorithmia</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-1294' class='srclink' href='../src/algorithmia/src/lib.rs.html#42-44' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct Algorithmia {
-    // some fields omitted
-}</pre><div class='docblock'><p>The top-level struct for instantiating Algorithmia client endpoints</p>
-</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;'a, 'c&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></h3><div class='impl-items'><h4 id='method.client' class='method'><code>fn <a href='#method.client' class='fnname'>client</a>&lt;A: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../algorithmia/client/enum.ApiAuth.html' title='algorithmia::client::ApiAuth'>ApiAuth</a>&gt;&gt;(api_key: A) -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></h4>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-748' class='srclink' href='../src/algorithmia/src/lib.rs.html#42-44' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Algorithmia { /* fields omitted */ }</pre><div class='docblock'><p>The top-level struct for instantiating Algorithmia client endpoints</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><span class='in-band'><code>impl&lt;'a, 'c&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-750' class='srclink' href='../src/algorithmia/src/lib.rs.html#46-132' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.client' class='method'><span id='client.v' class='invisible'><code>fn <a href='#method.client' class='fnname'>client</a>&lt;A:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../algorithmia/client/enum.ApiAuth.html' title='algorithmia::client::ApiAuth'>ApiAuth</a>&gt;&gt;(api_key: A) -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></span></h4>
 <div class='docblock'><p>Instantiate a new client</p>
 
 <p>Client should be instatiated with your API key, except
@@ -64,9 +64,9 @@
 
 <span class='comment'>// Initialize a client (for algorithms running on the Algorithmia platform)</span>
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='ident'>NoAuth</span>);</pre>
-</div><h4 id='method.alt_client' class='method'><code>fn <a href='#method.alt_client' class='fnname'>alt_client</a>&lt;A: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../algorithmia/client/enum.ApiAuth.html' title='algorithmia::client::ApiAuth'>ApiAuth</a>&gt;&gt;(base_url: <a class='struct' href='../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>, api_key: A) -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></h4>
+</div><h4 id='method.alt_client' class='method'><span id='alt_client.v' class='invisible'><code>fn <a href='#method.alt_client' class='fnname'>alt_client</a>&lt;A:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../algorithmia/client/enum.ApiAuth.html' title='algorithmia::client::ApiAuth'>ApiAuth</a>&gt;&gt;(base_url: <a class='struct' href='../algorithmia/struct.Url.html' title='algorithmia::Url'>Url</a>, api_key: A) -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></span></h4>
 <div class='docblock'><p>Instantiate a new client against alternate API servers</p>
-</div><h4 id='method.algo' class='method'><code>fn <a href='#method.algo' class='fnname'>algo</a>&lt;A: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='struct' href='../algorithmia/algo/struct.AlgoRef.html' title='algorithmia::algo::AlgoRef'>AlgoRef</a>&gt;&gt;(&amp;self, algorithm: A) -&gt; <a class='struct' href='../algorithmia/algo/struct.Algorithm.html' title='algorithmia::algo::Algorithm'>Algorithm</a></code></h4>
+</div><h4 id='method.algo' class='method'><span id='algo.v' class='invisible'><code>fn <a href='#method.algo' class='fnname'>algo</a>&lt;A:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='struct' href='../algorithmia/algo/struct.AlgoRef.html' title='algorithmia::algo::AlgoRef'>AlgoRef</a>&gt;&gt;(&amp;self, algorithm: A) -&gt; <a class='struct' href='../algorithmia/algo/struct.Algorithm.html' title='algorithmia::algo::Algorithm'>Algorithm</a></code></span></h4>
 <div class='docblock'><p>Instantiate an <a href="algo/algorithm.struct.html"><code>Algorithm</code></a> from this client</p>
 
 <p>By using In</p>
@@ -78,7 +78,7 @@
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>factor</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>algo</span>(<span class='string'>&quot;anowell/Dijkstra/0.1&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>factor</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>algo</span>((<span class='string'>&quot;anowell/Dijkstra&quot;</span>, <span class='ident'>Version</span>::<span class='ident'>Latest</span>));</pre>
-</div><h4 id='method.dir' class='method'><code>fn <a href='#method.dir' class='fnname'>dir</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a></code></h4>
+</div><h4 id='method.dir' class='method'><span id='dir.v' class='invisible'><code>fn <a href='#method.dir' class='fnname'>dir</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/dir/struct.DataDir.html' title='algorithmia::data::dir::DataDir'>DataDir</a></code></span></h4>
 <div class='docblock'><p>Instantiate a <code>DataDirectory</code> from this client</p>
 
 <h1 id='examples-2' class='section-header'><a href='#examples-2'>Examples</a></h1>
@@ -86,7 +86,7 @@
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Algorithmia</span>;
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>rustfoo</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>dir</span>(<span class='string'>&quot;data://.my/rustfoo&quot;</span>);</pre>
-</div><h4 id='method.file' class='method'><code>fn <a href='#method.file' class='fnname'>file</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a></code></h4>
+</div><h4 id='method.file' class='method'><span id='file.v' class='invisible'><code>fn <a href='#method.file' class='fnname'>file</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a></code></span></h4>
 <div class='docblock'><p>Instantiate a <code>DataDirectory</code> from this client</p>
 
 <h1 id='examples-3' class='section-header'><a href='#examples-3'>Examples</a></h1>
@@ -94,7 +94,7 @@
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Algorithmia</span>;
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>rustfoo</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>file</span>(<span class='string'>&quot;data://.my/rustfoo&quot;</span>);</pre>
-</div><h4 id='method.data' class='method'><code>fn <a href='#method.data' class='fnname'>data</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/path/struct.DataPath.html' title='algorithmia::data::path::DataPath'>DataPath</a></code></h4>
+</div><h4 id='method.data' class='method'><span id='data.v' class='invisible'><code>fn <a href='#method.data' class='fnname'>data</a>(&amp;self, path: &amp;'a <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='struct' href='../algorithmia/data/path/struct.DataPath.html' title='algorithmia::data::path::DataPath'>DataPath</a></code></span></h4>
 <div class='docblock'><p>Instantiate a <code>DataPath</code> from this client</p>
 
 <p>Use this if you don&#39;t explicitly know if a Data URI is to a directory or file</p>
@@ -104,10 +104,16 @@
 <span class='kw'>use</span> <span class='ident'>algorithmia</span>::<span class='ident'>Algorithmia</span>;
 <span class='kw'>let</span> <span class='ident'>client</span> <span class='op'>=</span> <span class='ident'>Algorithmia</span>::<span class='ident'>client</span>(<span class='string'>&quot;111112222233333444445555566&quot;</span>);
 <span class='kw'>let</span> <span class='ident'>rustfoo</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>data</span>(<span class='string'>&quot;data://.my/rustfoo/what_am_i&quot;</span>);</pre>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></h3><div class='docblock'><p>Allow cloning in order to reuse http client (and API key) for multiple connections</p>
-</div><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></h4>
-<h4 id='method.clone_from' class='method'><span class="since">1.0.0</span><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
-</div></section>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-774' class='srclink' href='../src/algorithmia/src/lib.rs.html#136-142' title='goto source code'>[src]</a></span></h3>
+<div class='docblock'><p>Allow cloning in order to reuse http client (and API key) for multiple connections</p>
+</div><div class='impl-items'><h4 id='method.clone' class='method'><span id='clone.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></span></h4>
+<div class='docblock'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
+</div><h4 id='method.clone_from' class='method'><span id='clone_from.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code><div class='since' title='Stable since Rust version 1.0.0'>1.0.0</div></span></h4>
+<div class='docblock'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> for <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-777' class='srclink' href='../src/algorithmia/src/lib.rs.html#144-151' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.default' class='method'><span id='default.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default' class='fnname'>default</a>() -&gt; <a class='struct' href='../algorithmia/struct.Algorithmia.html' title='algorithmia::Algorithmia'>Algorithmia</a></code></span></h4>
+<div class='docblock'><p>Returns the &quot;default value&quot; for a type. <a href="https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default">Read more</a></p>
+</div></div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -130,6 +136,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 
@@ -161,11 +169,9 @@
     <script>
         window.rootPath = "../";
         window.currentCrate = "algorithmia";
-        window.playgroundUrl = "";
     </script>
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
-    
     <script defer src="../search-index.js"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../main.css">
+    
 
     
     
@@ -43,10 +44,10 @@
 
     <section id='main' class="content trait">
 <h1 class='fqn'><span class='in-band'>Trait <a href='../index.html'>algorithmia</a>::<wbr><a href='index.html'>algo</a>::<wbr><a class='trait' href=''>EntryPoint</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-106' class='srclink' href='../../src/algorithmia/src/algo/algorithm.rs.html#133-187' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-72' class='srclink' href='../../src/algorithmia/src/algo/algorithm.rs.html#133-187' title='goto source code'>[src]</a></span></h1>
 <pre class='rust trait'>pub trait EntryPoint: <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> {
     fn <a href='#method.apply_str' class='fnname'>apply_str</a>(&amp;self, name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt; { ... }
     fn <a href='#method.apply_json' class='fnname'>apply_json</a>(&amp;self, json: &amp;<a class='enum' href='https://doc.rust-lang.org/rustc-serialize/rustc_serialize/json/enum.Json.html' title='rustc_serialize::json::Json'>Json</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt; { ... }
@@ -56,7 +57,7 @@
 </div>
             <h2 id='provided-methods'>Provided Methods</h2>
             <div class='methods'>
-        <h3 id='method.apply_str' class='method stab '><code>fn <a href='#method.apply_str' class='fnname'>apply_str</a>(&amp;self, name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></h3><h3 id='method.apply_json' class='method stab '><code>fn <a href='#method.apply_json' class='fnname'>apply_json</a>(&amp;self, json: &amp;<a class='enum' href='https://doc.rust-lang.org/rustc-serialize/rustc_serialize/json/enum.Json.html' title='rustc_serialize::json::Json'>Json</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></h3><h3 id='method.apply_bytes' class='method stab '><code>fn <a href='#method.apply_bytes' class='fnname'>apply_bytes</a>(&amp;self, bytes: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></h3><h3 id='method.apply' class='method stab '><code>fn <a href='#method.apply' class='fnname'>apply</a>&lt;'a&gt;(&amp;self, input: <a class='enum' href='../../algorithmia/algo/enum.AlgoInput.html' title='algorithmia::algo::AlgoInput'>AlgoInput</a>&lt;'a&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></h3><div class='docblock'><p>The default implementation of this method calls
+        <h3 id='method.apply_str' class='method stab '><span id='apply_str.v' class='invisible'><code>fn <a href='#method.apply_str' class='fnname'>apply_str</a>(&amp;self, name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></span></h3><h3 id='method.apply_json' class='method stab '><span id='apply_json.v' class='invisible'><code>fn <a href='#method.apply_json' class='fnname'>apply_json</a>(&amp;self, json: &amp;<a class='enum' href='https://doc.rust-lang.org/rustc-serialize/rustc_serialize/json/enum.Json.html' title='rustc_serialize::json::Json'>Json</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></span></h3><h3 id='method.apply_bytes' class='method stab '><span id='apply_bytes.v' class='invisible'><code>fn <a href='#method.apply_bytes' class='fnname'>apply_bytes</a>(&amp;self, bytes: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></span></h3><h3 id='method.apply' class='method stab '><span id='apply.v' class='invisible'><code>fn <a href='#method.apply' class='fnname'>apply</a>&lt;'a&gt;(&amp;self, input: <a class='enum' href='../../algorithmia/algo/enum.AlgoInput.html' title='algorithmia::algo::AlgoInput'>AlgoInput</a>&lt;'a&gt;) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../algorithmia/algo/enum.AlgoOutput.html' title='algorithmia::algo::AlgoOutput'>AlgoOutput</a>, <a class='struct' href='https://doc.rust-lang.org/nightly/alloc/boxed/struct.Box.html' title='alloc::boxed::Box'>Box</a>&lt;<a class='trait' href='https://doc.rust-lang.org/nightly/std/error/trait.Error.html' title='std::error::Error'>Error</a>&gt;&gt;</code></span></h3><div class='docblock'><p>The default implementation of this method calls
 <code>apply_str</code>, <code>apply_json</code>, or <code>apply_bytes</code> based on the input type.</p>
 
 <ul>
@@ -76,9 +77,10 @@
 </div></div>
         <h2 id='implementors'>Implementors</h2>
         <ul class='item-list' id='implementors-list'>
-    </ul><script type="text/javascript" async
-                              src="../../implementors/algorithmia/algo/trait.EntryPoint.js">
-                      </script></section>
+    <li><code>impl&lt;T&gt; EntryPoint for T <span class='where'>where T: <a class='trait' href='../../algorithmia/algo/trait.DecodedEntryPoint.html' title='algorithmia::algo::DecodedEntryPoint'>DecodedEntryPoint</a></span></code></li>
+</ul><script type="text/javascript" async
+                         src="../../implementors/algorithmia/algo/trait.EntryPoint.js">
+                 </script></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -101,6 +103,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 
@@ -132,11 +136,9 @@
     <script>
         window.rootPath = "../../";
         window.currentCrate = "algorithmia";
-        window.playgroundUrl = "";
     </script>
     <script src="../../jquery.js"></script>
     <script src="../../main.js"></script>
-    
     <script defer src="../../search-index.js"></script>
 </body>
 </html>

@@ -11,6 +11,7 @@
 
     <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
 
     
     
@@ -43,18 +44,21 @@
 
     <section id='main' class="content struct">
 <h1 class='fqn'><span class='in-band'>Struct <a href='../../index.html'>algorithmia</a>::<wbr><a href='../index.html'>data</a>::<wbr><a href='index.html'>dir</a>::<wbr><a class='struct' href=''>DataFileEntry</a></span><span class='out-of-band'><span id='render-detail'>
-            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
-                [<span class='inner'>&#x2212;</span>]
-            </a>
-        </span><a id='src-647' class='srclink' href='../../../src/algorithmia/src/data/dir.rs.html#156-160' title='goto source code'>[src]</a></span></h1>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-410' class='srclink' href='../../../src/algorithmia/src/data/dir.rs.html#156-160' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct DataFileEntry {
     pub size: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a>,
     pub last_modified: <a class='struct' href='https://lifthrasiir.github.io/rust-chrono/chrono/datetime/struct.DateTime.html' title='chrono::datetime::DateTime'>DateTime</a>&lt;<a class='struct' href='https://lifthrasiir.github.io/rust-chrono/chrono/offset/utc/struct.UTC.html' title='chrono::offset::utc::UTC'>UTC</a>&gt;,
     // some fields omitted
-}</pre><h2 class='fields'>Fields</h2>
-<table><tr class='stab '>
-                                  <td id='structfield.size'><code>size</code></td><td></td></tr><tr class='stab '>
-                                  <td id='structfield.last_modified'><code>last_modified</code></td><td></td></tr></table><h2 id='deref-methods'>Methods from <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Deref</a>&lt;Target=<a class='struct' href='../../../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a>&gt;</h2><div class='impl-items'><h4 id='method.put' class='method'><code>fn <a href='#method.put' class='fnname'>put</a>&lt;'a, B: <a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../../algorithmia/client/enum.Body.html' title='algorithmia::client::Body'>Body</a>&lt;'a&gt;&gt;&gt;(&amp;'a self, body: B) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/file/struct.FileAdded.html' title='algorithmia::data::file::FileAdded'>FileAdded</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+}</pre><h2 class='fields'>Fields</h2><span id='structfield.size' class='structfield'>
+                           <span id='size.v' class='invisible'>
+                           <code>size: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u64.html'>u64</a></code>
+                           </span></span><span class='stab '></span><span id='structfield.last_modified' class='structfield'>
+                           <span id='last_modified.v' class='invisible'>
+                           <code>last_modified: <a class='struct' href='https://lifthrasiir.github.io/rust-chrono/chrono/datetime/struct.DateTime.html' title='chrono::datetime::DateTime'>DateTime</a>&lt;<a class='struct' href='https://lifthrasiir.github.io/rust-chrono/chrono/offset/utc/struct.UTC.html' title='chrono::offset::utc::UTC'>UTC</a>&gt;</code>
+                           </span></span><span class='stab '></span><h2 id='deref-methods'>Methods from <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Deref</a>&lt;Target=<a class='struct' href='../../../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a>&gt;</h2><div class='impl-items'><h4 id='method.put' class='method'><span id='put.v' class='invisible'><code>fn <a href='#method.put' class='fnname'>put</a>&lt;'a, B:&nbsp;<a class='trait' href='https://doc.rust-lang.org/nightly/core/convert/trait.Into.html' title='core::convert::Into'>Into</a>&lt;<a class='enum' href='../../../algorithmia/client/enum.Body.html' title='algorithmia::client::Body'>Body</a>&lt;'a&gt;&gt;&gt;(&amp;'a self, body: B) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/file/struct.FileAdded.html' title='algorithmia::data::file::FileAdded'>FileAdded</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></span></h4>
 <div class='docblock'><p>Write to the Algorithmia Data API</p>
 
 <h1 id='examples' class='section-header'><a href='#examples'>Examples</a></h1>
@@ -67,7 +71,7 @@
 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>stdin</span> <span class='op'>=</span> <span class='ident'>io</span>::<span class='ident'>stdin</span>();
 <span class='kw'>let</span> <span class='ident'>data_file</span> <span class='op'>=</span> <span class='ident'>client</span>.<span class='ident'>clone</span>().<span class='ident'>file</span>(<span class='string'>&quot;.my/my_dir/stdin.txt&quot;</span>);
 <span class='ident'>data_file</span>.<span class='ident'>put</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>stdin</span>);</pre>
-</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/file/struct.DataResponse.html' title='algorithmia::data::file::DataResponse'>DataResponse</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+</div><h4 id='method.get' class='method'><span id='get.v' class='invisible'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/file/struct.DataResponse.html' title='algorithmia::data::file::DataResponse'>DataResponse</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></span></h4>
 <div class='docblock'><p>Get a file from the Algorithmia Data API</p>
 
 <h1 id='examples-1' class='section-header'><a href='#examples-1'>Examples</a></h1>
@@ -85,7 +89,7 @@
   },
   <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Error downloading file: {}&quot;</span>, <span class='ident'>err</span>),
 };</pre>
-</div><h4 id='method.delete' class='method'><code>fn <a href='#method.delete' class='fnname'>delete</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/file/struct.FileDeleted.html' title='algorithmia::data::file::FileDeleted'>FileDeleted</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></h4>
+</div><h4 id='method.delete' class='method'><span id='delete.v' class='invisible'><code>fn <a href='#method.delete' class='fnname'>delete</a>(&amp;self) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='struct' href='../../../algorithmia/data/file/struct.FileDeleted.html' title='algorithmia::data::file::FileDeleted'>FileDeleted</a>, <a class='enum' href='../../../algorithmia/error/enum.Error.html' title='algorithmia::error::Error'>Error</a>&gt;</code></span></h4>
 <div class='docblock'><p>Delete a file from from the Algorithmia Data API</p>
 
 <h1 id='examples-2' class='section-header'><a href='#examples-2'>Examples</a></h1>
@@ -97,9 +101,12 @@
   <span class='prelude-val'>Ok</span>(_) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Successfully deleted file&quot;</span>),
   <span class='prelude-val'>Err</span>(<span class='ident'>err</span>) <span class='op'>=&gt;</span> <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;Error deleting file: {}&quot;</span>, <span class='ident'>err</span>),
 };</pre>
-</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Deref</a> for <a class='struct' href='../../../algorithmia/data/dir/struct.DataFileEntry.html' title='algorithmia::data::dir::DataFileEntry'>DataFileEntry</a></code></h3><div class='impl-items'><h4 id='associatedtype.Target' class='type'><code>type Target = <a class='struct' href='../../../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a></code></h4>
-<h4 id='method.deref' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html#method.deref' class='fnname'>deref</a>(&amp;self) -&gt; &amp;<a class='struct' href='../../../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a></code></h4>
-</div></section>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html' title='core::ops::Deref'>Deref</a> for <a class='struct' href='../../../algorithmia/data/dir/struct.DataFileEntry.html' title='algorithmia::data::dir::DataFileEntry'>DataFileEntry</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-414' class='srclink' href='../../../src/algorithmia/src/data/dir.rs.html#162-165' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Target' class='type'><span id='Target.t' class='invisible'><code>type <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html#associatedtype.Target' class='type'>Target</a> = <a class='struct' href='../../../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a></code></span></h4>
+<div class='docblock'><p>The resulting type after dereferencing</p>
+</div><h4 id='method.deref' class='method'><span id='deref.v' class='invisible'><code>fn <a href='https://doc.rust-lang.org/nightly/core/ops/trait.Deref.html#tymethod.deref' class='fnname'>deref</a>(&amp;self) -&gt; &amp;<a class='struct' href='../../../algorithmia/data/file/struct.DataFile.html' title='algorithmia::data::file::DataFile'>DataFile</a></code></span></h4>
+<div class='docblock'><p>The method called to dereference a value</p>
+</div></div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>
@@ -122,6 +129,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 
@@ -153,11 +162,9 @@
     <script>
         window.rootPath = "../../../";
         window.currentCrate = "algorithmia";
-        window.playgroundUrl = "";
     </script>
     <script src="../../../jquery.js"></script>
     <script src="../../../main.js"></script>
-    
     <script defer src="../../../search-index.js"></script>
 </body>
 </html>
