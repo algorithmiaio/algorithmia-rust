@@ -87,11 +87,11 @@ pub trait HasDataPath {
     /// assert_eq!(my_file.exists().unwrap(), true);
     /// ```
     fn exists(&self) -> Result<bool> {
-        let url = try!(self.to_url());
+        let url = self.to_url()?;
         let client = self.client();
-        let req = try!(client.head(url));
+        let req = client.head(url)?;
 
-        let res = try!(req.send());
+        let res = req.send()?;
         match *res.status() {
             StatusCode::Ok => Ok(true),
             StatusCode::NotFound => Ok(false),

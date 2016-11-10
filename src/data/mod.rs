@@ -86,12 +86,12 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData> {
             .into());
     };
 
-    let data_type = try!(match headers.get::<XDataType>() {
-        Some(dt) if &*dt.to_string() == "directory" => Ok(DataType::Dir),
-        Some(dt) if &*dt.to_string() == "file" => Ok(DataType::File),
-        Some(dt) => Err(Error::InvalidDataType(dt.to_string())),
-        None => Err(Error::MissingDataType),
-    });
+    let data_type = match headers.get::<XDataType>() {
+        Some(dt) if &*dt.to_string() == "directory" => DataType::Dir,
+        Some(dt) if &*dt.to_string() == "file" => DataType::File,
+        Some(dt) => return Err(Error::InvalidDataType(dt.to_string())),
+        None => return Err(Error::MissingDataType),
+    };
 
     let content_length = headers.get::<ContentLength>().map(|c| c.0);
     let last_modified = headers.get::<Date>()

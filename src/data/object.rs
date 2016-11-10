@@ -41,13 +41,13 @@ impl DataObject {
     /// }
     /// ```
     pub fn get_type(&self) -> Result<DataType> {
-        let url = try!(self.to_url());
-        let req = try!(self.client.head(url));
-        let res = try!(req.send());
+        let url = self.to_url()?;
+        let req = self.client.head(url)?;
+        let res = req.send()?;
 
         match *res.status() {
             StatusCode::Ok => {
-                let metadata = try!(parse_headers(res.headers()));
+                let metadata = parse_headers(res.headers())?;
                 Ok(metadata.data_type)
             }
             StatusCode::NotFound => Err(Error::NotFound(self.to_url().unwrap())),
@@ -75,13 +75,13 @@ impl DataObject {
     /// ```
     pub fn into_type(self) -> Result<DataItem> {
         let metadata = {
-            let url = try!(self.to_url());
-            let req = try!(self.client.head(url));
-            let res = try!(req.send());
+            let url = self.to_url()?;
+            let req = self.client.head(url)?;
+            let res = req.send()?;
             if *res.status() == StatusCode::NotFound {
                 return Err(Error::NotFound(self.to_url().unwrap()));
             }
-            try!(parse_headers(res.headers()))
+            parse_headers(res.headers())?
         };
 
         match metadata.data_type {

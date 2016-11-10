@@ -43,7 +43,7 @@ impl From<ParserError> for Error {
 }
 
 pub fn decode_value<D: Decodable>(json: Json) -> Result<D> {
-    let encoded = try!(json::encode(&json));
+    let encoded = json::encode(&json)?;
     decode_str(&encoded)
 }
 

@@ -89,17 +89,17 @@ impl DataFile {
     pub fn put<B>(&self, body: B) -> Result<FileAdded, Error>
         where B: Into<Body>
     {
-        let url = try!(self.to_url());
-        let req = try!(self.client.put(url)).body(body);
+        let url = self.to_url()?;
+        let req = self.client.put(url)?.body(body);
 
-        let mut res = try!(req.send());
+        let mut res = req.send()?;
         let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
+        res.read_to_string(&mut res_json)?;
 
         if res.status().is_success() {
             json::decode_str(&res_json).map_err(|err| err.into())
         } else {
-            Err(try!(json::decode_str::<ApiErrorResponse>(&res_json)).error.into())
+            Err(json::decode_str::<ApiErrorResponse>(&res_json)?.error.into())
         }
     }
 
@@ -125,10 +125,10 @@ impl DataFile {
     /// };
     /// ```
     pub fn get(&self) -> Result<DataResponse, Error> {
-        let url = try!(self.to_url());
-        let req = try!(self.client.get(url));
-        let res = try!(req.send());
-        let metadata = try!(parse_headers(res.headers()));
+        let url = self.to_url()?;
+        let req = self.client.get(url)?;
+        let res = req.send()?;
+        let metadata = parse_headers(res.headers())?;
 
         if res.status().is_success() {
             match metadata.data_type {
@@ -168,16 +168,16 @@ impl DataFile {
     /// };
     /// ```
     pub fn delete(&self) -> Result<FileDeleted, Error> {
-        let url = try!(self.to_url());
-        let req = try!(self.client.delete(url));
-        let mut res = try!(req.send());
+        let url = self.to_url()?;
+        let req = self.client.delete(url)?;
+        let mut res = req.send()?;
         let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
+        res.read_to_string(&mut res_json)?;
 
         if res.status().is_success() {
             json::decode_str(&res_json).map_err(|err| err.into())
         } else {
-            Err(try!(json::decode_str::<ApiErrorResponse>(&res_json)).error.into())
+            Err(json::decode_str::<ApiErrorResponse>(&res_json)?.error.into())
         }
     }
 }

@@ -95,8 +95,7 @@ let output = response.as_bytes().unwrap();
 ### Error handling
 
 True to the nature of explicit error handling in rust,
-the `pipe` and response parsing methods all return `Result`-wrapped types
-intended to be handled with `match` blocks or the `try!` macro:
+the `pipe` and response parsing methods all return `Result`-wrapped types:
 
 ```rust
 let algo = client.algo("algo://demo/Hello/0.1.1");

@@ -78,11 +78,12 @@ impl Decodable for FileItem {
     fn decode<D: Decoder>(d: &mut D) -> Result<FileItem, D::Error> {
         use std::error::Error;
         d.read_struct("root", 0, |d| {
-            Ok(FileItem{
-                filename: try!(d.read_struct_field("filename", 0, |d| Decodable::decode(d))),
-                size: try!(d.read_struct_field("size", 0, |d| Decodable::decode(d))),
+            Ok(FileItem {
+                filename: d.read_struct_field("filename", 0, |d| Decodable::decode(d))?,
+                size: d.read_struct_field("size", 0, |d| Decodable::decode(d))?,
                 last_modified: {
-                    let json_str: String = try!(d.read_struct_field("last_modified", 0, |d| Decodable::decode(d)));
+                    let json_str: String =
+                        d.read_struct_field("last_modified", 0, |d| Decodable::decode(d))?;
                     match json_str.parse() {
                         Ok(datetime) => datetime,
                         Err(err) => return Err(d.error(err.description())),
@@ -202,13 +203,13 @@ impl<'a> Iterator for DirectoryListing<'a> {
 }
 
 fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, Error> {
-    let mut url = try!(dir.to_url());
+    let mut url = dir.to_url()?;
     if let Some(ref m) = marker {
         url.query_pairs_mut().append_pair("marker", m);
     }
 
-    let req = try!(dir.client.get(url));
-    let mut res = try!(req.send());
+    let req = dir.client.get(url)?;
+    let mut res = req.send()?;
 
     if res.status().is_success() {
         if let Some(data_type) = res.headers().get::<XDataType>() {
@@ -219,7 +220,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow,
     }
 
     let mut res_json = String::new();
-    try!(res.read_to_string(&mut res_json));
+    res.read_to_string(&mut res_json)?;
 
     if res.status().is_success() {
         json::decode_str(&res_json).map_err(|err| err.into())
@@ -281,30 +282,32 @@ impl DataDir {
     /// };
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
-        let parent = try!(self.parent().ok_or_else(|| Error::InvalidDataPath(self.path.clone())));
-        let parent_url = try!(parent.to_url());
+        let parent = self.parent().ok_or_else(|| Error::InvalidDataPath(self.path.clone()))?;
+        let parent_url = parent.to_url()?;
 
         // TODO: address complete abuse of this structure
         let input_data = FolderItem {
-            name: try!(self.basename().ok_or_else(|| Error::InvalidDataPath(self.path.clone())))
+            name: self.basename()
+                .ok_or_else(|| Error::InvalidDataPath(self.path.clone()))?
                 .into(),
             acl: Some(acl.into()),
         };
-        let raw_input = try!(json::encode(&input_data));
+        let raw_input = json::encode(&input_data)?;
 
         // POST request
-        let req = try!(self.client.post(parent_url))
-            .header(ContentType(mime!(Application/Json)))
+        let req = self.client
+            .post(parent_url)?
+            .header(ContentType(mime!(Application / Json)))
             .body(raw_input);
 
         // Parse response
-        let mut res = try!(req.send());
+        let mut res = req.send()?;
 
         if res.status().is_success() {
             Ok(())
         } else {
             let mut res_json = String::new();
-            try!(res.read_to_string(&mut res_json));
+            res.read_to_string(&mut res_json)?;
             Err(error::decode(&res_json))
         }
     }
@@ -324,17 +327,17 @@ impl DataDir {
     /// ```
     pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
         // DELETE request
-        let mut url = try!(self.to_url());
+        let mut url = self.to_url()?;
         if force {
             url.query_pairs_mut().append_pair("force", "true");
         }
 
-        let req = try!(self.client.delete(url));
+        let req = self.client.delete(url)?;
 
         // Parse response
-        let mut res = try!(req.send());
+        let mut res = req.send()?;
         let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
+        res.read_to_string(&mut res_json)?;
 
         if res.status().is_success() {
             json::decode_str(&res_json).map_err(|err| err.into())
@@ -361,7 +364,7 @@ impl DataDir {
         // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
         let filename = path_ref.file_name().unwrap().to_str().unwrap();
-        let file = try!(File::open(path_ref));
+        let file = File::open(path_ref)?;
 
         let data_file: DataFile = self.child(filename);
         data_file.put(file)

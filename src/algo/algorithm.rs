@@ -171,7 +171,7 @@ impl<T> EntryPoint for T
     fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input.as_json() {
             Some(obj) => {
-                let decoded = try!(json::decode_value(obj.into_owned()));
+                let decoded = json::decode_value(obj.into_owned())?;
                 self.apply_decoded(decoded)
             }
             None => Err(Error::UnsupportedInput.into()),
@@ -307,21 +307,17 @@ impl Algorithm {
     pub fn pipe<'a, I>(&'a self, input_data: I) -> Result<AlgoResponse, Error>
         where I: Into<AlgoInput<'a>>
     {
-        let mut res = try!(match input_data.into() {
-            AlgoInput::Text(text) => {
-                self.pipe_as(&*text, mime!(Text/Plain))
-            }
+        let mut res = match input_data.into() {
+            AlgoInput::Text(text) => self.pipe_as(&*text, mime!(Text / Plain))?,
             AlgoInput::Json(json) => {
-                let encoded = try!(json::encode(&json));
-                self.pipe_as(&*encoded, mime!(Application/Json))
+                let encoded = json::encode(&json)?;
+                self.pipe_as(&*encoded, mime!(Application / Json))?
             }
-            AlgoInput::Binary(bytes) => {
-                self.pipe_as(&*bytes, mime!(Application/OctetStream))
-            }
-        });
+            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, mime!(Application / OctetStream))?,
+        };
 
         let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
+        res.read_to_string(&mut res_json)?;
         res_json.parse()
     }
 
@@ -343,24 +339,21 @@ impl Algorithm {
     ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
-        let mut res = try!(self.pipe_as(json_input, mime!(Application/Json)));
+        let mut res = self.pipe_as(json_input, mime!(Application / Json))?;
 
         let mut res_json = String::new();
-        try!(res.read_to_string(&mut res_json));
+        res.read_to_string(&mut res_json)?;
         res_json.parse()
     }
 
 
     #[doc(hidden)]
-    pub fn pipe_as<B>(&self,
-                          input_data: B,
-                          content_type: Mime)
-                          -> Result<Response, Error>
+    pub fn pipe_as<B>(&self, input_data: B, content_type: Mime) -> Result<Response, Error>
         where B: Into<Body>
     {
 
         // Append options to URL as query parameters
-        let mut url = try!(self.to_url());
+        let mut url = self.to_url()?;
         if !self.options.is_empty() {
             let mut query_params = url.query_pairs_mut();
             for (k, v) in self.options.iter() {
@@ -369,7 +362,8 @@ impl Algorithm {
         }
 
         // We just need the path and query string
-        let req = try!(self.client.post(url))
+        let req = self.client
+            .post(url)?
             .header(ContentType(content_type))
             .body(input_data);
 
@@ -448,16 +442,14 @@ impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
     #[cfg(feature="with-serde")]
     pub fn decode<D: Deserialize>(&self) -> Result<D, Error> {
-        let res_json = try!(self.as_json()
-            .ok_or(Error::MismatchedContentType("json")));
+        let res_json = self.as_json().ok_or(Error::MismatchedContentType("json"))?;
         json::decode_value::<D>(res_json.into_owned()).map_err(|err| err.into())
     }
 
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
     #[cfg(feature="with-rustc-serialize")]
     pub fn decode<D: Decodable>(&self) -> Result<D, Error> {
-        let res_json = try!(self.as_json()
-            .ok_or(Error::MismatchedContentType("json")));
+        let res_json = self.as_json().ok_or(Error::MismatchedContentType("json"))?;
         json::decode_value::<D>(res_json.into_owned()).map_err(|err| err.into())
     }
 }
@@ -495,16 +487,14 @@ impl AlgoResponse {
     #[cfg(feature="serde")]
     pub fn decode<D: Deserialize>(self) -> Result<D, Error> {
         let ct = self.metadata.content_type.clone();
-        let res_json = try!(self.into_json()
-            .ok_or(Error::UnexpectedContentType("json", ct)));
+        let res_json = self.into_json().ok_or_else(|| Error::UnexpectedContentType("json", ct))?;
         json::decode_value::<D>(res_json).map_err(|err| err.into())
     }
 
     #[cfg(feature="with-rustc-serialize")]
     pub fn decode<D: Decodable>(self) -> Result<D, Error> {
         let ct = self.metadata.content_type.clone();
-        let res_json = try!(self.into_json()
-            .ok_or(Error::UnexpectedContentType("json", ct)));
+        let res_json = self.into_json().ok_or_else(|| Error::UnexpectedContentType("json", ct))?;
         json::decode_value::<D>(res_json).map_err(|err| err.into())
     }
 }
@@ -551,11 +541,11 @@ impl FromStr for AlgoResponse {
         }
 
         // Parse into Json object
-        let data = try!(json::value_from_str(json_str));
+        let data = json::value_from_str(json_str)?;
 
         // Construct the AlgoMetadata object
         let metadata = match data.search("metadata") {
-            Some(meta_json) => try!(json::decode_str::<AlgoMetadata>(&meta_json.to_string())),
+            Some(meta_json) => json::decode_str::<AlgoMetadata>(&meta_json.to_string())?,
             None => {
                 return Err(json::missing_field_error("metadata"));
             }
@@ -573,7 +563,7 @@ impl FromStr for AlgoResponse {
             }
             ("binary", Some(value)) => {
                 match json::value_as_str(value) {
-                    Some(text) => AlgoOutput::Binary(try!(base64::decode(text))),
+                    Some(text) => AlgoOutput::Binary(base64::decode(text)?),
                     None => return Err(Error::MismatchedContentType("binary")),
                 }
             }
