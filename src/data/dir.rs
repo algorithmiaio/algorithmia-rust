@@ -285,7 +285,6 @@ impl DataDir {
         let parent = self.parent().ok_or_else(|| Error::InvalidDataPath(self.path.clone()))?;
         let parent_url = parent.to_url()?;
 
-        // TODO: address complete abuse of this structure
         let input_data = FolderItem {
             name: self.basename()
                 .ok_or_else(|| Error::InvalidDataPath(self.path.clone()))?
@@ -361,12 +360,12 @@ impl DataDir {
     /// };
     /// ```
     pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<FileAdded, Error> {
-        // FIXME: A whole lot of unwrap going on here...
         let path_ref = file_path.as_ref();
-        let filename = path_ref.file_name().unwrap().to_str().unwrap();
         let file = File::open(path_ref)?;
 
-        let data_file: DataFile = self.child(filename);
+        // Safe to unwrap: we've already opened the file or returned an error
+        let filename = path_ref.file_name().unwrap().to_string_lossy();
+        let data_file: DataFile = self.child(&filename);
         data_file.put(file)
     }
 
