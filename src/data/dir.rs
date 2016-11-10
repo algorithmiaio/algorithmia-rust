@@ -28,7 +28,6 @@ use std::vec::IntoIter;
 
 use chrono::{DateTime, UTC};
 use reqwest::header::ContentType;
-use mime::{Mime, TopLevel, SubLevel};
 
 #[cfg(feature="with-rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder};
@@ -295,7 +294,7 @@ impl DataDir {
 
         // POST request
         let req = try!(self.client.post(parent_url))
-            .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
+            .header(ContentType(mime!(Application/Json)))
             .body(raw_input);
 
         // Parse response

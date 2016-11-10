@@ -68,7 +68,7 @@ pub type JsonValue = Json;
 use base64;
 use reqwest::header::ContentType;
 use reqwest::Url;
-use mime::{Mime, TopLevel, SubLevel};
+use mime::Mime;
 #[doc(hidden)]
 pub use reqwest::Response;
 
@@ -309,18 +309,14 @@ impl Algorithm {
     {
         let mut res = try!(match input_data.into() {
             AlgoInput::Text(text) => {
-                self.pipe_as(&*text, Mime(TopLevel::Text, SubLevel::Plain, vec![]))
+                self.pipe_as(&*text, mime!(Text/Plain))
             }
             AlgoInput::Json(json) => {
                 let encoded = try!(json::encode(&json));
-                self.pipe_as(&*encoded,
-                             Mime(TopLevel::Application, SubLevel::Json, vec![]))
+                self.pipe_as(&*encoded, mime!(Application/Json))
             }
             AlgoInput::Binary(bytes) => {
-                self.pipe_as(&*bytes,
-                             Mime(TopLevel::Application,
-                                  SubLevel::Ext("octet-stream".into()),
-                                  vec![]))
+                self.pipe_as(&*bytes, mime!(Application/OctetStream))
             }
         });
 
@@ -347,8 +343,7 @@ impl Algorithm {
     ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
-        let mut res = try!(self.pipe_as(json_input,
-                                        Mime(TopLevel::Application, SubLevel::Json, vec![])));
+        let mut res = try!(self.pipe_as(json_input, mime!(Application/Json)));
 
         let mut res_json = String::new();
         try!(res.read_to_string(&mut res_json));
