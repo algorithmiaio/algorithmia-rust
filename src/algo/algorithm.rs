@@ -399,11 +399,11 @@ impl Algorithm {
         self
     }
 
-    /// Builder method to include stdout in the response metadata
+    /// Builder method to enabled or disable stdout in the response metadata
     ///
     /// This has no affect unless authenticated as the owner of the algorithm
-    pub fn enable_stdout(&mut self) -> &mut Algorithm {
-        self.options.enable_stdout();
+    pub fn stdout(&mut self, stdout: bool) -> &mut Algorithm {
+        self.options.stdout(stdout);
         self
     }
 }
@@ -515,11 +515,11 @@ impl AlgoOptions {
         self.opts.insert("timeout".into(), timeout.to_string());
     }
 
-    /// Sets the option to enable stdout retrieval
+    /// Enable or disable stdout retrieval
     ///
     /// This has no affect unless authenticated as the owner of the algorithm
-    pub fn enable_stdout(&mut self) {
-        self.opts.insert("stdout".into(), true.to_string());
+    pub fn stdout(&mut self, stdout: bool) {
+        self.opts.insert("stdout".into(), stdout.to_string());
     }
 }
 
