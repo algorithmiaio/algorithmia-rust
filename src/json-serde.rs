@@ -17,6 +17,11 @@ pub fn value_from_str(json: &str) -> Result<Value> {
     Value::from_str(json).map_err(Error::from)
 }
 
+pub fn take_field(json: &mut Value, field: &str) -> Option<Value> {
+    json.as_object_mut()
+        .and_then(|ref mut o| o.remove(field))
+}
+
 // Could use `to_string`, but really just needs to return `Result<impl Into<Body>>`
 //   so `to_vec` seems good
 pub fn encode<S: Serialize>(value: S) -> Result<Vec<u8>> {

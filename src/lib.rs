@@ -173,6 +173,9 @@ impl Clone for Algorithmia {
     }
 }
 
+/// The default Algorithmia client uses environment variables
+///   `ALGORITHMIA_API` to override the default base URL of the API
+///   and `ALGORITHMIA_API_KEY` to optionally the API key.
 impl Default for Algorithmia {
     fn default() -> Algorithmia {
         let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());

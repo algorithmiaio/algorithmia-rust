@@ -55,6 +55,11 @@ pub fn value_from_str(json: &str) -> Result<Json> {
     Json::from_str(json).map_err(Error::from)
 }
 
+pub fn take_field(json: &mut Json, field: &str) -> Option<Json> {
+    json.as_object_mut()
+        .and_then(|ref mut o| o.remove(field))
+}
+
 pub fn encode<E: Encodable>(value: E) -> Result<String> {
     json::encode(&value).map_err(Error::from)
 }

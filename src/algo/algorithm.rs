@@ -197,16 +197,16 @@ pub trait EntryPoint: Default {
     /// The default implementation of this method calls
     /// `apply_str`, `apply_json`, or `apply_bytes` based on the input type.
     ///
-    ///   - `AlgoInput::Text` results in call to  `apply_str`
-    ///   - `AlgoInput::Json` results in call to  `apply_json`
-    ///   - `AlgoInput::Binary` results in call to  `apply_bytes`
+    /// - `AlgoInput::Text` results in call to  `apply_str`
+    /// - `AlgoInput::Json` results in call to  `apply_json`
+    /// - `AlgoInput::Binary` results in call to  `apply_bytes`
     ///
     /// If that call returns anKind `UnsupportedInput` error, then this method
     ///   method will may attempt to coerce the input into another type
     ///   and attempt one more call:
     ///
-    ///   - `AlgoInput::Text` input will be JSON-encoded to call `apply_json`
-    ///   - `AlgoInput::Json` input will be parse to see it can call `apply_str`
+    /// - `AlgoInput::Text` input will be JSON-encoded to call `apply_json`
+    /// - `AlgoInput::Json` input will be parse to see it can call `apply_str`
     fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input {
             AlgoInput::Text(ref text) => {
@@ -281,12 +281,13 @@ impl Algorithm {
     /// Execute an algorithm with
     ///
     /// Content-type is determined by the type of input_data
-    ///   String => plain/text
-    ///   Encodable => application/json
-    ///   Byte slice => application/octet-stream
+    ///
+    /// - String => plain/text
+    /// - Encodable => application/json
+    /// - Byte slice => application/octet-stream
     ///
     /// To create encodable objects for complex input,
-    ///     use `#[derive(RustcEncodable)]` on your struct
+    ///   use `#[derive(RustcEncodable)]` on your struct
     ///
     /// If you want a string to be sent as application/json,
     ///    use `pipe_json(...)` instead
@@ -406,7 +407,7 @@ impl Algorithm {
 impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
     #[allow(match_same_arms)]
-    pub fn as_string(&'a self) -> Option<&'a str> {
+    pub fn as_string(&self) -> Option<&str> {
         match *self {
             AlgoInput::Text(ref text) => Some(&*text),
             AlgoInput::Json(Cow::Borrowed(json)) => json::value_as_str(json),
@@ -430,7 +431,7 @@ impl<'a> AlgoInput<'a> {
     }
 
     /// If the `AlgoInput` is binary, returns the associated byte slice
-    pub fn as_bytes(&'a self) -> Option<&'a [u8]> {
+    pub fn as_bytes(&self) -> Option<&[u8]> {
         match *self {
             AlgoInput::Text(_) |
             AlgoInput::Json(_) => None,
@@ -541,33 +542,29 @@ impl FromStr for AlgoResponse {
         }
 
         // Parse into Json object
-        let data = json::value_from_str(json_str)?;
-
-        // Construct the AlgoMetadata object
-        let metadata = match data.search("metadata") {
-            Some(meta_json) => json::decode_str::<AlgoMetadata>(&meta_json.to_string())?,
-            None => {
-                return Err(json::missing_field_error("metadata"));
-            }
-        };
+        let mut data = json::value_from_str(json_str)?;
+        let metadata_value = json::take_field(&mut data, "metadata")
+            .ok_or_else(|| json::missing_field_error("metadata"))?;
+        let result_value = json::take_field(&mut data, "result")
+            .ok_or_else(|| json::missing_field_error("result"))?;
 
         // Construct the AlgoOutput object
-        let result = match (&*metadata.content_type, data.search("result")) {
+        let metadata = json::decode_value::<AlgoMetadata>(metadata_value)?;
+        let result = match (&*metadata.content_type, result_value) {
             ("void", _) => AlgoOutput::Json(JsonValue!(Null)),
-            ("json", Some(value)) => AlgoOutput::Json(value.clone()), // TODO: Consider Cow<'a Json>
-            ("text", Some(value)) => {
-                match json::value_as_str(value) {
+            ("json", value) => AlgoOutput::Json(value),
+            ("text", value) => {
+                match json::value_as_str(&value) {
                     Some(text) => AlgoOutput::Text(text.into()),
                     None => return Err(Error::MismatchedContentType("text").into()),
                 }
             }
-            ("binary", Some(value)) => {
-                match json::value_as_str(value) {
+            ("binary", value) => {
+                match json::value_as_str(&value) {
                     Some(text) => AlgoOutput::Binary(base64::decode(text)?),
                     None => return Err(Error::MismatchedContentType("binary")),
                 }
             }
-            (_, None) => return Err(json::missing_field_error("result")),
             (content_type, _) => return Err(Error::InvalidContentType(content_type.into())),
         };
 
@@ -590,12 +587,11 @@ impl fmt::Display for AlgoResponse {
 }
 
 impl Read for AlgoResponse {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let mut out = buf; // why do I need this binding?
+    fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
         match self.result {
-            AlgoOutput::Text(ref s) => out.write(s.as_bytes()),
-            AlgoOutput::Json(ref s) => out.write(s.to_string().as_bytes()),
-            AlgoOutput::Binary(ref bytes) => out.write(bytes),
+            AlgoOutput::Text(ref s) => buf.write(s.as_bytes()),
+            AlgoOutput::Json(ref s) => buf.write(s.to_string().as_bytes()),
+            AlgoOutput::Binary(ref bytes) => buf.write(bytes),
         }
     }
 }
@@ -671,7 +667,7 @@ impl<'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
     }
 }
 
-// AlgoOutput conversions - could probably combine with fancier implementations
+// AlgoOutput conversions
 impl From<()> for AlgoOutput {
     fn from(_unit: ()) -> Self {
         AlgoOutput::Json(JsonValue!(Null))
@@ -726,7 +722,7 @@ impl<'a, E: Encodable> From<&'a E> for AlgoOutput {
 
 // Add when overlapping specialization is possible
 // impl <S: Serialize> From<S> for AlgoOutput {
-//     fn from(object: S) -> Self {
+//     default fn from(object: S) -> Self {
 //         AlgoOutput::Json(object.to_json())
 //     }
 // }
