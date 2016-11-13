@@ -6,3 +6,4 @@ pub use self::version::*;
 
 mod algorithm;
 mod version;
+mod macros;
