@@ -8,7 +8,7 @@
 //!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566");
-//! let moving_avg = client.algo(("timeseries/SimpleMovingAverage", "0.1"));
+//! let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
@@ -104,7 +104,7 @@ pub enum AlgoOutput {
 
 /// Algorithmia algorithm - intialized from the `Algorithmia` builder
 pub struct Algorithm {
-    pub path: String,
+    algo_uri: AlgoUri,
     options: AlgoOptions,
     client: HttpClient,
 }
@@ -114,8 +114,10 @@ pub struct AlgoOptions {
     opts: HashMap<String, String>,
 }
 
-pub struct AlgoRef {
-    pub path: String,
+/// URI of an Algorithmia algorithm
+#[derive(Clone)]
+pub struct AlgoUri {
+    path: String,
 }
 
 /// Metadata returned from the API
@@ -250,15 +252,10 @@ pub trait EntryPoint: Default {
 
 impl Algorithm {
     #[doc(hidden)]
-    pub fn new(client: HttpClient, algo_ref: AlgoRef) -> Algorithm {
-        let path: String = match algo_ref.path {
-            ref p if p.starts_with("algo://") => p[7..].into(),
-            ref p if p.starts_with('/') => p[1..].into(),
-            p => p,
-        };
+    pub fn new(client: HttpClient, algo_uri: AlgoUri) -> Algorithm {
         Algorithm {
             client: client,
-            path: path,
+            algo_uri: algo_uri,
             options: AlgoOptions::default(),
         }
     }
@@ -269,13 +266,13 @@ impl Algorithm {
             Ok(ref u) => u,
             Err(e) => return Err(e.into()),
         };
-        let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.path);
+        let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.algo_uri.path);
         base_url.join(&path).map_err(Error::from)
     }
 
     /// Get the Algorithmia algo URI for this Algorithm
-    pub fn to_algo_uri(&self) -> String {
-        format!("algo://{}", self.path)
+    pub fn to_algo_uri(&self) -> &AlgoUri {
+        &self.algo_uri
     }
 
     /// Execute an algorithm with
@@ -403,6 +400,29 @@ impl Algorithm {
     }
 }
 
+impl AlgoUri {
+    /// Initialize `AlgoUri` with a typed `Version`
+    ///
+    /// ```
+    /// # use algorithmia::algo::{AlgoUri, Version};
+    /// let uri = AlgoUri::with_version("demo/Hello", Version::Minor(0, 1));
+    /// assert_eq!(uri.path(), "demo/Hello/0.1");
+    /// ```
+    pub fn with_version<V: Into<Version>>(user_algo: &str, version: V) -> AlgoUri {
+        let path = match version.into() {
+            Version::Latest => user_algo.to_owned(),
+            ref ver => format!("{}/{}", user_algo, ver),
+        };
+
+        AlgoUri { path: path }
+    }
+
+
+    /// Returns the algorithm's URI path
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+}
 
 impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
@@ -576,6 +596,13 @@ impl FromStr for AlgoResponse {
     }
 }
 
+impl fmt::Display for AlgoUri {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str(&self.path)
+    }
+}
+
+
 impl fmt::Display for AlgoResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.result {
@@ -596,21 +623,25 @@ impl Read for AlgoResponse {
     }
 }
 
-impl<'a> From<&'a str> for AlgoRef {
+impl<'a> From<&'a str> for AlgoUri {
     fn from(path: &'a str) -> Self {
-        AlgoRef { path: path.into() }
+        let path = match path {
+            p if p.starts_with("algo://") => &p[7..],
+            p if p.starts_with('/') => &p[1..],
+            p => p,
+        };
+        AlgoUri { path: path.to_owned() }
     }
 }
 
-impl<'a, V: Into<Version>> From<(&'a str, V)> for AlgoRef {
-    fn from(path_parts: (&'a str, V)) -> Self {
-        let (algo, version) = path_parts;
-        let path = match version.into() {
-            Version::Latest => algo.to_string(),
-            ref ver => format!("{}/{}", algo, ver),
+impl From<String> for AlgoUri {
+    fn from(path: String) -> Self {
+        let path = match path {
+            ref p if p.starts_with("algo://") => p[7..].to_owned(),
+            ref p if p.starts_with('/') => p[1..].to_owned(),
+            p => p,
         };
-
-        AlgoRef { path: path }
+        AlgoUri { path: path }
     }
 }
 
@@ -773,7 +804,8 @@ mod tests {
     #[test]
     fn test_algo_typesafe_to_url() {
         let mock_client = mock_client();
-        let algorithm = mock_client.algo(("anowell/Pinky", "abcdef123456"));
+        let pinky = AlgoUri::with_version("anowell/Pinky", "abcdef123456");
+        let algorithm = mock_client.algo(pinky);
         assert_eq!(algorithm.to_url().unwrap().path(),
                    "/v1/algo/anowell/Pinky/abcdef123456");
     }
