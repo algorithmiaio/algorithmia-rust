@@ -20,6 +20,7 @@
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 
 #![cfg_attr(feature="with-serde", feature(proc_macro))]
+#![cfg_attr(feature="nightly", feature(specialization))]
 
 #![allow(unknown_lints)]
 

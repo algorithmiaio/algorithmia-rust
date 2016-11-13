@@ -749,11 +749,19 @@ impl<S: Serialize> From<Box<S>> for AlgoOutput {
     }
 }
 
+// Waiting for specialization to stabilize
+#[cfg(all(feature="with-serde", feature="nightly"))]
+impl <S: Serialize> From<S> for AlgoOutput {
+    default fn from(object: S) -> Self {
+        AlgoOutput::Json(object.to_json())
+    }
+}
+
 #[cfg(feature="with-rustc-serialize")]
 impl<'a, E: Encodable> From<&'a E> for AlgoOutput {
     fn from(object: &'a E) -> Self {
         // Not great - but serde is the longer-term story anyway
-        let encoded = json::encode(&object).unwrap();
+        let encoded = json::encode(object).unwrap();
         AlgoOutput::Json(Json::from_str(&encoded).unwrap())
     }
 }
@@ -767,12 +775,15 @@ impl<E: Encodable> From<Box<E>> for AlgoOutput {
     }
 }
 
-// Add when overlapping specialization is possible
-// impl <S: Serialize> From<S> for AlgoOutput {
-//     default fn from(object: S) -> Self {
-//         AlgoOutput::Json(object.to_json())
-//     }
-// }
+// Waiting for specialization to stabilize
+#[cfg(all(feature="with-rustc-serialize", feature="nightly"))]
+impl<E: Encodable> From<E> for AlgoOutput {
+    default fn from(object: E) -> Self {
+        // Not great - but serde is the longer-term story anyway
+        let encoded = json::encode(&object).unwrap();
+        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
+    }
+}
 
 // The conversion that makes it easy to pipe output to another algorithm's input
 impl<'a> From<AlgoOutput> for AlgoInput<'a> {

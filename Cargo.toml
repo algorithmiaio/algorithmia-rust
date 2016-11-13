@@ -35,3 +35,4 @@ rustc_version = "0.1.7"
 default = ["with-serde"]
 with-serde = ["serde", "serde_json", "serde_derive", "chrono/serde"]
 with-rustc-serialize = ["rustc-serialize", "chrono/rustc-serialize"]
+nightly = []
