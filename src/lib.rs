@@ -69,7 +69,7 @@ mod json;
 pub mod prelude {
     pub use ::Algorithmia;
     pub use ::client::ApiAuth;
-    pub use ::algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput};
+    pub use ::algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
     pub use ::data::HasDataPath;
 }
 
