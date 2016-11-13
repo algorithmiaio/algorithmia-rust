@@ -742,9 +742,25 @@ impl<'a, S: Serialize> From<&'a S> for AlgoOutput {
     }
 }
 
+#[cfg(feature="with-serde")]
+impl<S: Serialize> From<Box<S>> for AlgoOutput {
+    fn from(object: Box<S>) -> Self {
+        AlgoOutput::Json(object.to_json())
+    }
+}
+
 #[cfg(feature="with-rustc-serialize")]
 impl<'a, E: Encodable> From<&'a E> for AlgoOutput {
     fn from(object: &'a E) -> Self {
+        // Not great - but serde is the longer-term story anyway
+        let encoded = json::encode(&object).unwrap();
+        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
+    }
+}
+
+#[cfg(feature="with-rustc-serialize")]
+impl<E: Encodable> From<Box<E>> for AlgoOutput {
+    fn from(object: Box<E>) -> Self {
         // Not great - but serde is the longer-term story anyway
         let encoded = json::encode(&object).unwrap();
         AlgoOutput::Json(Json::from_str(&encoded).unwrap())
