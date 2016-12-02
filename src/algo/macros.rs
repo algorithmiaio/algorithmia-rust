@@ -9,14 +9,14 @@
 ///   converting output and error types back.
 ///
 /// The `algo_entrypoint!` macro hides all that boilerplate code behind a single macro invocation.
-///   `algo_entrypoint(input => your_fn)` wires up the boilerplate for calling `your_fn`
-///    according to specified input where these values are accepted:
+///   `algo_entrypoint(type => your_fn)` wires up the boilerplate for calling `your_fn(Type)`:
 ///
-/// - `text`: calls `your_fn(&str)`
-/// - `bytes`: calls `your_fn(&[u8])`
-/// - `JsonValue`: calls `your_fn(&JsonValue)`
-/// - `AlgoInput`: calls `your_fn(AlgoInput)`
-/// - `T`: calls `your_fn(T)` (T must be deserializable)
+/// Use the following types:
+/// - `&str` or `String` if your algorithm accepts text input
+/// - `&[u8]` or `Vec<u8>` if your algorithm accepts binary input
+/// - Any deserializeable type if your algorithm accepts JSON input
+/// - `JsonValue` is you want your algorithm to work directly with the typed JSON input
+/// - `AlgoInput` if you want to work with the full enum of possible input types
 ///
 /// In all cases, the return value of `your_fn` should be `Result<T, E>` where
 ///   `T` impl `Into<AlgoOutput>` which includes `String`, `Vec<u8>`, `JsonValue`, and boxed serializeable types
@@ -31,7 +31,7 @@
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// algo_entrypoint!(text => hello_text);
+/// algo_entrypoint!(&str => hello_text);
 ///
 /// fn hello_text(input: &str) -> Result<String, String> {
 ///     unimplemented!()
@@ -62,7 +62,7 @@
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// algo_entrypoint!(bytes => hello_bytes);
+/// algo_entrypoint!(&[u8] => hello_bytes);
 ///
 /// fn hello_bytes(input: &[u8]) -> Result<Vec<u8>, String> {
 ///     unimplemented!()
@@ -143,7 +143,7 @@
 /// # use algorithmia::prelude::*;
 /// pub struct Algo{ init_id: String }
 ///
-/// algo_entrypoint!(text => Algo::hello_text);
+/// algo_entrypoint!(&str => Algo::hello_text);
 ///
 /// impl Algo {
 ///     fn hello_text(&self, input: &str) -> Result<String, String> {
@@ -166,7 +166,7 @@ macro_rules! algo_entrypoint {
     ($t:ty, $apply:ident, Algo::$method:ident) => {
         impl EntryPoint for Algo {
             fn $apply(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
-                self.$method(input).map(AlgoOutput::from).map_err(|err| err.into())
+                self.$method(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
     };
@@ -174,16 +174,22 @@ macro_rules! algo_entrypoint {
         #[derive(Default)] pub struct Algo;
         impl EntryPoint for Algo {
             fn $apply(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
-                $p(input).map(AlgoOutput::from).map_err(|err| err.into())
+                $p(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
     };
 
     // Implement EntryPoint to call methods on `Algo`
-    (text => Algo::$i:ident) => {
+    (&str => Algo::$i:ident) => {
         algo_entrypoint!(&str, apply_str, Algo::$i);
     };
-    (bytes => Algo::$i:ident) => {
+    (String => Algo::$i:ident) => {
+        algo_entrypoint!(&str, apply_str, Algo::$i);
+    };
+    (&[u8] => Algo::$i:ident) => {
+        algo_entrypoint!(&[u8], apply_bytes, Algo::$i);
+    };
+    (Vec<u8> => Algo::$i:ident) => {
         algo_entrypoint!(&[u8], apply_bytes, Algo::$i);
     };
     (JsonValue => Algo::$i:ident) => {
@@ -202,10 +208,16 @@ macro_rules! algo_entrypoint {
     };
 
     // Implement EntryPoint to call free functions
-    (text => $p:path) => {
+    (&str => $p:path) => {
         algo_entrypoint!(&str, apply_str, $p);
     };
-    (bytes => $p:path) => {
+    (String => $p:path) => {
+        algo_entrypoint!(&str, apply_str, $p);
+    };
+    (&[u8] => $p:path) => {
+        algo_entrypoint!(&[u8], apply_bytes, $p);
+    };
+    (Vec<u8> => $p:path) => {
         algo_entrypoint!(&[u8], apply_bytes, $p);
     };
     (JsonValue => $p:path) => {
