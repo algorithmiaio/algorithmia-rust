@@ -15,8 +15,8 @@
 //! ```
 
 use client::HttpClient;
-use error::{self, Error};
-use data::*;
+use error::{self, ErrorKind, Result, ResultExt};
+use data::{DataItem, DeletedResult, DataDirItem, DataFileItem, HasDataPath, FileAdded, DataFile};
 use super::parse_data_uri;
 use super::header::XDataType;
 use ::json;
@@ -75,7 +75,7 @@ struct FileItem {
 // Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
 #[cfg(feature="with-rustc-serialize")]
 impl Decodable for FileItem {
-    fn decode<D: Decoder>(d: &mut D) -> Result<FileItem, D::Error> {
+    fn decode<D: Decoder>(d: &mut D) -> ::std::result::Result<FileItem, D::Error> {
         use std::error::Error;
         d.read_struct("root", 0, |d| {
             Ok(FileItem {
@@ -163,7 +163,7 @@ impl<'a> DirectoryListing<'a> {
 }
 
 impl<'a> Iterator for DirectoryListing<'a> {
-    type Item = Result<DataItem, Error>;
+    type Item = Result<DataItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
@@ -202,28 +202,28 @@ impl<'a> Iterator for DirectoryListing<'a> {
     }
 }
 
-fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, Error> {
+fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow> {
     let mut url = dir.to_url()?;
     if let Some(ref m) = marker {
         url.query_pairs_mut().append_pair("marker", m);
     }
 
-    let req = dir.client.get(url)?;
-    let mut res = req.send()?;
+    let req = dir.client.get(url);
+    let mut res = req.send().chain_err(|| ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri())))?;
 
     if res.status().is_success() {
         if let Some(data_type) = res.headers().get::<XDataType>() {
             if "directory" != data_type.as_str() {
-                return Err(Error::UnexpectedDataType("directory", data_type.to_string()));
+                return Err(ErrorKind::UnexpectedDataType("directory", data_type.to_string()).into());
             }
         }
     }
 
     let mut res_json = String::new();
-    res.read_to_string(&mut res_json)?;
+    res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
 
     if res.status().is_success() {
-        json::decode_str(&res_json).map_err(|err| err.into())
+        json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
     } else {
         Err(error::decode(&res_json))
     }
@@ -281,32 +281,32 @@ impl DataDir {
     ///   Err(e) => println!("Error created directory: {}", e),
     /// };
     /// ```
-    pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
-        let parent = self.parent().ok_or_else(|| Error::InvalidDataPath(self.path.clone()))?;
+    pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<()> {
+        let parent = self.parent().ok_or_else(|| ErrorKind::InvalidDataPath(self.path.clone()))?;
         let parent_url = parent.to_url()?;
 
         let input_data = FolderItem {
             name: self.basename()
-                .ok_or_else(|| Error::InvalidDataPath(self.path.clone()))?
+                .ok_or_else(|| ErrorKind::InvalidDataPath(self.path.clone()))?
                 .into(),
             acl: Some(acl.into()),
         };
-        let raw_input = json::encode(&input_data)?;
+        let raw_input = json::encode(&input_data).chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
 
         // POST request
         let req = self.client
-            .post(parent_url)?
+            .post(parent_url)
             .header(ContentType(mime!(Application / Json)))
             .body(raw_input);
 
         // Parse response
-        let mut res = req.send()?;
+        let mut res = req.send().chain_err(|| ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri())))?;
 
         if res.status().is_success() {
             Ok(())
         } else {
             let mut res_json = String::new();
-            res.read_to_string(&mut res_json)?;
+            res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri())))?;
             Err(error::decode(&res_json))
         }
     }
@@ -324,22 +324,22 @@ impl DataDir {
     ///   Err(err) => println!("Error deleting directory: {}", err),
     /// };
     /// ```
-    pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
+    pub fn delete(&self, force: bool) -> Result<DirectoryDeleted> {
         // DELETE request
         let mut url = self.to_url()?;
         if force {
             url.query_pairs_mut().append_pair("force", "true");
         }
 
-        let req = self.client.delete(url)?;
+        let req = self.client.delete(url);
 
         // Parse response
-        let mut res = req.send()?;
+        let mut res = req.send().chain_err(|| ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri())))?;
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json)?;
+        res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
 
         if res.status().is_success() {
-            json::decode_str(&res_json).map_err(|err| err.into())
+            json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
         } else {
             Err(error::decode(&res_json))
         }
@@ -359,9 +359,9 @@ impl DataDir {
     ///   Err(err) => println!("Error uploading file: {}", err),
     /// };
     /// ```
-    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<FileAdded, Error> {
+    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<FileAdded> {
         let path_ref = file_path.as_ref();
-        let file = File::open(path_ref)?;
+        let file = File::open(path_ref).chain_err(|| ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display())))?;
 
         // Safe to unwrap: we've already opened the file or returned an error
         let filename = path_ref.file_name().unwrap().to_string_lossy();

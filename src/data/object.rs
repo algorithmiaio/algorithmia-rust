@@ -1,6 +1,5 @@
 use data::*;
 use client::HttpClient;
-use error::*;
 use chrono::{UTC, TimeZone};
 use reqwest::StatusCode;
 use super::{parse_headers, parse_data_uri};
@@ -42,21 +41,20 @@ impl DataObject {
     /// ```
     pub fn get_type(&self) -> Result<DataType> {
         let url = self.to_url()?;
-        let req = self.client.head(url)?;
-        let res = req.send()?;
+        let req = self.client.head(url);
+        let res = req.send().chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
 
         match *res.status() {
             StatusCode::Ok => {
                 let metadata = parse_headers(res.headers())?;
                 Ok(metadata.data_type)
             }
-            StatusCode::NotFound => Err(Error::NotFound(self.to_url().unwrap())),
+            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
-                Err(ApiError {
-                        message: status.to_string(),
-                        stacktrace: None,
-                    }
-                    .into())
+                Err(ErrorKind::Api(ApiError {
+                            message: status.to_string(),
+                            stacktrace: None,
+                }).into())
             }
         }
     }
@@ -76,10 +74,10 @@ impl DataObject {
     pub fn into_type(self) -> Result<DataItem> {
         let metadata = {
             let url = self.to_url()?;
-            let req = self.client.head(url)?;
-            let res = req.send()?;
+            let req = self.client.head(url);
+            let res = req.send().chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
             if *res.status() == StatusCode::NotFound {
-                return Err(Error::NotFound(self.to_url().unwrap()));
+                return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
             }
             parse_headers(res.headers())?
         };

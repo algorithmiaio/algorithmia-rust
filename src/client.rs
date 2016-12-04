@@ -3,7 +3,6 @@
 //! Do not use directly - use the [`Algorithmia`](../struct.Algorithmia.html) struct instead
 use reqwest::{Client, Method, RequestBuilder, Url, IntoUrl};
 use reqwest::header::{Authorization, UserAgent};
-use ::Error;
 
 use url::ParseError;
 use std::sync::Arc;
@@ -20,7 +19,7 @@ pub enum ApiAuth {
 /// Internal `HttpClient` to build requests: wraps `reqwest` client
 #[derive(Clone)]
 pub struct HttpClient {
-    pub base_url: Result<Url, ParseError>,
+    pub base_url: ::std::result::Result<Url, ParseError>,
     api_auth: ApiAuth,
     inner_client: Arc<Client>,
     user_agent: String,
@@ -40,39 +39,39 @@ impl HttpClient {
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn get(&self, url: Url) -> Result<RequestBuilder, Error> {
+    pub fn get(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Get, url)
     }
 
     /// Helper to make Algorithmia GET requests with the API key
-    pub fn head(&self, url: Url) -> Result<RequestBuilder, Error> {
+    pub fn head(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Head, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn post(&self, url: Url) -> Result<RequestBuilder, Error> {
+    pub fn post(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Post, url)
     }
 
     /// Helper to make Algorithmia PUT requests with the API key
-    pub fn put(&self, url: Url) -> Result<RequestBuilder, Error> {
+    pub fn put(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Put, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
-    pub fn delete(&self, url: Url) -> Result<RequestBuilder, Error> {
+    pub fn delete(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::Delete, url)
     }
 
 
-    fn build_request(&self, verb: Method, url: Url) -> Result<RequestBuilder, Error> {
-        let mut req = self.inner_client.request(verb, url);
+    fn build_request(&self, verb: Method, url: Url) -> RequestBuilder {
+        let mut req = self.inner_client.request(verb, url.clone());
 
         req = req.header(UserAgent(self.user_agent.clone()));
         if let ApiAuth::ApiKey(ref api_key) = self.api_auth {
             req = req.header(Authorization(format!("Simple {}", api_key)))
         }
-        Ok(req)
+        req
     }
 }
 

@@ -1,54 +1,51 @@
 //! Error types
-use std::{result, fmt, io, str};
+use std::{fmt, str};
 use std::fmt::Display;
 use ::json;
-use base64;
-use url;
 use reqwest;
 
-
-quick_error! {
-    #[derive(Debug)]
-    pub enum Error {
-
-        Http(err: reqwest::Error) {
-            from()
-            from(e: url::ParseError) -> (reqwest::Error::from(e))
-            cause(err)
-            description(err.description())
-            display("http error: {}", err)
+error_chain! {
+    errors {
+        Http(context: String) {
+            description("http error")
+            display("http error {}", context)
         }
 
-        Json(err: json::JsonError) {
-            from()
-            cause(err)
-            description("json error")
-            display("json error: {}", err)
+        InvalidBaseUrl {
+            description("invalid base url")
         }
 
-        Base64(err: base64::Base64Error) {
-            from()
-            cause(err)
+        InvalidUrlPath(path: String) {
+            description("invalid path")
+            display("invalid url path '{}'", path)
+        }
+
+        InvalidAlgoUri(uri: String) {
+            description("invalid algorithm uri")
+            display("invalid algorithm uri: {}", &uri)
+        }
+
+        DecodeJson(item: &'static str) {
+            description("json decode error")
+            display("failed to decode {} json", item)
+        }
+
+        EncodeJson(item: &'static str) {
+            description("json encode error")
+            display("failed to encode {} as json", item)
+        }
+
+        DecodeBase64(item: &'static str) {
             description("base64 error")
-            display("base64 error: {}", err)
+            display("failed to decode {} as base64", item)
         }
 
-        Io(err: io::Error) {
-            from()
-            cause(err)
+        Io(context: String) {
             description("io error")
-            display("io error: {}", err)
-        }
-
-        Utf8(err: str::Utf8Error) {
-            from()
-            cause(err)
-            description("utf8 error")
-            display("utf8 error: {}", err)
+            display("io error {}", context)
         }
 
         Api(err: ApiError) {
-            from()
             description("api error")
             display("api error: {}", err)
         }
@@ -96,10 +93,10 @@ quick_error! {
             description("unsupported input type")
         }
 
+        #[doc(hidden)]
+        __DontMatchMe {}
     }
 }
-
-pub type Result<T> = result::Result<T, Error>;
 
 
 #[cfg_attr(feature="with-serde", derive(Deserialize))]
@@ -129,8 +126,9 @@ pub struct ApiErrorResponse {
 
 
 pub fn decode(json_str: &str) -> Error {
-    match json::decode_str::<ApiErrorResponse>(json_str) {
-        Ok(err_res) => err_res.error.into(),
-        Err(err) => err,
+    let decoded_error = json::decode_str::<ApiErrorResponse>(json_str);
+    match decoded_error.chain_err(|| ErrorKind::DecodeJson("api error response")) {
+            Ok(err_res) => ErrorKind::Api(err_res.error).into(),
+            Err(err) => err,
     }
 }

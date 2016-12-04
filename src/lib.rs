@@ -21,6 +21,7 @@
 
 #![cfg_attr(feature="with-serde", feature(proc_macro))]
 #![cfg_attr(feature="nightly", feature(specialization))]
+#![recursion_limit = "1024"]
 
 #![allow(unknown_lints)]
 
@@ -32,7 +33,7 @@ extern crate mime;
 #[macro_use]
 extern crate hyper;
 #[macro_use]
-extern crate quick_error;
+extern crate error_chain;
 
 #[cfg(feature="with-serde")]
 extern crate serde;

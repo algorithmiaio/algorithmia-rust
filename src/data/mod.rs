@@ -79,18 +79,17 @@ struct HeaderData {
 
 fn parse_headers(headers: &Headers) -> Result<HeaderData> {
     if let Some(err_header) = headers.get::<XErrorMessage>() {
-        return Err(ApiError {
+        return Err(ErrorKind::Api(ApiError {
                 message: err_header.to_string(),
                 stacktrace: None,
-            }
-            .into());
+        }).into());
     };
 
     let data_type = match headers.get::<XDataType>() {
         Some(dt) if &*dt.to_string() == "directory" => DataType::Dir,
         Some(dt) if &*dt.to_string() == "file" => DataType::File,
-        Some(dt) => return Err(Error::InvalidDataType(dt.to_string())),
-        None => return Err(Error::MissingDataType),
+        Some(dt) => return Err(ErrorKind::InvalidDataType(dt.to_string()).into()),
+        None => return Err(ErrorKind::MissingDataType.into()),
     };
 
     let content_length = headers.get::<ContentLength>().map(|c| c.0);

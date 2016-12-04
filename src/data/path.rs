@@ -1,5 +1,4 @@
 use data::*;
-use error::*;
 use super::header::XErrorMessage;
 
 use client::HttpClient;
@@ -12,13 +11,9 @@ pub trait HasDataPath {
 
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Result<Url> {
-        let client = self.client();
-        let base_url = match client.base_url {
-            Ok(ref u) => u,
-            Err(e) => return Err(e.into()),
-        };
+        let ref base_url = self.client().base_url.as_ref().map_err(|err| err.clone()).chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
-        base_url.join(&path).map_err(Error::from)
+        base_url.join(&path).chain_err(|| ErrorKind::InvalidUrlPath(path))
     }
 
     /// Get the Algorithmia data URI a given Data Object
@@ -89,9 +84,9 @@ pub trait HasDataPath {
     fn exists(&self) -> Result<bool> {
         let url = self.to_url()?;
         let client = self.client();
-        let req = client.head(url)?;
+        let req = client.head(url);
 
-        let res = req.send()?;
+        let res = req.send().chain_err(|| ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri())))?;
         match *res.status() {
             StatusCode::Ok => Ok(true),
             StatusCode::NotFound => Ok(false),
@@ -101,11 +96,10 @@ pub trait HasDataPath {
                     None => format!("{}", status),
                 };
 
-                Err(ApiError {
+                Err(ErrorKind::Api(ApiError {
                         message: msg,
                         stacktrace: None,
-                    }
-                    .into())
+                }).into())
             }
         }
     }

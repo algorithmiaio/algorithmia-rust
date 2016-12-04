@@ -9,18 +9,22 @@
 ///   converting output and error types back.
 ///
 /// The `algo_entrypoint!` macro hides all that boilerplate code behind a single macro invocation.
-///   `algo_entrypoint(type => your_fn)` wires up the boilerplate for calling `your_fn(Type)`:
+///   `algo_entrypoint(type => your_fn)` wires up the boilerplate for calling `your_fn(type)`:
 ///
 /// Use the following types:
+///
 /// - `&str` or `String` if your algorithm accepts text input
 /// - `&[u8]` or `Vec<u8>` if your algorithm accepts binary input
 /// - Any deserializeable type if your algorithm accepts JSON input
 /// - `JsonValue` is you want your algorithm to work directly with the typed JSON input
 /// - `AlgoInput` if you want to work with the full enum of possible input types
 ///
-/// In all cases, the return value of `your_fn` should be `Result<T, E>` where
-///   `T` impl `Into<AlgoOutput>` which includes `String`, `Vec<u8>`, `JsonValue`, and boxed serializeable types
-///   `E` impl `Into<Box<Error>>` which includes `String` and all `Error` types
+/// In all cases, the return value of `your_fn` should be `Result<T, E>` where:
+///
+/// - `T` impl `Into<AlgoOutput>` which includes `String`, `Vec<u8>`, `JsonValue`, and boxed* serializeable types
+/// - `E` impl `Into<Box<Error>>` which includes `String` and all `Error` types
+///
+/// *&ast; support for unboxed serializeable depends on specialization implemented behind the 'nightly' feature.*
 ///
 /// # Examples
 ///

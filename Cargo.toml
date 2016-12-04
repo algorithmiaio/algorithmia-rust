@@ -20,9 +20,10 @@ serde_derive = { version = "0.8", optional = true }
 rustc-serialize = { version = "0.3.19", optional = true }
 base64 = "0.2.1"
 quick-error = "1.1.0"
+error-chain = "0.7.1"
 chrono = { version = "0.2", features = ["serde"] }
 mime = "0.2.2"
-reqwest = "0.1.0"
+reqwest = { git = "https://github.com/seanmonstar/reqwest.git" }
 
 [dependencies.hyper]
 version = "0.9"
