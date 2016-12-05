@@ -161,9 +161,6 @@
 ///     }
 /// }
 /// ```
-
-
-
 #[macro_export]
 macro_rules! algo_entrypoint {
     // Helpers for recursively implementing text/bytes/JsonValue/AlgoInput

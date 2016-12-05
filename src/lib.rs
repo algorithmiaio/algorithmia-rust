@@ -105,7 +105,7 @@ impl<'a, 'c> Algorithmia {
     }
 
     /// Instantiate a new client against alternate API servers
-    pub fn alt_client<A: Into<ApiAuth>, U: IntoUrl>(base_url: U, api_key: A) -> Algorithmia {
+    pub fn client_with_url<A: Into<ApiAuth>, U: IntoUrl>(base_url: U, api_key: A) -> Algorithmia {
         Algorithmia { http_client: HttpClient::new(api_key.into(), base_url) }
     }
 

@@ -1,19 +1,28 @@
 use data::*;
 use super::header::XErrorMessage;
+use ::error::{ErrorKind, Result, ResultExt, ApiError};
 
 use client::HttpClient;
 use reqwest::{Url, StatusCode};
 
+/// Trait used to indicate
 pub trait HasDataPath {
+    #[doc(hidden)]
     fn new(client: HttpClient, path: &str) -> Self;
+    #[doc(hidden)]
     fn path(&self) -> &str;
+    #[doc(hidden)]
     fn client(&self) -> &HttpClient;
 
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Result<Url> {
-        let ref base_url = self.client().base_url.as_ref().map_err(|err| err.clone()).chain_err(|| ErrorKind::InvalidBaseUrl)?;
+        let ref base_url = self.client()
+            .base_url
+            .as_ref()
+            .map_err(|err| err.clone())
+            .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
-        base_url.join(&path).chain_err(|| ErrorKind::InvalidUrlPath(path))
+        base_url.join(&path).chain_err(|| ErrorKind::InvalidDataUri(self.to_data_uri()))
     }
 
     /// Get the Algorithmia data URI a given Data Object
@@ -86,7 +95,11 @@ pub trait HasDataPath {
         let client = self.client();
         let req = client.head(url);
 
-        let res = req.send().chain_err(|| ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri())))?;
+        let res =
+            req.send()
+                .chain_err(|| {
+                    ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
+                })?;
         match *res.status() {
             StatusCode::Ok => Ok(true),
             StatusCode::NotFound => Ok(false),
@@ -99,7 +112,8 @@ pub trait HasDataPath {
                 Err(ErrorKind::Api(ApiError {
                         message: msg,
                         stacktrace: None,
-                }).into())
+                    })
+                    .into())
             }
         }
     }

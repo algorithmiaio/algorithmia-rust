@@ -13,36 +13,23 @@
 
 use chrono::{DateTime, UTC, TimeZone};
 use client::HttpClient;
-use data::{DeletedResult, HasDataPath, DataType};
+use data::{HasDataPath, DataType};
 use std::io::{self, Read};
-use ::{json, Body};
+use ::Body;
 use error::{self, ErrorKind, Result, ResultExt, ApiError};
 use super::{parse_headers, parse_data_uri};
 
 
-/// Response when creating a file via the Data API
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
-pub struct FileAdded {
-    pub result: String,
-}
-
-/// Response when deleting a file from the Data API
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
-pub struct FileDeleted {
-    pub result: DeletedResult,
-}
-
-pub struct DataResponse {
+/// Response and reader when downloading a `DataFile`
+pub struct FileData {
+    /// Size of file in bytes
     pub size: u64,
+    /// Last modified timestamp
     pub last_modified: DateTime<UTC>,
     data: Box<Read>,
 }
 
-impl Read for DataResponse {
+impl Read for FileData {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.data.read(buf)
@@ -56,15 +43,18 @@ pub struct DataFile {
 }
 
 impl HasDataPath for DataFile {
+    #[doc(hidden)]
     fn new(client: HttpClient, path: &str) -> Self {
         DataFile {
             client: client,
             path: parse_data_uri(path).to_string(),
         }
     }
+    #[doc(hidden)]
     fn path(&self) -> &str {
         &self.path
     }
+    #[doc(hidden)]
     fn client(&self) -> &HttpClient {
         &self.client
     }
@@ -86,18 +76,20 @@ impl DataFile {
     /// let file = File::open("/path/to/file.jpg").unwrap();
     /// client.clone().file(".my/my_dir/file.jpg").put(file);
     /// ```
-    pub fn put<B>(&self, body: B) -> Result<FileAdded>
+    pub fn put<B>(&self, body: B) -> Result<()>
         where B: Into<Body>
     {
         let url = self.to_url()?;
         let req = self.client.put(url).body(body);
 
-        let mut res = req.send().chain_err(|| ErrorKind::Http(format!("writing file '{}'", self.to_data_uri())))?;
+        let mut res = req.send()
+            .chain_err(|| ErrorKind::Http(format!("writing file '{}'", self.to_data_uri())))?;
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("writing file '{}'", self.to_data_uri())))?;
+        res.read_to_string(&mut res_json)
+            .chain_err(|| ErrorKind::Io(format!("writing file '{}'", self.to_data_uri())))?;
 
         if res.status().is_success() {
-            json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("file creation response"))
+            Ok(())
         } else {
             Err(error::decode(&res_json))
         }
@@ -124,21 +116,23 @@ impl DataFile {
     ///   Err(err) => println!("Error downloading file: {}", err),
     /// };
     /// ```
-    pub fn get(&self) -> Result<DataResponse> {
+    pub fn get(&self) -> Result<FileData> {
         let url = self.to_url()?;
         let req = self.client.get(url);
-        let res = req.send().chain_err(|| ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri())))?;
+        let res = req.send()
+            .chain_err(|| ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri())))?;
         let metadata = parse_headers(res.headers())?;
 
         if res.status().is_success() {
             match metadata.data_type {
                 DataType::File => (),
                 DataType::Dir => {
-                    return Err(ErrorKind::UnexpectedDataType("file", "directory".to_string()).into());
+                    return Err(ErrorKind::UnexpectedDataType("file", "directory".to_string())
+                        .into());
                 }
             }
 
-            Ok(DataResponse {
+            Ok(FileData {
                 size: metadata.content_length.unwrap_or(0),
                 last_modified: metadata.last_modified
                     .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
@@ -148,7 +142,8 @@ impl DataFile {
             Err(ErrorKind::Api(ApiError {
                     message: res.status().to_string(),
                     stacktrace: None,
-            }).into())
+                })
+                .into())
         }
     }
 
@@ -166,15 +161,17 @@ impl DataFile {
     ///   Err(err) => println!("Error deleting file: {}", err),
     /// };
     /// ```
-    pub fn delete(&self) -> Result<FileDeleted> {
+    pub fn delete(&self) -> Result<()> {
         let url = self.to_url()?;
         let req = self.client.delete(url);
-        let mut res = req.send().chain_err(|| ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri())))?;
+        let mut res = req.send()
+            .chain_err(|| ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri())))?;
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri())))?;
+        res.read_to_string(&mut res_json)
+            .chain_err(|| ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri())))?;
 
         if res.status().is_success() {
-            json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("file deletion response"))
+            Ok(())
         } else {
             Err(error::decode(&res_json))
         }

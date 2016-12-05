@@ -124,18 +124,23 @@ pub struct AlgoUri {
 #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
 #[derive(Debug)]
 pub struct AlgoMetadata {
+    /// Algorithm execution duration
     pub duration: f32,
+    /// Stdout from the algorithm (must enable stdout on request and be the algorithm author)
     pub stdout: Option<String>,
+    /// API alerts (e.g. low balance warning)
     pub alerts: Option<Vec<String>>,
+    /// Describes how the ouput's `result` field should be parsed (`text`, `json`, or `binary`)
     pub content_type: String,
 }
 
 /// Successful API response that wraps the `AlgoOutput` and its Metadata
 pub struct AlgoResponse {
+    /// Any metadata associated with the API response
     pub metadata: AlgoMetadata,
+    /// The algorithm output decoded into an `AlgoOutput` enum
     pub result: AlgoOutput,
 }
-
 
 
 impl Algorithm {
@@ -150,9 +155,13 @@ impl Algorithm {
 
     /// Get the API Endpoint URL for this Algtried orithm
     pub fn to_url(&self) -> Result<Url> {
-        let ref base_url = self.client.base_url.as_ref().map_err(|err| err.clone()).chain_err(|| ErrorKind::InvalidBaseUrl)?;
+        let ref base_url = self.client
+            .base_url
+            .as_ref()
+            .map_err(|err| err.clone())
+            .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.algo_uri.path);
-        base_url.join(&path).chain_err(|| ErrorKind::InvalidAlgoUri(path) )
+        base_url.join(&path).chain_err(|| ErrorKind::InvalidAlgoUri(path))
     }
 
     /// Get the Algorithmia algo URI for this Algorithm
@@ -193,14 +202,15 @@ impl Algorithm {
         let mut res = match input_data.into() {
             AlgoInput::Text(text) => self.pipe_as(&*text, mime!(Text / Plain))?,
             AlgoInput::Json(json) => {
-                let encoded = json::encode(&json).chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
+                let encoded =
+                    json::encode(&json).chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
                 self.pipe_as(&*encoded, mime!(Application / Json))?
             }
             AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, mime!(Application / OctetStream))?,
         };
 
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json).chain_err(|| "failed to read algorithm response" )?;
+        res.read_to_string(&mut res_json).chain_err(|| "failed to read algorithm response")?;
         res_json.parse()
     }
 
@@ -225,7 +235,7 @@ impl Algorithm {
         let mut res = self.pipe_as(json_input, mime!(Application / Json))?;
 
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json).chain_err(|| "failed to read algorithm response" )?;
+        res.read_to_string(&mut res_json).chain_err(|| "failed to read algorithm response")?;
         res_json.parse()
     }
 
@@ -349,19 +359,21 @@ impl<'a> AlgoInput<'a> {
     #[cfg(feature="with-serde")]
     pub fn decode<D: Deserialize>(&self) -> Result<D> {
         let res_json = self.as_json().ok_or(ErrorKind::MismatchedContentType("json"))?;
-        json::decode_value::<D>(res_json.into_owned()).chain_err(|| "failed to decode input to specified type")
+        json::decode_value::<D>(res_json.into_owned())
+            .chain_err(|| "failed to decode input to specified type")
     }
 
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
     #[cfg(feature="with-rustc-serialize")]
     pub fn decode<D: Decodable>(&self) -> Result<D> {
         let res_json = self.as_json().ok_or(ErrorKind::MismatchedContentType("json"))?;
-        json::decode_value::<D>(res_json.into_owned()).chain_err(|| "failed to decode input to specified type")
+        json::decode_value::<D>(res_json.into_owned())
+            .chain_err(|| "failed to decode input to specified type")
     }
 }
 
 impl AlgoResponse {
-    /// If the result is text (or a valid JSON string), returns the associated string
+    /// Return algorithm output as a string (if text or a valid JSON string)
     #[allow(match_same_arms)]
     pub fn into_string(self) -> Option<String> {
         match self.result {
@@ -372,7 +384,7 @@ impl AlgoResponse {
         }
     }
 
-    /// If the result is JSON (or JSON encodable text), returns the associated JSON type
+    /// Read algorithm output as `JsonValue` (if JSON of text)
     pub fn into_json(self) -> Option<JsonValue> {
         match self.result {
             AlgoOutput::Json(json) => Some(json),
@@ -381,7 +393,7 @@ impl AlgoResponse {
         }
     }
 
-    /// If the result is Binary, returns the associated byte slice
+    /// If the algorithm output is Binary, returns the associated byte slice
     pub fn into_bytes(self) -> Option<Vec<u8>> {
         match self.result {
             AlgoOutput::Binary(bytes) => Some(bytes),
@@ -389,18 +401,21 @@ impl AlgoResponse {
         }
     }
 
-    /// If the result is valid JSON, decode it to a particular type
+    /// If the algorithm output is JSON, decode it into a particular type
     #[cfg(feature="serde")]
     pub fn decode<D: Deserialize>(self) -> Result<D> {
         let ct = self.metadata.content_type.clone();
-        let res_json = self.into_json().ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
+        let res_json = self.into_json()
+            .ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
         json::decode_value::<D>(res_json).chain_err(|| ErrorKind::DecodeJson("algorithm response"))
     }
 
+    /// If the algorithm output is JSON, decode it into a particular type
     #[cfg(feature="with-rustc-serialize")]
     pub fn decode<D: Decodable>(self) -> Result<D> {
         let ct = self.metadata.content_type.clone();
-        let res_json = self.into_json().ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
+        let res_json = self.into_json()
+            .ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
         json::decode_value::<D>(res_json).chain_err(|| ErrorKind::DecodeJson("algorithm response"))
     }
 }
@@ -452,9 +467,9 @@ impl FromStr for AlgoResponse {
         let metadata_value = json::take_field(&mut data, "metadata")
             .ok_or_else(|| json::missing_field_error("metadata"))
             .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
-        let result_value = json::take_field(&mut data, "result")
-            .ok_or_else(|| json::missing_field_error("result"))
-            .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
+        let result_value =
+            json::take_field(&mut data, "result").ok_or_else(|| json::missing_field_error("result"))
+                .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
 
         // Construct the AlgoOutput object
         let metadata = json::decode_value::<AlgoMetadata>(metadata_value)
@@ -478,7 +493,9 @@ impl FromStr for AlgoResponse {
                     None => return Err(ErrorKind::MismatchedContentType("binary").into()),
                 }
             }
-            (content_type, _) => return Err(ErrorKind::InvalidContentType(content_type.into()).into()),
+            (content_type, _) => {
+                return Err(ErrorKind::InvalidContentType(content_type.into()).into())
+            }
         };
 
         // Construct the AlgoResponse object
@@ -644,7 +661,7 @@ impl<S: Serialize> From<Box<S>> for AlgoOutput {
 
 // Waiting for specialization to stabilize
 #[cfg(all(feature="with-serde", feature="nightly"))]
-impl <S: Serialize> From<S> for AlgoOutput {
+impl<S: Serialize> From<S> for AlgoOutput {
     default fn from(object: S) -> Self {
         AlgoOutput::Json(object.to_json())
     }

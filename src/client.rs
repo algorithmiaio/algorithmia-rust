@@ -12,7 +12,9 @@ pub use reqwest::Body;
 /// Represent the different ways to auth with the API
 #[derive(Clone)]
 pub enum ApiAuth {
+    /// Algorithmia API key to use for authentication
     ApiKey(String),
+    /// Use unauthenticated request (common for on-platform algorithms)
     None,
 }
 

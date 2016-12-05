@@ -16,7 +16,7 @@
 
 use client::HttpClient;
 use error::{self, ErrorKind, Result, ResultExt};
-use data::{DataItem, DeletedResult, DataDirItem, DataFileItem, HasDataPath, FileAdded, DataFile};
+use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
 use super::header::XDataType;
 use ::json;
@@ -38,22 +38,21 @@ pub struct DataDir {
     client: HttpClient,
 }
 
-
 #[cfg_attr(feature="with-serde", derive(Deserialize))]
 #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
-pub struct DirectoryUpdated {
-    pub acl: Option<DataAcl>,
+struct DeletedResponse {
+    result: DirectoryDeleted,
 }
 
-
-/// Response when deleting a new Directory
+/// Response when deleting a file form the Data API
 #[cfg_attr(feature="with-serde", derive(Deserialize))]
 #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
 #[derive(Debug)]
 pub struct DirectoryDeleted {
-    // Omitting deleted.number and error.number for now
-    pub result: DeletedResult,
+    /// Number of files that were deleted
+    ///
+    /// Note: some backing stores may indicate deletion succeeds for non-existing files
+    pub deleted: u64,
 }
 
 #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
@@ -94,15 +93,17 @@ impl Decodable for FileItem {
     }
 }
 
-/// ACL that indicates permissions for a `DataDirectory`
+/// ACL that indicates permissions for a `DataDir`
 /// See also: [`ReadAcl`](enum.ReadAcl.html) enum to construct a `DataACL`
 #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
 #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
 #[derive(Debug)]
 pub struct DataAcl {
+    /// Read ACL
     pub read: Vec<String>,
 }
 
+/// Read access control values
 pub enum ReadAcl {
     /// Readable only by owner
     Private,
@@ -139,8 +140,9 @@ struct DirectoryShow {
     pub marker: Option<String>,
 }
 
-
+/// Iterator over the listing of a `DataDir`
 pub struct DirectoryListing<'a> {
+    /// ACL indicates permissions for this `DataDir`
     pub acl: Option<DataAcl>,
     dir: &'a DataDir,
     folders: IntoIter<FolderItem>,
@@ -209,18 +211,21 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
     }
 
     let req = dir.client.get(url);
-    let mut res = req.send().chain_err(|| ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri())))?;
+    let mut res = req.send()
+        .chain_err(|| ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri())))?;
 
     if res.status().is_success() {
         if let Some(data_type) = res.headers().get::<XDataType>() {
             if "directory" != data_type.as_str() {
-                return Err(ErrorKind::UnexpectedDataType("directory", data_type.to_string()).into());
+                return Err(ErrorKind::UnexpectedDataType("directory", data_type.to_string())
+                    .into());
             }
         }
     }
 
     let mut res_json = String::new();
-    res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
+    res.read_to_string(&mut res_json)
+        .chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
 
     if res.status().is_success() {
         json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
@@ -230,15 +235,18 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
 }
 
 impl HasDataPath for DataDir {
+    #[doc(hidden)]
     fn new(client: HttpClient, path: &str) -> Self {
         DataDir {
             client: client,
             path: parse_data_uri(path).to_string(),
         }
     }
+    #[doc(hidden)]
     fn path(&self) -> &str {
         &self.path
     }
+    #[doc(hidden)]
     fn client(&self) -> &HttpClient {
         &self.client
     }
@@ -282,12 +290,12 @@ impl DataDir {
     /// };
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<()> {
-        let parent = self.parent().ok_or_else(|| ErrorKind::InvalidDataPath(self.path.clone()))?;
+        let parent = self.parent().ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?;
         let parent_url = parent.to_url()?;
 
         let input_data = FolderItem {
             name: self.basename()
-                .ok_or_else(|| ErrorKind::InvalidDataPath(self.path.clone()))?
+                .ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?
                 .into(),
             acl: Some(acl.into()),
         };
@@ -300,7 +308,8 @@ impl DataDir {
             .body(raw_input);
 
         // Parse response
-        let mut res = req.send().chain_err(|| ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri())))?;
+        let mut res = req.send()
+            .chain_err(|| ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri())))?;
 
         if res.status().is_success() {
             Ok(())
@@ -334,12 +343,16 @@ impl DataDir {
         let req = self.client.delete(url);
 
         // Parse response
-        let mut res = req.send().chain_err(|| ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri())))?;
+        let mut res = req.send()
+            .chain_err(|| ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri())))?;
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
+        res.read_to_string(&mut res_json)
+            .chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
 
         if res.status().is_success() {
-            json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
+            json::decode_str::<DeletedResponse>(&res_json)
+                .map(|res| res.result)
+                .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
         } else {
             Err(error::decode(&res_json))
         }
@@ -350,18 +363,21 @@ impl DataDir {
     ///
     /// # Examples
     /// ```no_run
-    /// # use algorithmia::Algorithmia;
+    /// # use algorithmia::prelude::*;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let my_dir = client.dir(".my/my_dir");
     ///
     /// match my_dir.put_file("/path/to/file") {
-    ///   Ok(response) => println!("Successfully uploaded to: {}", response.result),
+    ///   Ok(_) => println!("Successfully uploaded to: {}", my_dir.to_data_uri()),
     ///   Err(err) => println!("Error uploading file: {}", err),
     /// };
     /// ```
-    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<FileAdded> {
+    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
         let path_ref = file_path.as_ref();
-        let file = File::open(path_ref).chain_err(|| ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display())))?;
+        let file =
+            File::open(path_ref).chain_err(|| {
+                    ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display()))
+                })?;
 
         // Safe to unwrap: we've already opened the file or returned an error
         let filename = path_ref.file_name().unwrap().to_string_lossy();
@@ -369,6 +385,7 @@ impl DataDir {
         data_file.put(file)
     }
 
+    /// Instantiate `DataFile` or `DataDir` as a child of this `DataDir`
     pub fn child<T: HasDataPath>(&self, filename: &str) -> T {
         let new_uri = match self.to_data_uri() {
             ref uri if uri.ends_with('/') => format!("{}{}", uri, filename),

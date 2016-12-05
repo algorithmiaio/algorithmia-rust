@@ -39,7 +39,9 @@ pub enum DataItem {
 
 /// `DataFile` wrapper with metadata
 pub struct DataFileItem {
+    /// Size of file in bytes
     pub size: u64,
+    /// Last modified timestamp
     pub last_modified: DateTime<UTC>,
     file: DataFile,
 }
@@ -63,14 +65,6 @@ impl Deref for DataDirItem {
     }
 }
 
-// Shared by results for deleting both files and directories
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
-pub struct DeletedResult {
-    pub deleted: u64,
-}
-
 struct HeaderData {
     pub data_type: DataType,
     pub content_length: Option<u64>,
@@ -82,7 +76,8 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData> {
         return Err(ErrorKind::Api(ApiError {
                 message: err_header.to_string(),
                 stacktrace: None,
-        }).into());
+            })
+            .into());
     };
 
     let data_type = match headers.get::<XDataType>() {

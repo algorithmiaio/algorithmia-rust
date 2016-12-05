@@ -8,7 +8,6 @@ use serde::Deserialize;
 #[cfg(feature="with-rustc-serialize")]
 use rustc_serialize::Decodable;
 
-
 /// Alternate implementation for `EntryPoint`
 ///   that automatically decodes JSON input to the associate type.
 ///
@@ -28,8 +27,10 @@ use rustc_serialize::Decodable;
 /// }
 /// ```
 pub trait DecodedEntryPoint: Default {
+    /// Specifies the type that the input will be automatically deserialized into
     #[cfg(feature="with-serde")]
     type Input: Deserialize;
+    /// Specifies the type that the input will be automatically decoded into
     #[cfg(feature="with-rustc-serialize")]
     type Input: Decodable;
 
@@ -56,14 +57,19 @@ impl<T> EntryPoint for T
 /// Implementing an algorithm involves overriding at least one of these methods
 pub trait EntryPoint: Default {
     #[allow(unused_variables)]
+    /// Override to handle string input
     fn apply_str(&self, name: &str) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::from(ErrorKind::UnsupportedInput).into())
     }
+
     #[allow(unused_variables)]
+    /// Override to handle JSON input (see also [`DecodedEntryPoint`](trait.DecodedEntryPoint.html))
     fn apply_json(&self, json: &JsonValue) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::from(ErrorKind::UnsupportedInput).into())
     }
+
     #[allow(unused_variables)]
+    /// Override to handle binary input
     fn apply_bytes(&self, bytes: &[u8]) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::from(ErrorKind::UnsupportedInput).into())
     }
@@ -107,7 +113,9 @@ pub trait EntryPoint: Default {
                             Ok(Error(ErrorKind::UnsupportedInput, _)) => {
                                 match input.as_string() {
                                     Some(text) => self.apply_str(text),
-                                    None => Err(Error::from(ErrorKind::UnsupportedInput).into()).into(),
+                                    None => {
+                                        Err(Error::from(ErrorKind::UnsupportedInput).into()).into()
+                                    }
                                 }
                             }
                             Ok(err) => Err(err.into()),

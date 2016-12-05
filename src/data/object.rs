@@ -1,4 +1,5 @@
 use data::*;
+use error::{ApiError, Result, ResultExt, ErrorKind};
 use client::HttpClient;
 use chrono::{UTC, TimeZone};
 use reqwest::StatusCode;
@@ -12,15 +13,18 @@ pub struct DataObject {
 }
 
 impl HasDataPath for DataObject {
+    #[doc(hidden)]
     fn new(client: HttpClient, path: &str) -> Self {
         DataObject {
             client: client,
             path: parse_data_uri(path).to_string(),
         }
     }
+    #[doc(hidden)]
     fn path(&self) -> &str {
         &self.path
     }
+    #[doc(hidden)]
     fn client(&self) -> &HttpClient {
         &self.client
     }
@@ -42,7 +46,8 @@ impl DataObject {
     pub fn get_type(&self) -> Result<DataType> {
         let url = self.to_url()?;
         let req = self.client.head(url);
-        let res = req.send().chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
+        let res = req.send()
+            .chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
 
         match *res.status() {
             StatusCode::Ok => {
@@ -52,9 +57,10 @@ impl DataObject {
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
                 Err(ErrorKind::Api(ApiError {
-                            message: status.to_string(),
-                            stacktrace: None,
-                }).into())
+                        message: status.to_string(),
+                        stacktrace: None,
+                    })
+                    .into())
             }
         }
     }
@@ -75,7 +81,11 @@ impl DataObject {
         let metadata = {
             let url = self.to_url()?;
             let req = self.client.head(url);
-            let res = req.send().chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
+            let res =
+                req.send()
+                    .chain_err(|| {
+                        ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
+                    })?;
             if *res.status() == StatusCode::NotFound {
                 return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
             }
