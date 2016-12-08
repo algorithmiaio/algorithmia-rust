@@ -58,7 +58,7 @@ impl<T> EntryPoint for T
 pub trait EntryPoint: Default {
     #[allow(unused_variables)]
     /// Override to handle string input
-    fn apply_str(&self, name: &str) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply_str(&self, text: &str) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::from(ErrorKind::UnsupportedInput).into())
     }
 

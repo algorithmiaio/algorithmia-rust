@@ -13,10 +13,10 @@
 ///
 /// Use the following types:
 ///
-/// - `&str` or `String` if your algorithm accepts text input
-/// - `&[u8]` or `Vec<u8>` if your algorithm accepts binary input
+/// - `&str` if your algorithm accepts text input
+/// - `&[u8]` if your algorithm accepts binary input
 /// - Any deserializeable type if your algorithm accepts JSON input
-/// - `JsonValue` is you want your algorithm to work directly with the typed JSON input
+/// - `&JsonValue` is you want your algorithm to work directly with the typed JSON input
 /// - `AlgoInput` if you want to work with the full enum of possible input types
 ///
 /// In all cases, the return value of `your_fn` should be `Result<T, E>` where:
@@ -81,7 +81,7 @@
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// algo_entrypoint!(JsonValue => hello_json);
+/// algo_entrypoint!(&JsonValue => hello_json);
 ///
 /// fn hello_json(input: &JsonValue) -> Result<JsonValue, String> {
 ///     unimplemented!()
@@ -167,7 +167,7 @@ macro_rules! algo_entrypoint {
     ($t:ty, $apply:ident, Algo::$method:ident) => {
         impl EntryPoint for Algo {
             fn $apply(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
-                self.$method(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
+                self.$method(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
     };
@@ -175,7 +175,7 @@ macro_rules! algo_entrypoint {
         #[derive(Default)] pub struct Algo;
         impl EntryPoint for Algo {
             fn $apply(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
-                $p(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
+                $p(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
     };
@@ -184,20 +184,14 @@ macro_rules! algo_entrypoint {
     (&str => Algo::$i:ident) => {
         algo_entrypoint!(&str, apply_str, Algo::$i);
     };
-    (String => Algo::$i:ident) => {
-        algo_entrypoint!(&str, apply_str, Algo::$i);
-    };
     (&[u8] => Algo::$i:ident) => {
         algo_entrypoint!(&[u8], apply_bytes, Algo::$i);
     };
-    (Vec<u8> => Algo::$i:ident) => {
-        algo_entrypoint!(&[u8], apply_bytes, Algo::$i);
-    };
-    (JsonValue => Algo::$i:ident) => {
-        algo_entrypoint!(&::algorithmia::algo::JsonValue, apply_json, Algo::$i);
+    (&JsonValue => Algo::$i:ident) => {
+        algo_entrypoint!(&JsonValue, apply_json, Algo::$i);
     };
     (AlgoInput => Algo::$i:ident) => {
-        algo_entrypoint!(::algorithmia::algo::AlgoInput, apply, Algo::$i);
+        algo_entrypoint!(AlgoInput, apply, Algo::$i);
     };
     ($t:ty => Algo::$i:ident) => {
         impl DecodedEntryPoint for Algo {
@@ -212,20 +206,14 @@ macro_rules! algo_entrypoint {
     (&str => $p:path) => {
         algo_entrypoint!(&str, apply_str, $p);
     };
-    (String => $p:path) => {
-        algo_entrypoint!(&str, apply_str, $p);
-    };
     (&[u8] => $p:path) => {
         algo_entrypoint!(&[u8], apply_bytes, $p);
     };
-    (Vec<u8> => $p:path) => {
-        algo_entrypoint!(&[u8], apply_bytes, $p);
-    };
-    (JsonValue => $p:path) => {
-        algo_entrypoint!(&::algorithmia::algo::JsonValue, apply_json, $p);
+    (&JsonValue => $p:path) => {
+        algo_entrypoint!(&JsonValue, apply_json, $p);
     };
     (AlgoInput => $p:path) => {
-        algo_entrypoint!(::algorithmia::algo::AlgoInput, apply, $p);
+        algo_entrypoint!(AlgoInput, apply, $p);
     };
 
     ($t:ty => $p:path) => {
@@ -237,4 +225,43 @@ macro_rules! algo_entrypoint {
             }
         }
     };
+}
+
+// Testing all the variants with unused code
+mod test_str {
+    use prelude::*;
+    algo_entrypoint!(&str => hello_text);
+    fn hello_text(_input: &str) -> Result<String, String> { unimplemented!() }
+}
+
+mod test_bytes {
+    use prelude::*;
+    algo_entrypoint!(&[u8] => hello_bytes);
+    fn hello_bytes(_input: &[u8]) -> Result<Vec<u8>, String> { unimplemented!() }
+}
+
+mod test_json {
+    use prelude::*;
+    algo_entrypoint!(&JsonValue => hello_json);
+    fn hello_json(_input: &JsonValue) -> Result<JsonValue, String> { unimplemented!() }
+}
+
+mod test_enum {
+    use prelude::*;
+    algo_entrypoint!(AlgoInput => hello_enum);
+    fn hello_enum(_input: AlgoInput) -> Result<AlgoOutput, String> { unimplemented!() }
+}
+
+mod test_decode {
+    use prelude::*;
+
+    #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
+    #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+    pub struct Custom {
+        foo: String,
+        bar: Vec<u32>,
+        baz: bool,
+    }
+    algo_entrypoint!(Custom => hello_decoded);
+    fn hello_decoded(_input: Custom) -> Result<Box<Custom>, String> { unimplemented!() }
 }
