@@ -11,12 +11,12 @@ A rust client library for the Algorithmia API.
 ## Getting started
 
 The Algorithmia Rust client is published to [crates.io](https://crates.io/crates/algorithmia).
-Add `algorithmia = "1.3.0"` to the dependencies in your `Cargo.toml` and run `cargo install`.
+Add `algorithmia = "2.0.0"` to the dependencies in your `Cargo.toml` and run `cargo install`.
 
 Instantiate an Algorithmia client using your API key:
 
 ```rust
-use algorithmia::*;
+use algorithmia::Algorithmia;
 
 let client = Algorithmia::client("YOUR_API_KEY");
 ```
@@ -45,8 +45,8 @@ println!("{}", response.as_string().unwrap());
 
 ### JSON input/output
 
-Call an algorithm with JSON input calling `pipe` with a reference to a type that implements `rustc-serialize::Encodable`.
-If the algorithm output is JSON, you can call `decode` to deserialize the resonse into a type that implements `rustc-serialize::Decodable`.
+Call an algorithm with JSON input calling `pipe` with a reference to a type that implements `serde::Serialize`.
+If the algorithm output is JSON, you can call `decode` to deserialize the resonse into a type that implements `serde::Deserialize`.
 
 This includes many primitive types, tuples, `Vec`, and other collection types from the standard library:
 
@@ -57,10 +57,10 @@ let output: Vec<String> = response.decode().unwrap();
 // -> ["transformer", "retransform"] as Vec<String>
 ```
 
-Implementing `Encodable` or `Decodable` for your custom types is generally as easy as adding a `derive` annotation.
+Implementing `Serialize` or `Deserialize` for your custom types is generally as easy as adding a `derive` annotation.
 
 ```rust
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(Deserialize, Serialize)]
 struct MyStruct {
     some_field: String,
     other_field: u32,
@@ -68,15 +68,16 @@ struct MyStruct {
 // now you can call `pipe` with `&MyStruct` or `decode` into `MyStruct`
 ```
 
-Alternatively, you can work with raw JSON:
+With `serde_json`, you can also sue the `json!` macro or implement custom serialization/deserialization.
+See [serde.rs](https://serde.rs/) for more details on using serde.
+
+Alternatively, you can work with raw JSON strings:
 
 ```rust
 let response = algo.pipe_json(r#"["transformer", "terraforms", "retransform"]"#);
 let output = response.as_json().unwrap().to_string();
 // -> "[\"transformer\", \"retransform\"]"
 ```
-
-[Open an issue](https://github.com/algorithmiaio/algorithmia-rust/issues) if you really want `serde-json` support. :-)
 
 ### Binary input/output
 
@@ -106,6 +107,9 @@ match algo.pipe(&[]) {
 // -> error calling demo/Hello: apply() functions do not match input data
 ```
 
+Note: this crate makes use of the `error-chain` crate, so for many error variants,
+there may be additional errors chained to `err.cause()`.
+
 ### Request options
 
 The client exposes options that can configure algorithm requests via a builder pattern.
@@ -113,14 +117,14 @@ This includes support for changing the timeout or indicating that the API should
 
 ```rust
 let mut algo = client.algo("algo://demo/Hello/0.1.1");
-let algo = algo.timeout(10).enable_stdout();
+let algo = algo.timeout(10).stdout(true);
 let response = algo.pipe(input).unwrap();
 if let Some(ref stdout) = response.metadata.stdout {
     println!("{}", stdout);
 }
 ```
 
-Note: `enable_stdout()` is ignored if you do not have access to the algorithm source.
+Note: `stdout(true)` is ignored if you do not have access to the algorithm source.
 
 ## Managing data
 
