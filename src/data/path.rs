@@ -16,10 +16,10 @@ pub trait HasDataPath {
 
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Result<Url> {
-        let ref base_url = self.client()
+        let base_url = self.client()
             .base_url
             .as_ref()
-            .map_err(|err| err.clone())
+            .map_err(|err| *err)
             .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
         base_url.join(&path).chain_err(|| ErrorKind::InvalidDataUri(self.to_data_uri()))

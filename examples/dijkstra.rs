@@ -57,8 +57,8 @@ impl<'a> RouteMap<'a> {
 fn main() {
     let mut args = env::args();
     args.next(); // discard args[0]
-    let start = args.next().unwrap_or("a".to_string());
-    let end = args.next().unwrap_or("c".to_string());
+    let start = args.next().unwrap_or_else(|| "a".to_string());
+    let end = args.next().unwrap_or_else(|| "c".to_string());
 
     let input_map = RouteMap {
         map: hashmap!(

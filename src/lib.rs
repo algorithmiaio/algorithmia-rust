@@ -19,7 +19,6 @@
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
 
-#![cfg_attr(feature="with-serde", feature(proc_macro))]
 #![cfg_attr(feature="nightly", feature(specialization))]
 #![recursion_limit = "1024"]
 
@@ -100,7 +99,7 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client(ApiAuth::None);
     /// ```
     pub fn client<A: Into<ApiAuth>>(api_key: A) -> Algorithmia {
-        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
+        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
         Algorithmia { http_client: HttpClient::new(api_key.into(), &api_address) }
     }
 
@@ -178,7 +177,7 @@ impl Clone for Algorithmia {
 ///   and `ALGORITHMIA_API_KEY` to optionally the API key.
 impl Default for Algorithmia {
     fn default() -> Algorithmia {
-        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or(DEFAULT_API_BASE_URL.into());
+        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
         let api_key =
             std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
         Algorithmia { http_client: HttpClient::new(api_key, &api_address) }

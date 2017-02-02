@@ -154,10 +154,10 @@ impl Algorithm {
 
     /// Get the API Endpoint URL for this Algtried orithm
     pub fn to_url(&self) -> Result<Url> {
-        let ref base_url = self.client
+        let base_url = self.client
             .base_url
             .as_ref()
-            .map_err(|err| err.clone())
+            .map_err(|err| *err)
             .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.algo_uri.path);
         base_url.join(&path).chain_err(|| ErrorKind::InvalidAlgoUri(path))
