@@ -13,20 +13,26 @@ keywords = ["algorithmia", "algorithm", "client"]
 build = "build.rs"
 
 [dependencies]
-url = "1.2"
-serde = { version = "0.8", optional = true }
-serde_json = { version = "0.8", optional = true }
-serde_derive = { version = "0.8", optional = true }
+url = "1.4"
+serde = { version = "0.9", optional = true }
+serde_json = { version = "0.9", optional = true }
+serde_derive = { version = "0.9", optional = true }
 rustc-serialize = { version = "0.3.19", optional = true }
-base64 = "0.2.1"
+base64 = "0.3.0"
 quick-error = "1.1.0"
-error-chain = "0.7.1"
-chrono = { version = "0.2", features = ["serde"] }
+error-chain = "0.8.1"
 mime = "0.2.2"
-reqwest = { git = "https://github.com/seanmonstar/reqwest.git" }
+reqwest = "0.4"
+
+[dependencies.chrono]
+version = "0.2"
+git = "https://github.com/KodrAus/rust-chrono.git"
+branch = "chore/serde-0.9"
+features = ["serde"]
+default-features = false
 
 [dependencies.hyper]
-version = "0.9"
+version = "0.10"
 default-features = false
 
 [build-dependencies]

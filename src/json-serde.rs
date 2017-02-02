@@ -1,6 +1,7 @@
-use serde_json::{self, Value, ErrorCode as JsonErrorCode};
+use serde_json::{self, Value};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use serde::de::Error as SerdeError;
 
 pub use serde_json::Error as JsonError;
 
@@ -36,5 +37,5 @@ pub fn value_as_str(json: &Value) -> Option<&str> {
 }
 
 pub fn missing_field_error(field: &'static str) -> JsonError {
-    JsonError::Syntax(JsonErrorCode::MissingField(field), 0, 0)
+    JsonError::missing_field(field)
 }

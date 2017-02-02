@@ -595,7 +595,7 @@ impl<'a> From<JsonValue> for AlgoInput<'a> {
 #[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
     fn from(object: &'a S) -> Self {
-        AlgoInput::Json(Cow::Owned(object.to_json()))
+        AlgoInput::Json(Cow::Owned(object.to_json().expect("Failed to serialize")))
     }
 }
 
@@ -648,14 +648,14 @@ impl From<JsonValue> for AlgoOutput {
 #[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoOutput {
     fn from(object: &'a S) -> Self {
-        AlgoOutput::Json(object.to_json())
+        AlgoOutput::Json(object.to_json().expect("Failed to serialize"))
     }
 }
 
 #[cfg(feature="with-serde")]
 impl<S: Serialize> From<Box<S>> for AlgoOutput {
     fn from(object: Box<S>) -> Self {
-        AlgoOutput::Json(object.to_json())
+        AlgoOutput::Json(object.to_json().expect("Failed to serialize"))
     }
 }
 
