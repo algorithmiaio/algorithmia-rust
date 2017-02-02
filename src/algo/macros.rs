@@ -97,10 +97,10 @@
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// #[derive(RustcDecodable)]
+/// #[derive(Deserialize)]
 /// pub struct MyInput { corpus: String, msg: String }
 ///
-/// #[derive(RustcEncodable)]
+/// #[derive(Serialize)]
 /// pub struct MyOutput { probabilities: Vec<(String, f32)> }
 ///
 /// algo_entrypoint!(MyInput);
@@ -117,10 +117,10 @@
 /// The previous example expands into:
 ///
 /// ```ignore
-/// #[derive(RustcDecodable)]
+/// #[derive(Deserialize)]
 /// pub struct MyInput { corpus: String, msg: String };
 ///
-/// #[derive(RustcEncodable)]
+/// #[derive(Serialize)]
 /// pub struct MyOutput { probabilities: Vec<(String, f32)> };
 ///
 /// #[derive(Default)]
