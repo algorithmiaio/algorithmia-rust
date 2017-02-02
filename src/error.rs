@@ -26,7 +26,7 @@ error_chain! {
         /// Invalid Data URI
         InvalidDataUri(uri: String) {
             description("invalid data uri")
-            display("invalid url uri '{}'", uri)
+            display("invalid data uri '{}'", uri)
         }
 
         /// Invalid Algorithm URI
