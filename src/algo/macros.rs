@@ -9,7 +9,9 @@
 ///   converting output and error types back.
 ///
 /// The `algo_entrypoint!` macro hides all that boilerplate code behind a single macro invocation.
-///   `algo_entrypoint(type => your_fn)` wires up the boilerplate for calling `your_fn(type)`:
+///   `algo_entrypoint(type => your_fn)` wires up the boilerplate for calling `your_fn(type)`.
+///   Additionally, you can use the macro as `algo_entrypoint(type)` which is equivalent to
+///   `algo_entrypoint!(type => apply)
 ///
 /// Use the following types:
 ///
@@ -35,9 +37,9 @@
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// algo_entrypoint!(&str => hello_text);
+/// algo_entrypoint!(&str);
 ///
-/// fn hello_text(input: &str) -> Result<String, String> {
+/// fn apply(input: &str) -> Result<String, String> {
 ///     unimplemented!()
 /// }
 /// ```
@@ -50,11 +52,11 @@
 ///
 /// impl EntryPoint for Algo {
 ///     fn apply_str(&self, input: &str) -> Result<AlgoOutput, Box<::std::error::Error>> {
-///         hello_text(input).map(AlgoOutput::from).map_err(|err| err.into())
+///         apply(input).map(AlgoOutput::from).map_err(|err| err.into())
 ///     }
 /// }
 ///
-/// fn hello_text(input: &str) -> Result<String, String> {
+/// fn apply(input: &str) -> Result<String, String> {
 ///     unimplemented!()
 /// }
 /// ```
@@ -66,9 +68,9 @@
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// algo_entrypoint!(&[u8] => hello_bytes);
+/// algo_entrypoint!(&[u8]);
 ///
-/// fn hello_bytes(input: &[u8]) -> Result<Vec<u8>, String> {
+/// fn apply(input: &[u8]) -> Result<Vec<u8>, String> {
 ///     unimplemented!()
 /// }
 /// ```
@@ -81,9 +83,9 @@
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// algo_entrypoint!(&JsonValue => hello_json);
+/// algo_entrypoint!(&JsonValue);
 ///
-/// fn hello_json(input: &JsonValue) -> Result<JsonValue, String> {
+/// fn apply(input: &JsonValue) -> Result<JsonValue, String> {
 ///     unimplemented!()
 /// }
 /// ```
@@ -101,9 +103,9 @@
 /// #[derive(RustcEncodable)]
 /// pub struct MyOutput { probabilities: Vec<(String, f32)> }
 ///
-/// algo_entrypoint!(MyInput => hello_custom);
+/// algo_entrypoint!(MyInput);
 ///
-/// fn hello_custom(input: MyInput) -> Result<Box<MyOutput>, String> {
+/// fn apply(input: MyInput) -> Result<Box<MyOutput>, String> {
 ///     unimplemented!()
 /// }
 /// ```
@@ -127,11 +129,11 @@
 /// impl DecodedEntryPoint for Algo {
 ///     type Input (String, String);
 ///     fn apply_decoded(&self, input: MyInput) -> Result<AlgoOutput, Box<::std::error::Error>> {
-///         hello_custom(input).map(AlgoOutput::from).map_err(|err| err.into())
+///         apply(input).map(AlgoOutput::from).map_err(|err| err.into())
 ///     }
 /// }
 ///
-/// fn hello_custom(input: MyInput) -> Result<Box<MyOutput>, String> {
+/// fn apply(input: MyInput) -> Result<Box<MyOutput>, String> {
 ///     unimplemented!()
 /// }
 /// ```
@@ -178,6 +180,22 @@ macro_rules! algo_entrypoint {
                 $p(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
+    };
+    // Implement short-hand variants using free apply function
+    (&str) => {
+        algo_entrypoint!(&str => apply);
+    };
+    (&[u8]) => {
+        algo_entrypoint!(&[u8] => apply);
+    };
+    (&JsonValue) => {
+        algo_entrypoint!(&JsonValue => apply);
+    };
+    (AlgoInput) => {
+        algo_entrypoint!(AlgoInput => apply);
+    };
+    ($t:ty) => {
+        algo_entrypoint!($t => apply);
     };
 
     // Implement EntryPoint to call methods on `Algo`
@@ -264,4 +282,43 @@ mod test_decode {
     }
     algo_entrypoint!(Custom => hello_decoded);
     fn hello_decoded(_input: Custom) -> Result<Box<Custom>, String> { unimplemented!() }
+}
+
+mod test_shorthand_str {
+    use prelude::*;
+    algo_entrypoint!(&str => apply);
+    fn apply(_input: &str) -> Result<String, String> { unimplemented!() }
+}
+
+
+mod test_shorthand_bytes {
+    use prelude::*;
+    algo_entrypoint!(&[u8]);
+    fn apply(_input: &[u8]) -> Result<Vec<u8>, String> { unimplemented!() }
+}
+
+mod test_shorthand_json {
+    use prelude::*;
+    algo_entrypoint!(&JsonValue);
+    fn apply(_input: &JsonValue) -> Result<JsonValue, String> { unimplemented!() }
+}
+
+mod test_shorthand_enum {
+    use prelude::*;
+    algo_entrypoint!(AlgoInput);
+    fn apply(_input: AlgoInput) -> Result<AlgoOutput, String> { unimplemented!() }
+}
+
+mod test_shorthand_decode {
+    use prelude::*;
+
+    #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
+    #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+    pub struct Custom {
+        foo: String,
+        bar: Vec<u32>,
+        baz: bool,
+    }
+    algo_entrypoint!(Custom);
+    fn apply(_input: Custom) -> Result<Box<Custom>, String> { unimplemented!() }
 }
