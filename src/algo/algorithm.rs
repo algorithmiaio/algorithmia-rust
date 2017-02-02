@@ -4,7 +4,6 @@
 //!
 //! ```no_run
 //! use algorithmia::Algorithmia;
-//! use algorithmia::algo::{Algorithm, Version};
 //!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566");
@@ -187,7 +186,6 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::algo::Algorithm;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
@@ -223,7 +221,6 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::algo::Algorithm;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
@@ -275,11 +272,11 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::algo::Algorithm;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// client.algo("codeb34v3r/FindMinMax/0.1")
     ///     .timeout(3)
-    ///     .pipe(vec![2,3,4]);
+    ///     .pipe(vec![2,3,4])
+    ///     .unwrap();
     /// ```
     pub fn timeout(&mut self, timeout: u32) -> &mut Algorithm {
         self.options.timeout(timeout);

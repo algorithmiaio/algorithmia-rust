@@ -35,7 +35,7 @@ impl DataObject {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use algorithmia::data::{DataFile, DataDir, DataType, HasDataPath};
+    /// # use algorithmia::data::{DataType, HasDataPath};
     /// # let client = Algorithmia::client("111112222233333444445555566");
     /// let my_obj = client.data("data://.my/some/path");
     /// match my_obj.get_type().ok().unwrap() {

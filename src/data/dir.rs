@@ -5,13 +5,12 @@
 //! ```no_run
 //! use algorithmia::Algorithmia;
 //! use algorithmia::data::DataAcl;
-//! use std::fs::File;
 //!
 //! let client = Algorithmia::client("111112222233333444445555566");
 //! let my_dir = client.dir(".my/my_dir");
 //!
-//! my_dir.create(DataAcl::default());
-//! my_dir.put_file("/path/to/file");
+//! my_dir.create(DataAcl::default()).unwrap();
+//! my_dir.put_file("/path/to/file").unwrap();
 //! ```
 
 use client::HttpClient;

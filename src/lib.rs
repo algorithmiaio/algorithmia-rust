@@ -4,7 +4,6 @@
 //!
 //! ```no_run
 //! use algorithmia::Algorithmia;
-//! use algorithmia::algo::{Algorithm, Version};
 //!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566");
@@ -18,6 +17,7 @@
 //! ```
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
+#![doc(test(attr(allow(unused_variables), allow(dead_code))))]
 
 #![cfg_attr(feature="with-serde", feature(proc_macro))]
 #![cfg_attr(feature="nightly", feature(specialization))]
@@ -116,7 +116,6 @@ impl<'a, 'c> Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// use algorithmia::algo::Version;
     /// let client = Algorithmia::client("111112222233333444445555566");
     /// let factor = client.algo("anowell/Dijkstra/0.1");
     /// ```

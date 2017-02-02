@@ -19,12 +19,12 @@ fn main() {
     };
 
     let client = Algorithmia::client(&*api_key);
-    match client.clone().dir(&*path).create(ReadAcl::Private) {
+    match client.dir(&*path).create(ReadAcl::Private) {
         Ok(_) => println!("Successfully created collection {}", path),
         Err(e) => println!("Error creating collection: {}", e),
     }
 
-    match client.clone().dir(&*path).delete(true) {
+    match client.dir(&*path).delete(true) {
         Ok(_) => println!("Successfully deleted collection {}", path),
         Err(e) => println!("Error deleting collection: {}", e),
     }

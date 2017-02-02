@@ -8,7 +8,7 @@
 //! let client = Algorithmia::client("111112222233333444445555566");
 //! let my_file = client.file(".my/my_dir/some_filename");
 //!
-//! my_file.put("file_contents");
+//! my_file.put("file_contents").unwrap();
 //! ```
 
 use chrono::{DateTime, UTC, TimeZone};
@@ -66,15 +66,14 @@ impl DataFile {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # use std::io::{self, Read};
     /// # use std::fs::File;
     /// let client = Algorithmia::client("111112222233333444445555566");
     ///
-    /// client.clone().file(".my/my_dir/string.txt").put("file_contents");
-    /// client.clone().file(".my/my_dir/bytes.txt").put("file_contents".as_bytes());
+    /// client.file(".my/my_dir/string.txt").put("file_contents").unwrap();
+    /// client.file(".my/my_dir/bytes.txt").put("file_contents".as_bytes()).unwrap();
     ///
     /// let file = File::open("/path/to/file.jpg").unwrap();
-    /// client.clone().file(".my/my_dir/file.jpg").put(file);
+    /// client.file(".my/my_dir/file.jpg").put(file).unwrap();
     /// ```
     pub fn put<B>(&self, body: B) -> Result<()>
         where B: Into<Body>
