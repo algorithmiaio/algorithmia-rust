@@ -4,13 +4,16 @@ version = "2.0.0-alpha"
 license = "MIT"
 authors = ["Anthony Nowell <anthony@algorithmia.com>"]
 
-description = "Client for calling algorithms hosted on   the Algorithmia marketplace"
+description = "Client for calling algorithms hosted on the Algorithmia marketplace"
 documentation = "http://algorithmiaio.github.io/algorithmia-rust/algorithmia/"
 repository = "https://github.com/algorithmiaio/algorithmia-rust"
 readme = "README.md"
-keywords = ["algorithmia", "algorithm", "client"]
-
+keywords = ["algorithmia", "algorithm", "client", "machine-learning"]
+categories =["algorithms", "web-programming::http-client", "science"]
 build = "build.rs"
+
+[badges]
+travis-ci = { repository = "algorithmiaio/algorithmia-rust" }
 
 [dependencies]
 url = "1.4"
