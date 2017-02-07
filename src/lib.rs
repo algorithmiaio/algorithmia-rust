@@ -68,10 +68,10 @@ mod json;
 
 /// Reexports of the most common types and traits
 pub mod prelude {
-    pub use ::Algorithmia;
-    pub use ::client::ApiAuth;
-    pub use ::algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
-    pub use ::data::HasDataPath;
+    pub use Algorithmia;
+    pub use client::ApiAuth;
+    pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
+    pub use data::HasDataPath;
 }
 
 mod version;
@@ -99,7 +99,8 @@ impl<'a, 'c> Algorithmia {
     /// let client = Algorithmia::client(ApiAuth::None);
     /// ```
     pub fn client<A: Into<ApiAuth>>(api_key: A) -> Algorithmia {
-        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
+        let api_address = std::env::var("ALGORITHMIA_API")
+            .unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
         Algorithmia { http_client: HttpClient::new(api_key.into(), &api_address) }
     }
 
@@ -177,7 +178,8 @@ impl Clone for Algorithmia {
 ///   and `ALGORITHMIA_API_KEY` to optionally the API key.
 impl Default for Algorithmia {
     fn default() -> Algorithmia {
-        let api_address = std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
+        let api_address = std::env::var("ALGORITHMIA_API")
+            .unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
         let api_key =
             std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
         Algorithmia { http_client: HttpClient::new(api_key, &api_address) }
