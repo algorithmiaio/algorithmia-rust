@@ -1,6 +1,6 @@
 use data::*;
 use super::header::XErrorMessage;
-use ::error::{ErrorKind, Result, ResultExt, ApiError};
+use error::{ErrorKind, Result, ResultExt, ApiError};
 
 use client::HttpClient;
 use reqwest::{Url, StatusCode};

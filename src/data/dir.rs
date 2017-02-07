@@ -18,7 +18,7 @@ use error::{self, ErrorKind, Result, ResultExt};
 use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
 use super::header::XDataType;
-use ::json;
+use json;
 
 use std::io::Read;
 use std::fs::File;
@@ -314,7 +314,10 @@ impl DataDir {
             Ok(())
         } else {
             let mut res_json = String::new();
-            res.read_to_string(&mut res_json).chain_err(|| ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri())))?;
+            res.read_to_string(&mut res_json)
+                .chain_err(|| {
+                    ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri()))
+                })?;
             Err(error::decode(&res_json))
         }
     }

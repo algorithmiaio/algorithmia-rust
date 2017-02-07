@@ -1,5 +1,5 @@
 use algo::{AlgoInput, AlgoOutput, JsonValue};
-use ::std::error::Error as StdError;
+use std::error::Error as StdError;
 use error::{Error, ErrorKind};
 use json;
 

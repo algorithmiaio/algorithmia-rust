@@ -10,12 +10,14 @@ fn main() {
     args.next(); // discard args[0]
     let path = match args.next() {
         Some(arg) => arg,
-        None => { panic!("USAGE: datatest <COLLECTION>")}
+        None => panic!("USAGE: datatest <COLLECTION>"),
     };
 
     let api_key = match env::var("ALGORITHMIA_API_KEY") {
         Ok(key) => key,
-        Err(e) => { panic!("Error getting ALGORITHMIA_API_KEY: {}", e); }
+        Err(e) => {
+            panic!("Error getting ALGORITHMIA_API_KEY: {}", e);
+        }
     };
 
     let client = Algorithmia::client(&*api_key);

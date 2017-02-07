@@ -15,7 +15,7 @@ use chrono::{DateTime, UTC, TimeZone};
 use client::HttpClient;
 use data::{HasDataPath, DataType};
 use std::io::{self, Read};
-use ::Body;
+use Body;
 use error::{self, ErrorKind, Result, ResultExt, ApiError};
 use super::{parse_headers, parse_data_uri};
 

@@ -19,7 +19,7 @@
 use client::HttpClient;
 use error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
 use super::version::Version;
-use ::{json, Body};
+use {json, Body};
 
 #[cfg(feature="with-serde")]
 use serde_json::{self, Value};

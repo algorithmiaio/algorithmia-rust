@@ -1,7 +1,7 @@
 //! Error types
 use std::{fmt, str};
 use std::fmt::Display;
-use ::json;
+use json;
 use reqwest;
 
 error_chain! {

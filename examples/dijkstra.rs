@@ -24,14 +24,16 @@ type DijkstraInput<'a> = (SrcDestMap<'a>, &'a str, &'a str);
 type Route = Vec<String>;
 
 struct RouteMap<'a> {
-  map: SrcDestMap<'a>
+    map: SrcDestMap<'a>,
 }
 
 impl<'a> RouteMap<'a> {
     pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgoResponse {
         let api_key = match env::var("ALGORITHMIA_API_KEY") {
             Ok(key) => key,
-            Err(e) => { panic!("Error getting ALGORITHMIA_API_KEY: {}", e); }
+            Err(e) => {
+                panic!("Error getting ALGORITHMIA_API_KEY: {}", e);
+            }
         };
         let client = Algorithmia::client(&*api_key);
         let dijkstra_uri = AlgoUri::with_version("anowell/Dijkstra", Version::Latest);
@@ -42,7 +44,8 @@ impl<'a> RouteMap<'a> {
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);
         // println!("Input: {:?}", input_data);
-        println!("Input:\n{}", serde_json::to_string_pretty(&input_data).unwrap());
+        println!("Input:\n{}",
+                 serde_json::to_string_pretty(&input_data).unwrap());
 
         match dijkstra.pipe(&input_data) {
             Ok(response) => response,
@@ -66,7 +69,7 @@ fn main() {
             "b" => hashmap!("a" => 2, "c" => 2),
             "c" => hashmap!("b" => 2, "d" => 1),
             "d" => hashmap!("a" => 1, "c" => 3)
-        )
+        ),
     };
 
     let output = input_map.get_dijkstra_route(&start, &end);

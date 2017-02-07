@@ -249,25 +249,33 @@ macro_rules! algo_entrypoint {
 mod test_str {
     use prelude::*;
     algo_entrypoint!(&str => hello_text);
-    fn hello_text(_input: &str) -> Result<String, String> { unimplemented!() }
+    fn hello_text(_input: &str) -> Result<String, String> {
+        unimplemented!()
+    }
 }
 
 mod test_bytes {
     use prelude::*;
     algo_entrypoint!(&[u8] => hello_bytes);
-    fn hello_bytes(_input: &[u8]) -> Result<Vec<u8>, String> { unimplemented!() }
+    fn hello_bytes(_input: &[u8]) -> Result<Vec<u8>, String> {
+        unimplemented!()
+    }
 }
 
 mod test_json {
     use prelude::*;
     algo_entrypoint!(&JsonValue => hello_json);
-    fn hello_json(_input: &JsonValue) -> Result<JsonValue, String> { unimplemented!() }
+    fn hello_json(_input: &JsonValue) -> Result<JsonValue, String> {
+        unimplemented!()
+    }
 }
 
 mod test_enum {
     use prelude::*;
     algo_entrypoint!(AlgoInput => hello_enum);
-    fn hello_enum(_input: AlgoInput) -> Result<AlgoOutput, String> { unimplemented!() }
+    fn hello_enum(_input: AlgoInput) -> Result<AlgoOutput, String> {
+        unimplemented!()
+    }
 }
 
 mod test_decode {
@@ -281,32 +289,42 @@ mod test_decode {
         baz: bool,
     }
     algo_entrypoint!(Custom => hello_decoded);
-    fn hello_decoded(_input: Custom) -> Result<Box<Custom>, String> { unimplemented!() }
+    fn hello_decoded(_input: Custom) -> Result<Box<Custom>, String> {
+        unimplemented!()
+    }
 }
 
 mod test_shorthand_str {
     use prelude::*;
     algo_entrypoint!(&str => apply);
-    fn apply(_input: &str) -> Result<String, String> { unimplemented!() }
+    fn apply(_input: &str) -> Result<String, String> {
+        unimplemented!()
+    }
 }
 
 
 mod test_shorthand_bytes {
     use prelude::*;
     algo_entrypoint!(&[u8]);
-    fn apply(_input: &[u8]) -> Result<Vec<u8>, String> { unimplemented!() }
+    fn apply(_input: &[u8]) -> Result<Vec<u8>, String> {
+        unimplemented!()
+    }
 }
 
 mod test_shorthand_json {
     use prelude::*;
     algo_entrypoint!(&JsonValue);
-    fn apply(_input: &JsonValue) -> Result<JsonValue, String> { unimplemented!() }
+    fn apply(_input: &JsonValue) -> Result<JsonValue, String> {
+        unimplemented!()
+    }
 }
 
 mod test_shorthand_enum {
     use prelude::*;
     algo_entrypoint!(AlgoInput);
-    fn apply(_input: AlgoInput) -> Result<AlgoOutput, String> { unimplemented!() }
+    fn apply(_input: AlgoInput) -> Result<AlgoOutput, String> {
+        unimplemented!()
+    }
 }
 
 mod test_shorthand_decode {
@@ -320,5 +338,7 @@ mod test_shorthand_decode {
         baz: bool,
     }
     algo_entrypoint!(Custom);
-    fn apply(_input: Custom) -> Result<Box<Custom>, String> { unimplemented!() }
+    fn apply(_input: Custom) -> Result<Box<Custom>, String> {
+        unimplemented!()
+    }
 }
