@@ -26,13 +26,7 @@ quick-error = "1.1.0"
 error-chain = "0.8.1"
 mime = "0.2.2"
 reqwest = "0.4"
-
-[dependencies.chrono]
-version = "0.2"
-git = "https://github.com/KodrAus/rust-chrono.git"
-branch = "chore/serde-0.9"
-features = ["serde"]
-default-features = false
+chrono = { version = "0.3", features = ["serde"] }
 
 [dependencies.hyper]
 version = "0.10"
