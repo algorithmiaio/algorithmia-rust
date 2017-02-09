@@ -52,8 +52,6 @@ use client::HttpClient;
 pub mod algo;
 pub mod data;
 pub mod error;
-mod client;
-pub use error::Error;
 pub use reqwest::{Url, IntoUrl};
 pub use client::ApiAuth;
 pub use reqwest::Body;
@@ -74,6 +72,7 @@ pub mod prelude {
     pub use data::HasDataPath;
 }
 
+mod client;
 mod version;
 
 static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
