@@ -9,7 +9,7 @@ use serde::Deserialize;
 use rustc_serialize::Decodable;
 
 /// Alternate implementation for `EntryPoint`
-///   that automatically decodes JSON input to the associate type.
+///   that automatically decodes JSON input to the associate type
 ///
 /// # Examples
 /// ```no_run

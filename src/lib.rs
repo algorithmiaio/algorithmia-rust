@@ -67,7 +67,6 @@ mod json;
 /// Reexports of the most common types and traits
 pub mod prelude {
     pub use Algorithmia;
-    pub use client::ApiAuth;
     pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
     pub use data::HasDataPath;
 }

@@ -5,7 +5,7 @@ use error::{ErrorKind, Result, ResultExt, ApiError};
 use client::HttpClient;
 use reqwest::{Url, StatusCode};
 
-/// Trait used to indicate
+/// Trait used for types that can be represented with an Algorithmia Data URI
 pub trait HasDataPath {
     #[doc(hidden)]
     fn new(client: HttpClient, path: &str) -> Self;

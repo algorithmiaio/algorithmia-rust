@@ -52,6 +52,9 @@ pub struct DirectoryDeleted {
     ///
     /// Note: some backing stores may indicate deletion succeeds for non-existing files
     pub deleted: u64,
+    // Placeholder for API stability if additional fields are added later
+    #[cfg_attr(feature="with-serde", serde(skip_deserializing))]
+    _dummy: (),
 }
 
 #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
@@ -100,6 +103,8 @@ impl Decodable for FileItem {
 pub struct DataAcl {
     /// Read ACL
     pub read: Vec<String>,
+    // Placeholder for stability with API additions
+    _dummy: (),
 }
 
 /// Read access control values
@@ -110,6 +115,10 @@ pub enum ReadAcl {
     MyAlgorithms,
     /// Readable by any user
     Public,
+
+    /// Non-exhaustive for API stability if ACL types are added
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
 impl Default for DataAcl {
@@ -121,9 +130,10 @@ impl Default for DataAcl {
 impl From<ReadAcl> for DataAcl {
     fn from(acl: ReadAcl) -> Self {
         match acl {
-            ReadAcl::Private => DataAcl { read: vec![] },
-            ReadAcl::MyAlgorithms => DataAcl { read: vec!["algo://.my/*".into()] },
-            ReadAcl::Public => DataAcl { read: vec!["user://*".into()] },
+            ReadAcl::Private => DataAcl { read: vec![], _dummy: () },
+            ReadAcl::MyAlgorithms => DataAcl { read: vec!["algo://.my/*".into()], _dummy: () },
+            ReadAcl::Public => DataAcl { read: vec!["user://*".into()], _dummy: () },
+            ReadAcl::__Nonexhaustive => DataAcl { read: vec![], _dummy: () },
         }
     }
 }

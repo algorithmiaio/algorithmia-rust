@@ -131,6 +131,9 @@ pub struct AlgoMetadata {
     pub alerts: Option<Vec<String>>,
     /// Describes how the ouput's `result` field should be parsed (`text`, `json`, or `binary`)
     pub content_type: String,
+    // Placeholder for API stability if additional fields are added later
+    #[cfg_attr(feature="with-serde", serde(skip_deserializing))]
+    _dummy: (),
 }
 
 /// Successful API response that wraps the `AlgoOutput` and its Metadata
@@ -139,6 +142,8 @@ pub struct AlgoResponse {
     pub metadata: AlgoMetadata,
     /// The algorithm output decoded into an `AlgoOutput` enum
     pub result: AlgoOutput,
+    // Placeholder for API stability if additional fields are added later
+    _dummy: (),
 }
 
 
@@ -499,6 +504,7 @@ impl FromStr for AlgoResponse {
         Ok(AlgoResponse {
             metadata: metadata,
             result: result,
+            _dummy: (),
         })
     }
 }
@@ -749,15 +755,9 @@ mod tests {
     fn test_json_decoding() {
         let json_output =
             r#"{"metadata":{"duration":0.46739511,"content_type":"json"},"result":[5,41]}"#;
-        let expected_meta = AlgoMetadata {
-            duration: 0.46739511f32,
-            stdout: None,
-            alerts: None,
-            content_type: "json".into(),
-        };
         let expected_result = [5, 41];
         let decoded = json_output.parse::<AlgoResponse>().unwrap();
-        assert_eq!(expected_meta.duration, decoded.metadata.duration);
+        assert_eq!(0.46739511f32, decoded.metadata.duration);
         assert_eq!(expected_result, &*decoded.decode::<Vec<i32>>().unwrap());
     }
 }

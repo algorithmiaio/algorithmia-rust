@@ -142,6 +142,7 @@ pub struct ApiErrorResponse {
 
 
 /// Helper to decode API responses into errors
+#[doc(hidden)]
 pub fn decode(json_str: &str) -> Error {
     let decoded_error = json::decode_str::<ApiErrorResponse>(json_str);
     match decoded_error.chain_err(|| ErrorKind::DecodeJson("api error response")) {
