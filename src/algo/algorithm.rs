@@ -173,19 +173,13 @@ impl Algorithm {
         &self.algo_uri
     }
 
-    /// Execute an algorithm with
+    /// Execute an algorithm with the specified `input_data`.
     ///
-    /// Content-type is determined by the type of input_data
-    ///
-    /// - String => plain/text
-    /// - Encodable => application/json
-    /// - Byte slice => application/octet-stream
-    ///
-    /// To create encodable objects for complex input,
-    ///   use `#[derive(RustcEncodable)]` on your struct
-    ///
-    /// If you want a string to be sent as application/json,
-    ///    use `pipe_json(...)` instead
+    /// `input_data` can be any type which converts into `AlgoInput`,
+    ///   including strings, byte slices, and any serializable type.
+    ///   To create serializable objects for complex input, annotate your type
+    ///   with `#[derive(Serialize)]` (see [serde.rs](http://serde.rs) for details).
+    ///   If you want to send a raw, unparsed JSON string, use the `pipe_json` method instead.
     ///
     /// # Examples
     ///
@@ -217,10 +211,14 @@ impl Algorithm {
         res_json.parse()
     }
 
-    /// Execute an algorithm with explicitly set content-type
+    /// Execute an algorithm with a raw JSON string as input.
     ///
-    ///
-    /// `pipe` provides a JSON encoding/decoding wrapper around this method
+    /// While the `pipe` method is more flexible in accepting different types
+    ///   of input, and inferring the content type when making an API call,
+    ///   `pipe_json` explicitly sends the provided string with
+    ///   `Content-Type: application/json` making no attempt to verify that
+    ///   the input is valid JSON. By contrast, calling `pipe` with a string
+    ///   would send it with `Content-Type: text/plain`.
     ///
     /// # Examples
     ///

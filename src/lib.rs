@@ -9,8 +9,8 @@
 //! let client = Algorithmia::client("111112222233333444445555566");
 //! let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
 //!
-//! // Run the algorithm using a type safe decoding of the output to Vec<int>
-//! //   since this algorithm outputs results as a JSON array of integers
+//! // Run the algorithm using a type safe decoding of the output to Vec<f64>
+//! //   since this algorithm outputs results as a JSON array of numbers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
 //! let result: Vec<f64> = moving_avg.pipe(&input).unwrap().decode().unwrap();
 //! println!("Completed with result: {:?}", result);
