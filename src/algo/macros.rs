@@ -11,7 +11,7 @@
 /// The `algo_entrypoint!` macro hides all that boilerplate code behind a single macro invocation.
 ///   `algo_entrypoint(type => your_fn)` wires up the boilerplate for calling `your_fn(type)`.
 ///   Additionally, you can use the macro as `algo_entrypoint(type)` which is equivalent to
-///   `algo_entrypoint!(type => apply)
+///   `algo_entrypoint!(type => apply)`.
 ///
 /// Use the following types:
 ///
@@ -23,8 +23,8 @@
 ///
 /// In all cases, the return value of `your_fn` should be `Result<T, E>` where:
 ///
-/// - `T` impl `Into<AlgoOutput>` which includes `String`, `Vec<u8>`, `JsonValue`, and boxed* serializeable types
-/// - `E` impl `Into<Box<Error>>` which includes `String` and all `Error` types
+/// - `T` implements `Into<AlgoOutput>` which includes `String`, `Vec<u8>`, `JsonValue`, and boxed* serializeable types
+/// - `E` implements `Into<Box<::std::error::Error>>` which includes `String` and all `Error` types
 ///
 /// *&ast; support for unboxed serializeable depends on specialization implemented behind the 'nightly' feature.*
 ///
