@@ -13,6 +13,7 @@
 
 use chrono::{DateTime, UTC, TimeZone};
 use client::HttpClient;
+use reqwest::StatusCode;
 use data::{HasDataPath, DataType};
 use std::io::{self, Read};
 use Body;
@@ -87,10 +88,10 @@ impl DataFile {
         res.read_to_string(&mut res_json)
             .chain_err(|| ErrorKind::Io(format!("writing file '{}'", self.to_data_uri())))?;
 
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(error::decode(&res_json))
+        match *res.status() {
+            status if status.is_success() => Ok(()),
+            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            _ => Err(error::decode(&res_json)),
         }
     }
 
@@ -120,29 +121,33 @@ impl DataFile {
         let req = self.client.get(url);
         let res = req.send()
             .chain_err(|| ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri())))?;
-        let metadata = parse_headers(res.headers())?;
 
-        if res.status().is_success() {
-            match metadata.data_type {
-                DataType::File => (),
-                DataType::Dir => {
-                    return Err(ErrorKind::UnexpectedDataType("file", "directory".to_string())
-                        .into());
+        match *res.status() {
+            StatusCode::Ok => {
+                let metadata = parse_headers(res.headers())?;
+                match metadata.data_type {
+                    DataType::File => (),
+                    DataType::Dir => {
+                        return Err(ErrorKind::UnexpectedDataType("file", "directory".to_string())
+                            .into());
+                    }
                 }
-            }
 
-            Ok(FileData {
-                size: metadata.content_length.unwrap_or(0),
-                last_modified: metadata.last_modified
-                    .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
-                data: Box::new(res),
-            })
-        } else {
-            Err(ErrorKind::Api(ApiError {
-                    message: res.status().to_string(),
-                    stacktrace: None,
+                Ok(FileData {
+                    size: metadata.content_length.unwrap_or(0),
+                    last_modified: metadata.last_modified
+                        .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
+                    data: Box::new(res),
                 })
-                .into())
+            }
+            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            status => {
+                Err(ErrorKind::Api(ApiError {
+                        message: status.to_string(),
+                        stacktrace: None,
+                    })
+                    .into())
+            }
         }
     }
 
@@ -169,10 +174,10 @@ impl DataFile {
         res.read_to_string(&mut res_json)
             .chain_err(|| ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri())))?;
 
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            Err(error::decode(&res_json))
+        match *res.status() {
+            status if status.is_success() => Ok(()),
+            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            _ => Err(error::decode(&res_json)),
         }
     }
 }

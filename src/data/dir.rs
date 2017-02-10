@@ -27,6 +27,7 @@ use std::vec::IntoIter;
 
 use chrono::{DateTime, UTC};
 use reqwest::header::ContentType;
+use reqwest::StatusCode;
 
 #[cfg(feature="with-rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder};
@@ -236,10 +237,12 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
     res.read_to_string(&mut res_json)
         .chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
 
-    if res.status().is_success() {
-        json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
-    } else {
-        Err(error::decode(&res_json))
+    match *res.status() {
+        status if status.is_success() => {
+            json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
+        }
+        StatusCode::NotFound => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
+        _ => Err(error::decode(&res_json)),
     }
 }
 
@@ -361,12 +364,15 @@ impl DataDir {
         res.read_to_string(&mut res_json)
             .chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
 
-        if res.status().is_success() {
-            json::decode_str::<DeletedResponse>(&res_json)
-                .map(|res| res.result)
-                .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
-        } else {
-            Err(error::decode(&res_json))
+
+        match *res.status() {
+            status if status.is_success() => {
+                json::decode_str::<DeletedResponse>(&res_json)
+                    .map(|res| res.result)
+                    .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
+            }
+            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            _ => Err(error::decode(&res_json)),
         }
     }
 

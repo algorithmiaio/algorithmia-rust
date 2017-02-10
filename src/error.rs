@@ -9,7 +9,7 @@ error_chain! {
         /// Error from the Algorithmia API (may be from the algorithm)
         Api(err: ApiError) {
             description("api error")
-            display("api error - {}", err)
+            display("api error - {}", err.message)
         }
 
         /// Http errors calling the API
