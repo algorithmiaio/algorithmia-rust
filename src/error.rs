@@ -8,31 +8,31 @@ error_chain! {
     errors {
         /// Error from the Algorithmia API (may be from the algorithm)
         Api(err: ApiError) {
-            description("api error")
-            display("api error - {}", err.message)
+            description("API error")
+            display("API error - {}", err.message)
         }
 
         /// Http errors calling the API
         Http(context: String) {
-            description("http error")
-            display("http error {}", context)
+            description("HTTP error")
+            display("HTTP error {}", context)
         }
 
         /// Base URL couldn't be parsed as a `Url`
         InvalidBaseUrl {
-            description("invalid base url")
+            description("invalid base URL")
         }
 
         /// Invalid Data URI
         InvalidDataUri(uri: String) {
-            description("invalid data uri")
-            display("invalid data uri '{}'", uri)
+            description("invalid data URI")
+            display("invalid data URI '{}'", uri)
         }
 
         /// Invalid Algorithm URI
         InvalidAlgoUri(uri: String) {
-            description("invalid algorithm uri")
-            display("invalid algorithm uri: {}", &uri)
+            description("invalid algorithm URI")
+            display("invalid algorithm URI: {}", &uri)
         }
 
         /// Error decoding JSON
@@ -55,8 +55,8 @@ error_chain! {
 
         /// I/O errors reading or writing data
         Io(context: String) {
-            description("io error")
-            display("io error {}", context)
+            description("I/O error")
+            display("I/O error {}", context)
         }
 
         /// API responded with unknown content type
@@ -79,25 +79,25 @@ error_chain! {
 
         /// Encountered 404 Not Found
         NotFound(url: reqwest::Url) {
-            description("404 not found")
-            display("404 not found: {}", url)
+            description("404 Not Found")
+            display("404 Not Found ({})", url)
         }
 
         /// API response was missing a data type header
         MissingDataType {
-            description("api response missing data type")
+            description("API response missing data type")
         }
 
         /// API response included an unknown data type header
         InvalidDataType(t: String) {
             description("invalid data type")
-            display("api responded with invalid data type: '{}'", t)
+            display("API responded with invalid data type: '{}'", t)
         }
 
         /// API response included an unexpected data type header
         UnexpectedDataType(expected: &'static str, actual: String) {
             description("unexpected data type")
-            display("expected api response with data type '{}', received '{}'", expected, actual)
+            display("expected API response with data type '{}', received '{}'", expected, actual)
         }
 
         /// Entrypoint not defined for input type

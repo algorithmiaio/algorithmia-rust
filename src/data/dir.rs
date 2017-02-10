@@ -14,7 +14,7 @@
 //! ```
 
 use client::HttpClient;
-use error::{self, ErrorKind, Result, ResultExt};
+use error::{self, ApiError, Error, ErrorKind, Result, ResultExt};
 use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
 use super::header::XDataType;
@@ -131,10 +131,30 @@ impl Default for DataAcl {
 impl From<ReadAcl> for DataAcl {
     fn from(acl: ReadAcl) -> Self {
         match acl {
-            ReadAcl::Private => DataAcl { read: vec![], _dummy: () },
-            ReadAcl::MyAlgorithms => DataAcl { read: vec!["algo://.my/*".into()], _dummy: () },
-            ReadAcl::Public => DataAcl { read: vec!["user://*".into()], _dummy: () },
-            ReadAcl::__Nonexhaustive => DataAcl { read: vec![], _dummy: () },
+            ReadAcl::Private => {
+                DataAcl {
+                    read: vec![],
+                    _dummy: (),
+                }
+            }
+            ReadAcl::MyAlgorithms => {
+                DataAcl {
+                    read: vec!["algo://.my/*".into()],
+                    _dummy: (),
+                }
+            }
+            ReadAcl::Public => {
+                DataAcl {
+                    read: vec!["user://*".into()],
+                    _dummy: (),
+                }
+            }
+            ReadAcl::__Nonexhaustive => {
+                DataAcl {
+                    read: vec![],
+                    _dummy: (),
+                }
+            }
         }
     }
 }
@@ -242,7 +262,13 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
             json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
         }
         StatusCode::NotFound => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
-        _ => Err(error::decode(&res_json)),
+        status => {
+            let api_error = ApiError {
+                message: status.to_string(),
+                stacktrace: None,
+            };
+            Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
+        }
     }
 }
 
@@ -331,7 +357,12 @@ impl DataDir {
                 .chain_err(|| {
                     ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri()))
                 })?;
-            Err(error::decode(&res_json))
+
+            let api_error = ApiError {
+                message: res.status().to_string(),
+                stacktrace: None,
+            };
+            Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
         }
     }
 
@@ -372,7 +403,13 @@ impl DataDir {
                     .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
             }
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            _ => Err(error::decode(&res_json)),
+            status => {
+                let api_error = ApiError {
+                    message: status.to_string(),
+                    stacktrace: None,
+                };
+                Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
+            }
         }
     }
 
