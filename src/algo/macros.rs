@@ -168,7 +168,7 @@ macro_rules! algo_entrypoint {
     // Helpers for recursively implementing text/bytes/JsonValue/AlgoInput
     ($t:ty, $apply:ident, Algo::$method:ident) => {
         impl EntryPoint for Algo {
-            fn $apply(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
+            fn $apply(&self, input: $t) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                 self.$method(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
@@ -176,7 +176,7 @@ macro_rules! algo_entrypoint {
     ($t:ty, $apply:ident, $p:path) => {
         #[derive(Default)] pub struct Algo;
         impl EntryPoint for Algo {
-            fn $apply(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
+            fn $apply(&self, input: $t) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                 $p(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
@@ -214,7 +214,7 @@ macro_rules! algo_entrypoint {
     ($t:ty => Algo::$i:ident) => {
         impl DecodedEntryPoint for Algo {
             type Input = $t;
-            fn apply_bytes(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
+            fn apply_bytes(&self, input: $t) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                 self.$i(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
@@ -238,7 +238,7 @@ macro_rules! algo_entrypoint {
         #[derive(Default)] pub struct Algo;
         impl DecodedEntryPoint for Algo {
             type Input = $t;
-            fn apply_decoded(&self, input: $t) -> Result<AlgoOutput, Box<::std::error::Error>> {
+            fn apply_decoded(&self, input: $t) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                 $p(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
