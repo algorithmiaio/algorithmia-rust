@@ -7,6 +7,7 @@ authors = ["Anthony Nowell <anthony@algorithmia.com>"]
 description = "Client for calling algorithms and managing data hosted on the Algorithmia marketplace"
 documentation = "http://docs.rs/algorithmia"
 repository = "https://github.com/algorithmiaio/algorithmia-rust"
+homepage = "https://algorithmia.com/developers/clients/rust/"
 readme = "README.md"
 keywords = ["algorithmia", "algorithm", "client", "machine-learning"]
 categories =["algorithms", "web-programming::http-client", "science"]
