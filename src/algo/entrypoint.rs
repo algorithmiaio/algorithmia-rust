@@ -1,6 +1,6 @@
 use algo::{AlgoInput, AlgoOutput, JsonValue};
 use std::error::Error as StdError;
-use error::{Error, ErrorKind};
+use error::{Error, ErrorKind, ResultExt};
 use json;
 
 #[cfg(feature="with-serde")]
@@ -46,7 +46,8 @@ impl<T> EntryPoint for T
     fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input.as_json() {
             Some(obj) => {
-                let decoded = json::decode_value(obj.into_owned())?;
+                let decoded = json::decode_value(obj.into_owned())
+                    .chain_err(|| "failed to parse input as JSON into the expected type")?;
                 self.apply_decoded(decoded)
             }
             None => Err(Error::from(ErrorKind::UnsupportedInput).into()),
