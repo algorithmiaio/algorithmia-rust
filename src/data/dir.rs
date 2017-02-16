@@ -131,7 +131,8 @@ impl Default for DataAcl {
 impl From<ReadAcl> for DataAcl {
     fn from(acl: ReadAcl) -> Self {
         match acl {
-            ReadAcl::Private | ReadAcl::__Nonexhaustive => {
+            ReadAcl::Private |
+            ReadAcl::__Nonexhaustive => {
                 DataAcl {
                     read: vec![],
                     _dummy: (),
