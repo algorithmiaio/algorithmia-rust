@@ -27,7 +27,7 @@ base64 = "0.3.0"
 quick-error = "1.1.0"
 error-chain = "0.8.1"
 mime = "0.2.2"
-reqwest = "0.5"
+reqwest = "0.4"
 chrono = { version = "0.3", features = ["serde"] }
 
 [dependencies.hyper]
