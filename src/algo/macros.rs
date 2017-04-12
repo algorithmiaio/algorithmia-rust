@@ -214,7 +214,7 @@ macro_rules! algo_entrypoint {
     ($t:ty => Algo::$i:ident) => {
         impl DecodedEntryPoint for Algo {
             type Input = $t;
-            fn apply_bytes(&self, input: $t) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
+            fn apply_decoded(&self, input: $t) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                 self.$i(input).map(AlgoOutput::from).map_err(|err| err.into())
             }
         }
@@ -291,6 +291,32 @@ mod test_decode {
     algo_entrypoint!(Custom => hello_decoded);
     fn hello_decoded(_input: Custom) -> Result<Box<Custom>, String> {
         unimplemented!()
+    }
+}
+
+mod test_decode_with_default {
+    use prelude::*;
+
+    pub struct Algo { _magic: u32 }
+
+    #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
+    #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+    pub struct Custom {
+        foo: String,
+        bar: Vec<u32>,
+        baz: bool,
+    }
+    algo_entrypoint!(Custom => Algo::hello_decoded);
+    impl Algo {
+        fn hello_decoded(&self, _input: Custom) -> Result<Box<Custom>, String> {
+            unimplemented!()
+        }
+    }
+
+    impl Default for Algo {
+        fn default() -> Self {
+            Algo { _magic: 42 }
+        }
     }
 }
 
