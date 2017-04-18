@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["Error","Errors that may be returned by this library"]],"fn":[["decode",""]],"struct":[["ApiError",""],["ApiErrorResponse","Struct for decoding Algorithmia API error responses"]]});
