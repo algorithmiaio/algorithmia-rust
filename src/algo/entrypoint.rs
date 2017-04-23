@@ -32,6 +32,7 @@ pub trait DecodedEntryPoint: Default {
     type Input: Deserialize;
     /// Specifies the type that the input will be automatically decoded into
     #[cfg(feature="with-rustc-serialize")]
+    #[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
     type Input: Decodable;
 
     /// This method is an apply variant that will receive the decoded form of JSON input.

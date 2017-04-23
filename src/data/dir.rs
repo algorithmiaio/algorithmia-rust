@@ -76,6 +76,7 @@ struct FileItem {
 
 // Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
 #[cfg(feature="with-rustc-serialize")]
+#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
 impl Decodable for FileItem {
     fn decode<D: Decoder>(d: &mut D) -> ::std::result::Result<FileItem, D::Error> {
         use std::error::Error;
