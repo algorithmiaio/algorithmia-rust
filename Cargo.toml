@@ -19,10 +19,9 @@ appveyor = { repository = "algorithmiaio/algorithmia-rust" }
 
 [dependencies]
 url = "1.4"
-serde = { version = "1.0", optional = true }
-serde_json = { version = "1.0", optional = true }
-serde_derive = { version = "1.0", optional = true }
-rustc-serialize = { version = "0.3.19", optional = true }
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
 base64 = "0.3.0"
 quick-error = "1.1.0"
 error-chain = "0.8.1"
@@ -38,7 +37,5 @@ default-features = false
 rustc_version = "0.1.7"
 
 [features]
-default = ["with-serde"]
-with-serde = ["serde", "serde_json", "serde_derive", "chrono/serde"]
-with-rustc-serialize = ["rustc-serialize", "chrono/rustc-serialize"]
+default = []
 nightly = []

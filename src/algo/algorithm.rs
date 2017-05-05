@@ -21,44 +21,17 @@ use error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
 use super::version::Version;
 use {json, Body};
 
-#[cfg(feature="with-serde")]
 use serde_json::{self, Value};
-#[cfg(feature="with-serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature="with-serde")]
 use serde::de::DeserializeOwned;
-#[cfg(feature="with-rustc-serialize")]
-use rustc_serialize::{self, Decodable, Encodable};
-#[cfg(feature="with-rustc-serialize")]
-use rustc_serialize::json::Json;
 
-#[cfg(feature="with-serde")]
 macro_rules! JsonValue {
     ($i:ident) => { serde_json::Value::$i };
     ($i:ident, $e:expr) => { serde_json::Value::$i($e) };
 }
 
-#[cfg(feature="with-rustc-serialize")]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-macro_rules! JsonValue {
-    ($i:ident) => { rustc_serialize::json::Json::$i };
-    ($i:ident, $e:expr) => { rustc_serialize::json::Json::$i($e) };
-}
-
 /// Feature-specific alias to a JSON enum type
-///
-/// This type alias varies by compilation feature to use the
-///   JSON enum type of the underlying JSON crate.
-#[cfg(feature="with-serde")]
 pub type JsonValue = Value;
-
-/// Feature-specific alias to a JSON enum type
-///
-/// This type alias varies by compilation feature to use the
-///   JSON enum type of the underlying JSON crate.
-#[cfg(feature="with-rustc-serialize")]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-pub type JsonValue = Json;
 
 use base64;
 use reqwest::header::ContentType;
@@ -115,9 +88,7 @@ pub struct AlgoUri {
 }
 
 /// Metadata returned from the API
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct AlgoMetadata {
     /// Algorithm execution duration
     pub duration: f32,
@@ -128,7 +99,7 @@ pub struct AlgoMetadata {
     /// Describes how the ouput's `result` field should be parsed (`text`, `json`, or `binary`)
     pub content_type: String,
     // Placeholder for API stability if additional fields are added later
-    #[cfg_attr(feature="with-serde", serde(skip_deserializing))]
+    #[serde(skip_deserializing)]
     _dummy: (),
 }
 
@@ -352,17 +323,7 @@ impl<'a> AlgoInput<'a> {
 
 
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
-    #[cfg(feature="with-serde")]
     pub fn decode<D: DeserializeOwned>(&self) -> Result<D> {
-        let res_json = self.as_json().ok_or(ErrorKind::MismatchedContentType("json"))?;
-        json::decode_value::<D>(res_json.into_owned())
-            .chain_err(|| "failed to decode input to specified type")
-    }
-
-    /// If the `AlgoInput` is valid JSON, decode it to a particular type
-    #[cfg(feature="with-rustc-serialize")]
-    #[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-    pub fn decode<D: Decodable>(&self) -> Result<D> {
         let res_json = self.as_json().ok_or(ErrorKind::MismatchedContentType("json"))?;
         json::decode_value::<D>(res_json.into_owned())
             .chain_err(|| "failed to decode input to specified type")
@@ -375,8 +336,7 @@ impl AlgoResponse {
     pub fn into_string(self) -> Option<String> {
         match self.result {
             AlgoOutput::Text(text) => Some(text),
-            #[cfg(feature="with-serde")] AlgoOutput::Json(Value::String(text)) => Some(text),
-            #[cfg(feature="with-rustc-serialize")] AlgoOutput::Json(Json::String(text)) => Some(text),
+            AlgoOutput::Json(Value::String(text)) => Some(text),
             _ => None,
         }
     }
@@ -399,20 +359,9 @@ impl AlgoResponse {
     }
 
     /// If the algorithm output is JSON, decode it into a particular type
-    #[cfg(feature="serde")]
     pub fn decode<D>(self) -> Result<D>
         where for<'de> D: Deserialize<'de>
     {
-        let ct = self.metadata.content_type.clone();
-        let res_json = self.into_json()
-            .ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
-        json::decode_value::<D>(res_json).chain_err(|| ErrorKind::DecodeJson("algorithm response"))
-    }
-
-    /// If the algorithm output is JSON, decode it into a particular type
-    #[cfg(feature="with-rustc-serialize")]
-    #[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-    pub fn decode<D: Decodable>(self) -> Result<D> {
         let ct = self.metadata.content_type.clone();
         let res_json = self.into_json()
             .ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
@@ -593,20 +542,9 @@ impl<'a> From<JsonValue> for AlgoInput<'a> {
     }
 }
 
-#[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
     fn from(object: &'a S) -> Self {
         AlgoInput::Json(Cow::Owned(serde_json::to_value(object).expect("Failed to serialize")))
-    }
-}
-
-#[cfg(feature="with-rustc-serialize")]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-impl<'a, E: Encodable> From<&'a E> for AlgoInput<'a> {
-    fn from(object: &'a E) -> Self {
-        // Not great - but serde is the longer-term story anyway
-        let encoded = json::encode(&object).unwrap();
-        AlgoInput::Json(Cow::Owned(Json::from_str(&encoded).unwrap()))
     }
 }
 
@@ -647,14 +585,12 @@ impl From<JsonValue> for AlgoOutput {
     }
 }
 
-#[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoOutput {
     fn from(object: &'a S) -> Self {
         AlgoOutput::Json(serde_json::to_value(object).expect("Failed to serialize"))
     }
 }
 
-#[cfg(feature="with-serde")]
 impl<S: Serialize> From<Box<S>> for AlgoOutput {
     fn from(object: Box<S>) -> Self {
         AlgoOutput::Json(serde_json::to_value(object).expect("Failed to serialize"))
@@ -662,41 +598,10 @@ impl<S: Serialize> From<Box<S>> for AlgoOutput {
 }
 
 // Waiting for specialization to stabilize
-#[cfg(all(feature="with-serde", feature="nightly"))]
+#[cfg(feature="nightly")]
 impl<S: Serialize> From<S> for AlgoOutput {
     default fn from(object: S) -> Self {
         AlgoOutput::Json(serde_json::to_value(object).expect("Failed to serialize"))
-    }
-}
-
-#[cfg(feature="with-rustc-serialize")]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-impl<'a, E: Encodable> From<&'a E> for AlgoOutput {
-    fn from(object: &'a E) -> Self {
-        // Not great - but serde is the longer-term story anyway
-        let encoded = json::encode(object).unwrap();
-        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
-    }
-}
-
-#[cfg(feature="with-rustc-serialize")]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-impl<E: Encodable> From<Box<E>> for AlgoOutput {
-    fn from(object: Box<E>) -> Self {
-        // Not great - but serde is the longer-term story anyway
-        let encoded = json::encode(&object).unwrap();
-        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
-    }
-}
-
-// Waiting for specialization to stabilize
-#[cfg(all(feature="with-rustc-serialize", feature="nightly"))]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-impl<E: Encodable> From<E> for AlgoOutput {
-    default fn from(object: E) -> Self {
-        // Not great - but serde is the longer-term story anyway
-        let encoded = json::encode(&object).unwrap();
-        AlgoOutput::Json(Json::from_str(&encoded).unwrap())
     }
 }
 

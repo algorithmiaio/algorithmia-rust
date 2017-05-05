@@ -112,9 +112,7 @@ error_chain! {
 
 
 /// Error from the Algorithmia API (may be from the algorithm)
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct ApiError {
     /// Error message returned from the Algorithmia API
     pub message: String,
@@ -132,9 +130,7 @@ impl Display for ApiError {
 }
 
 /// Struct for decoding Algorithmia API error responses
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 #[doc(hidden)]
 pub struct ApiErrorResponse {
     pub error: ApiError,

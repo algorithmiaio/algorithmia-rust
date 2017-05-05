@@ -29,79 +29,45 @@ use chrono::{DateTime, UTC};
 use reqwest::header::ContentType;
 use reqwest::StatusCode;
 
-#[cfg(feature="with-rustc-serialize")]
-use rustc_serialize::{Decodable, Decoder};
-
 /// Algorithmia Data Directory
 pub struct DataDir {
     path: String,
     client: HttpClient,
 }
 
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug, Deserialize)]
 struct DeletedResponse {
     result: DirectoryDeleted,
 }
 
 /// Response when deleting a file form the Data API
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct DirectoryDeleted {
     /// Number of files that were deleted
     ///
     /// Note: some backing stores may indicate deletion succeeds for non-existing files
     pub deleted: u64,
     // Placeholder for API stability if additional fields are added later
-    #[cfg_attr(feature="with-serde", serde(skip_deserializing))]
+    #[serde(skip_deserializing)]
     _dummy: (),
 }
 
-#[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 struct FolderItem {
     pub name: String,
     pub acl: Option<DataAcl>,
 }
 
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 struct FileItem {
     pub filename: String,
     pub size: u64,
     pub last_modified: DateTime<UTC>,
 }
 
-// Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
-#[cfg(feature="with-rustc-serialize")]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-impl Decodable for FileItem {
-    fn decode<D: Decoder>(d: &mut D) -> ::std::result::Result<FileItem, D::Error> {
-        use std::error::Error;
-        d.read_struct("root", 0, |d| {
-            Ok(FileItem {
-                filename: d.read_struct_field("filename", 0, |d| Decodable::decode(d))?,
-                size: d.read_struct_field("size", 0, |d| Decodable::decode(d))?,
-                last_modified: {
-                    let json_str: String =
-                        d.read_struct_field("last_modified", 0, |d| Decodable::decode(d))?;
-                    match json_str.parse() {
-                        Ok(datetime) => datetime,
-                        Err(err) => return Err(d.error(err.description())),
-                    }
-                },
-            })
-        })
-    }
-}
-
 /// ACL that indicates permissions for a `DataDir`
 /// See also: [`ReadAcl`](enum.ReadAcl.html) enum to construct a `DataACL`
-#[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct DataAcl {
     /// Read ACL
     pub read: Vec<String>,
@@ -156,9 +122,7 @@ impl From<ReadAcl> for DataAcl {
 }
 
 /// Response when querying an existing Directory
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 struct DirectoryShow {
     pub acl: Option<DataAcl>,
     pub folders: Option<Vec<FolderItem>>,

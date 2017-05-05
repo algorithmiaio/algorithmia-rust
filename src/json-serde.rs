@@ -31,8 +31,7 @@ pub fn encode<S: Serialize>(value: S) -> Result<Vec<u8>, JsonError> {
 
 pub fn value_as_str(json: &Value) -> Option<&str> {
     match *json {
-        #[cfg(feature="with-serde")] Value::String(ref text) => Some(&*text),
-        #[cfg(feature="with-rustc-serialize")] Json::String(ref text) => Some(&*text),
+        Value::String(ref text) => Some(&*text),
         _ => None,
     }
 }

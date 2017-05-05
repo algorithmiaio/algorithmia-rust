@@ -281,8 +281,7 @@ mod test_enum {
 mod test_decode {
     use prelude::*;
 
-    #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
-    #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+    #[derive(Deserialize, Serialize)]
     pub struct Custom {
         foo: String,
         bar: Vec<u32>,
@@ -299,8 +298,7 @@ mod test_decode_with_default {
 
     pub struct Algo { _magic: u32 }
 
-    #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
-    #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+    #[derive(Deserialize, Serialize)]
     pub struct Custom {
         foo: String,
         bar: Vec<u32>,
@@ -356,8 +354,7 @@ mod test_shorthand_enum {
 mod test_shorthand_decode {
     use prelude::*;
 
-    #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
-    #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
+    #[derive(Deserialize, Serialize)]
     pub struct Custom {
         foo: String,
         bar: Vec<u32>,

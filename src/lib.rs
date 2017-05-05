@@ -24,7 +24,6 @@
 
 #![allow(unknown_lints)]
 
-#[cfg(feature="with-serde")]
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -34,12 +33,8 @@ extern crate hyper;
 #[macro_use]
 extern crate error_chain;
 
-#[cfg(feature="with-serde")]
 extern crate serde;
-#[cfg(feature="with-serde")]
 extern crate serde_json;
-#[cfg(feature="with-rustc-serialize")]
-extern crate rustc_serialize;
 extern crate reqwest;
 extern crate base64;
 extern crate chrono;
@@ -56,12 +51,7 @@ pub use reqwest::{Url, IntoUrl};
 pub use client::ApiAuth;
 pub use reqwest::Body;
 
-#[cfg(feature="with-serde")]
 #[path = "json-serde.rs"]
-mod json;
-
-#[cfg(feature="with-rustc-serialize")]
-#[path = "json-rustc-serialize.rs"]
 mod json;
 
 /// Reexports of the most common types and traits
