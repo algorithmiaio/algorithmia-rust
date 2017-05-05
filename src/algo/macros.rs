@@ -18,12 +18,12 @@
 /// - `&str` if your algorithm accepts text input
 /// - `&[u8]` if your algorithm accepts binary input
 /// - Any deserializeable type if your algorithm accepts JSON input
-/// - `&JsonValue` is you want your algorithm to work directly with the typed JSON input
+/// - `&Value` is you want your algorithm to work directly with the typed JSON input
 /// - `AlgoInput` if you want to work with the full enum of possible input types
 ///
 /// In all cases, the return value of `your_fn` should be `Result<T, E>` where:
 ///
-/// - `T` implements `Into<AlgoOutput>` which includes `String`, `Vec<u8>`, `JsonValue`, and boxed* serializeable types
+/// - `T` implements `Into<AlgoOutput>` which includes `String`, `Vec<u8>`, `Value`, and boxed* serializeable types
 /// - `E` implements `Into<Box<::std::error::Error>>` which includes `String` and all `Error` types
 ///
 /// *&ast; support for unboxed serializeable depends on specialization implemented behind the 'nightly' feature.*
@@ -77,15 +77,15 @@
 ///
 /// ## JSON Input/Output
 /// To set the entrypoint to a function that receives and returns JSON data,
-///   you can work directly with the `JsonValue`:
+///   you can work directly with the `Value`:
 ///
 /// ```no_run
 /// # #[macro_use] extern crate algorithmia;
 /// # fn main() {}
 /// # use algorithmia::prelude::*;
-/// algo_entrypoint!(&JsonValue);
+/// algo_entrypoint!(&Value);
 ///
-/// fn apply(input: &JsonValue) -> Result<JsonValue, String> {
+/// fn apply(input: &Value) -> Result<Value, String> {
 ///     unimplemented!()
 /// }
 /// ```
@@ -165,7 +165,7 @@
 /// ```
 #[macro_export]
 macro_rules! algo_entrypoint {
-    // Helpers for recursively implementing text/bytes/JsonValue/AlgoInput
+    // Helpers for recursively implementing text/bytes/Value/AlgoInput
     ($t:ty, $apply:ident, Algo::$method:ident) => {
         impl EntryPoint for Algo {
             fn $apply(&self, input: $t) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
@@ -188,8 +188,8 @@ macro_rules! algo_entrypoint {
     (&[u8]) => {
         algo_entrypoint!(&[u8] => apply);
     };
-    (&JsonValue) => {
-        algo_entrypoint!(&JsonValue => apply);
+    (&Value) => {
+        algo_entrypoint!(&Value => apply);
     };
     (AlgoInput) => {
         algo_entrypoint!(AlgoInput => apply);
@@ -205,8 +205,8 @@ macro_rules! algo_entrypoint {
     (&[u8] => Algo::$i:ident) => {
         algo_entrypoint!(&[u8], apply_bytes, Algo::$i);
     };
-    (&JsonValue => Algo::$i:ident) => {
-        algo_entrypoint!(&JsonValue, apply_json, Algo::$i);
+    (&Value => Algo::$i:ident) => {
+        algo_entrypoint!(&Value, apply_json, Algo::$i);
     };
     (AlgoInput => Algo::$i:ident) => {
         algo_entrypoint!(AlgoInput, apply, Algo::$i);
@@ -227,8 +227,8 @@ macro_rules! algo_entrypoint {
     (&[u8] => $p:path) => {
         algo_entrypoint!(&[u8], apply_bytes, $p);
     };
-    (&JsonValue => $p:path) => {
-        algo_entrypoint!(&JsonValue, apply_json, $p);
+    (&Value => $p:path) => {
+        algo_entrypoint!(&Value, apply_json, $p);
     };
     (AlgoInput => $p:path) => {
         algo_entrypoint!(AlgoInput, apply, $p);
@@ -264,8 +264,8 @@ mod test_bytes {
 
 mod test_json {
     use prelude::*;
-    algo_entrypoint!(&JsonValue => hello_json);
-    fn hello_json(_input: &JsonValue) -> Result<JsonValue, String> {
+    algo_entrypoint!(&Value => hello_json);
+    fn hello_json(_input: &Value) -> Result<Value, String> {
         unimplemented!()
     }
 }
@@ -337,8 +337,8 @@ mod test_shorthand_bytes {
 
 mod test_shorthand_json {
     use prelude::*;
-    algo_entrypoint!(&JsonValue);
-    fn apply(_input: &JsonValue) -> Result<JsonValue, String> {
+    algo_entrypoint!(&Value);
+    fn apply(_input: &Value) -> Result<Value, String> {
         unimplemented!()
     }
 }

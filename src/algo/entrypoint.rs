@@ -1,9 +1,10 @@
-use algo::{AlgoInput, AlgoOutput, JsonValue};
+use algo::{AlgoInput, AlgoOutput};
 use std::error::Error as StdError;
 use error::{Error, ErrorKind, ResultExt};
 use json;
 
 use serde::de::DeserializeOwned;
+use serde_json::Value;
 
 /// Alternate implementation for `EntryPoint`
 ///   that automatically decodes JSON input to the associate type
@@ -58,7 +59,7 @@ pub trait EntryPoint: Default {
 
     #[allow(unused_variables)]
     /// Override to handle JSON input (see also [`DecodedEntryPoint`](trait.DecodedEntryPoint.html))
-    fn apply_json(&self, json: &JsonValue) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply_json(&self, json: &Value) -> Result<AlgoOutput, Box<StdError>> {
         Err(Error::from(ErrorKind::UnsupportedInput).into())
     }
 

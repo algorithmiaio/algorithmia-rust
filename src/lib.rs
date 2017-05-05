@@ -57,7 +57,8 @@ mod json;
 /// Reexports of the most common types and traits
 pub mod prelude {
     pub use Algorithmia;
-    pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
+    pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput};
+    pub use serde_json::Value;
     pub use data::HasDataPath;
 }
 

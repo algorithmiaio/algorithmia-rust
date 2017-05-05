@@ -25,14 +25,6 @@ use serde_json::{self, Value};
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
-macro_rules! JsonValue {
-    ($i:ident) => { serde_json::Value::$i };
-    ($i:ident, $e:expr) => { serde_json::Value::$i($e) };
-}
-
-/// Feature-specific alias to a JSON enum type
-pub type JsonValue = Value;
-
 use base64;
 use reqwest::header::ContentType;
 use reqwest::Url;
@@ -56,7 +48,7 @@ pub enum AlgoInput<'a> {
     /// Data that will be sent with `Content-Type: application/octet-stream`
     Binary(Cow<'a, [u8]>),
     /// Data that will be sent with `Content-Type: application/json`
-    Json(Cow<'a, JsonValue>),
+    Json(Cow<'a, Value>),
 }
 
 /// Types that can store the output of an algorithm
@@ -64,7 +56,7 @@ pub enum AlgoOutput {
     /// Representation of result when `metadata.content_type` is 'text'
     Text(String),
     /// Representation of result when `metadata.content_type` is 'json'
-    Json(JsonValue),
+    Json(Value),
     /// Representation of result when `metadata.content_type` is 'binary'
     Binary(Vec<u8>),
 }
@@ -302,10 +294,10 @@ impl<'a> AlgoInput<'a> {
     ///
     /// For `AlgoInput::Json`, this returns the borrowed `Json`.
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
-    pub fn as_json(&'a self) -> Option<Cow<'a, JsonValue>> {
+    pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
         match *self {
             AlgoInput::Text(ref text) => {
-                Some(Cow::Owned(JsonValue!(String, text.clone().into_owned())))
+                Some(Cow::Owned(Value::String(text.clone().into_owned())))
             }
             AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             AlgoInput::Binary(_) => None,
@@ -341,11 +333,11 @@ impl AlgoResponse {
         }
     }
 
-    /// Read algorithm output as `JsonValue` (if JSON of text)
-    pub fn into_json(self) -> Option<JsonValue> {
+    /// Read algorithm output as JSON `Value` (if JSON of text)
+    pub fn into_json(self) -> Option<Value> {
         match self.result {
             AlgoOutput::Json(json) => Some(json),
-            AlgoOutput::Text(text) => Some(JsonValue!(String, text)),
+            AlgoOutput::Text(text) => Some(Value::String(text)),
             _ => None,
         }
     }
@@ -424,7 +416,7 @@ impl FromStr for AlgoResponse {
         let metadata = json::decode_value::<AlgoMetadata>(metadata_value)
             .chain_err(|| ErrorKind::DecodeJson("algorithm response metadata"))?;
         let result = match (&*metadata.content_type, result_value) {
-            ("void", _) => AlgoOutput::Json(JsonValue!(Null)),
+            ("void", _) => AlgoOutput::Json(Value::Null),
             ("json", value) => AlgoOutput::Json(value),
             ("text", value) => {
                 match json::value_as_str(&value) {
@@ -508,7 +500,7 @@ impl From<String> for AlgoUri {
 // AlgoInput Conversions
 impl<'a> From<()> for AlgoInput<'a> {
     fn from(_unit: ()) -> Self {
-        AlgoInput::Json(Cow::Owned(JsonValue!(Null)))
+        AlgoInput::Json(Cow::Owned(Value::Null))
     }
 }
 
@@ -536,8 +528,8 @@ impl<'a> From<Vec<u8>> for AlgoInput<'a> {
     }
 }
 
-impl<'a> From<JsonValue> for AlgoInput<'a> {
-    fn from(json: JsonValue) -> Self {
+impl<'a> From<Value> for AlgoInput<'a> {
+    fn from(json: Value) -> Self {
         AlgoInput::Json(Cow::Owned(json))
     }
 }
@@ -551,7 +543,7 @@ impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
 // AlgoOutput conversions
 impl From<()> for AlgoOutput {
     fn from(_unit: ()) -> Self {
-        AlgoOutput::Json(JsonValue!(Null))
+        AlgoOutput::Json(Value::Null)
     }
 }
 
@@ -579,8 +571,8 @@ impl From<Vec<u8>> for AlgoOutput {
     }
 }
 
-impl From<JsonValue> for AlgoOutput {
-    fn from(json: JsonValue) -> Self {
+impl From<Value> for AlgoOutput {
+    fn from(json: Value) -> Self {
         AlgoOutput::Json(json)
     }
 }
