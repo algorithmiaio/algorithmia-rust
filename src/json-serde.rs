@@ -1,15 +1,16 @@
 use serde_json::{self, Value};
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use std::str::FromStr;
 use serde::de::Error as SerdeError;
 
 pub use serde_json::Error as JsonError;
 
-pub fn decode_value<D: Deserialize>(json: Value) -> Result<D, JsonError> {
+pub fn decode_value<D: DeserializeOwned>(json: Value) -> Result<D, JsonError> {
     serde_json::from_value(json)
 }
 
-pub fn decode_str<D: Deserialize>(json: &str) -> Result<D, JsonError> {
+pub fn decode_str<'de, D: Deserialize<'de>>(json: &'de str) -> Result<D, JsonError> {
     serde_json::from_str(json)
 }
 

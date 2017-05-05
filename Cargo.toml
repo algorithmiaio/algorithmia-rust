@@ -19,16 +19,16 @@ appveyor = { repository = "algorithmiaio/algorithmia-rust" }
 
 [dependencies]
 url = "1.4"
-serde = { version = "0.9", optional = true }
-serde_json = { version = "0.9", optional = true }
-serde_derive = { version = "0.9", optional = true }
+serde = { version = "1.0", optional = true }
+serde_json = { version = "1.0", optional = true }
+serde_derive = { version = "1.0", optional = true }
 rustc-serialize = { version = "0.3.19", optional = true }
 base64 = "0.3.0"
 quick-error = "1.1.0"
 error-chain = "0.8.1"
 mime = "0.2.2"
 reqwest = "0.5"
-chrono = { version = "=0.3.0", features = ["serde"] }
+chrono = { version = "0.3.0", features = ["serde"] }
 
 [dependencies.hyper]
 version = "0.10"

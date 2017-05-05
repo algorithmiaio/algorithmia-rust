@@ -24,9 +24,9 @@ use {json, Body};
 #[cfg(feature="with-serde")]
 use serde_json::{self, Value};
 #[cfg(feature="with-serde")]
-use serde_json::value::ToJson;
-#[cfg(feature="with-serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature="with-serde")]
+use serde::de::DeserializeOwned;
 #[cfg(feature="with-rustc-serialize")]
 use rustc_serialize::{self, Decodable, Encodable};
 #[cfg(feature="with-rustc-serialize")]
@@ -353,7 +353,7 @@ impl<'a> AlgoInput<'a> {
 
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
     #[cfg(feature="with-serde")]
-    pub fn decode<D: Deserialize>(&self) -> Result<D> {
+    pub fn decode<D: DeserializeOwned>(&self) -> Result<D> {
         let res_json = self.as_json().ok_or(ErrorKind::MismatchedContentType("json"))?;
         json::decode_value::<D>(res_json.into_owned())
             .chain_err(|| "failed to decode input to specified type")
@@ -400,7 +400,9 @@ impl AlgoResponse {
 
     /// If the algorithm output is JSON, decode it into a particular type
     #[cfg(feature="serde")]
-    pub fn decode<D: Deserialize>(self) -> Result<D> {
+    pub fn decode<D>(self) -> Result<D>
+        where for<'de> D: Deserialize<'de>
+    {
         let ct = self.metadata.content_type.clone();
         let res_json = self.into_json()
             .ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
@@ -594,7 +596,7 @@ impl<'a> From<JsonValue> for AlgoInput<'a> {
 #[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
     fn from(object: &'a S) -> Self {
-        AlgoInput::Json(Cow::Owned(object.to_json().expect("Failed to serialize")))
+        AlgoInput::Json(Cow::Owned(serde_json::to_value(object).expect("Failed to serialize")))
     }
 }
 
@@ -648,14 +650,14 @@ impl From<JsonValue> for AlgoOutput {
 #[cfg(feature="with-serde")]
 impl<'a, S: Serialize> From<&'a S> for AlgoOutput {
     fn from(object: &'a S) -> Self {
-        AlgoOutput::Json(object.to_json().expect("Failed to serialize"))
+        AlgoOutput::Json(serde_json::to_value(object).expect("Failed to serialize"))
     }
 }
 
 #[cfg(feature="with-serde")]
 impl<S: Serialize> From<Box<S>> for AlgoOutput {
     fn from(object: Box<S>) -> Self {
-        AlgoOutput::Json(object.to_json().expect("Failed to serialize"))
+        AlgoOutput::Json(serde_json::to_value(object).expect("Failed to serialize"))
     }
 }
 
@@ -663,7 +665,7 @@ impl<S: Serialize> From<Box<S>> for AlgoOutput {
 #[cfg(all(feature="with-serde", feature="nightly"))]
 impl<S: Serialize> From<S> for AlgoOutput {
     default fn from(object: S) -> Self {
-        AlgoOutput::Json(object.to_json())
+        AlgoOutput::Json(serde_json::to_value(object).expect("Failed to serialize"))
     }
 }
 

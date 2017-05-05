@@ -4,7 +4,7 @@ use error::{Error, ErrorKind, ResultExt};
 use json;
 
 #[cfg(feature="with-serde")]
-use serde::Deserialize;
+use serde::de::DeserializeOwned;
 #[cfg(feature="with-rustc-serialize")]
 use rustc_serialize::Decodable;
 
@@ -29,7 +29,7 @@ use rustc_serialize::Decodable;
 pub trait DecodedEntryPoint: Default {
     /// Specifies the type that the input will be automatically deserialized into
     #[cfg(feature="with-serde")]
-    type Input: Deserialize;
+    type Input: DeserializeOwned;
     /// Specifies the type that the input will be automatically decoded into
     #[cfg(feature="with-rustc-serialize")]
     #[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
