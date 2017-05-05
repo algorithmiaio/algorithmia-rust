@@ -51,9 +51,6 @@ pub use reqwest::{Url, IntoUrl};
 pub use client::ApiAuth;
 pub use reqwest::Body;
 
-#[path = "json-serde.rs"]
-mod json;
-
 /// Reexports of the most common types and traits
 pub mod prelude {
     pub use Algorithmia;

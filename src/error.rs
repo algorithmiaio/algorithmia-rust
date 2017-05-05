@@ -1,7 +1,7 @@
 //! Error types
 use std::{fmt, str};
 use std::fmt::Display;
-use json;
+use serde_json;
 use reqwest;
 
 error_chain! {
@@ -140,7 +140,7 @@ pub struct ApiErrorResponse {
 /// Helper to decode API responses into errors
 #[doc(hidden)]
 pub fn decode(json_str: &str) -> Error {
-    let decoded_error = json::decode_str::<ApiErrorResponse>(json_str);
+    let decoded_error = serde_json::from_str::<ApiErrorResponse>(json_str);
     match decoded_error.chain_err(|| ErrorKind::DecodeJson("api error response")) {
         Ok(err_res) => ErrorKind::Api(err_res.error).into(),
         Err(err) => err,

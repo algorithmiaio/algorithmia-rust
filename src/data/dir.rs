@@ -18,7 +18,7 @@ use error::{self, ApiError, Error, ErrorKind, Result, ResultExt};
 use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
 use super::header::XDataType;
-use json;
+use serde_json;
 
 use std::io::Read;
 use std::fs::File;
@@ -219,7 +219,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
 
     match *res.status() {
         status if status.is_success() => {
-            json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
+            serde_json::from_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
         }
         StatusCode::NotFound => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
         status => {
@@ -297,7 +297,7 @@ impl DataDir {
                 .into(),
             acl: Some(acl.into()),
         };
-        let raw_input = json::encode(&input_data).chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
+        let raw_input = serde_json::to_vec(&input_data).chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
 
         // POST request
         let req = self.client
@@ -358,7 +358,7 @@ impl DataDir {
 
         match *res.status() {
             status if status.is_success() => {
-                json::decode_str::<DeletedResponse>(&res_json)
+                serde_json::from_str::<DeletedResponse>(&res_json)
                     .map(|res| res.result)
                     .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
             }

@@ -19,11 +19,12 @@
 use client::HttpClient;
 use error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
 use super::version::Version;
-use {json, Body};
+use Body;
 
 use serde_json::{self, Value};
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::de::Error as SerdeError;
 
 use base64;
 use reqwest::header::ContentType;
@@ -159,7 +160,7 @@ impl Algorithm {
             AlgoInput::Text(text) => self.pipe_as(&*text, mime!(Text / Plain))?,
             AlgoInput::Json(json) => {
                 let encoded =
-                    json::encode(&json).chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
+                    serde_json::to_vec(&json).chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
                 self.pipe_as(&*encoded, mime!(Application / Json))?
             }
             AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, mime!(Application / OctetStream))?,
@@ -284,8 +285,8 @@ impl<'a> AlgoInput<'a> {
     pub fn as_string(&self) -> Option<&str> {
         match *self {
             AlgoInput::Text(ref text) => Some(&*text),
-            AlgoInput::Json(Cow::Borrowed(json)) => json::value_as_str(json),
-            AlgoInput::Json(Cow::Owned(ref json)) => json::value_as_str(json),
+            AlgoInput::Json(Cow::Borrowed(json)) => json.as_str(),
+            AlgoInput::Json(Cow::Owned(ref json)) => json.as_str(),
             _ => None,
         }
     }
@@ -293,7 +294,7 @@ impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is Json (or JSON encodable text), returns the associated JSON string
     ///
     /// For `AlgoInput::Json`, this returns the borrowed `Json`.
-    ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Json::String`.
+    ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Value::String`.
     pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
         match *self {
             AlgoInput::Text(ref text) => {
@@ -317,7 +318,7 @@ impl<'a> AlgoInput<'a> {
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
     pub fn decode<D: DeserializeOwned>(&self) -> Result<D> {
         let res_json = self.as_json().ok_or(ErrorKind::MismatchedContentType("json"))?;
-        json::decode_value::<D>(res_json.into_owned())
+        serde_json::from_value(res_json.into_owned())
             .chain_err(|| "failed to decode input to specified type")
     }
 }
@@ -357,7 +358,7 @@ impl AlgoResponse {
         let ct = self.metadata.content_type.clone();
         let res_json = self.into_json()
             .ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
-        json::decode_value::<D>(res_json).chain_err(|| ErrorKind::DecodeJson("algorithm response"))
+        serde_json::from_value(res_json).chain_err(|| ErrorKind::DecodeJson("algorithm response"))
     }
 }
 
@@ -398,34 +399,36 @@ impl FromStr for AlgoResponse {
     type Err = Error;
     fn from_str(json_str: &str) -> ::std::result::Result<Self, Self::Err> {
         // Early return if the response decodes into ApiErrorResponse
-        if let Ok(err_res) = json::decode_str::<ApiErrorResponse>(json_str) {
+        if let Ok(err_res) = serde_json::from_str::<ApiErrorResponse>(json_str) {
             return Err(ErrorKind::Api(err_res.error).into());
         }
 
         // Parse into Json object
-        let mut data = json::value_from_str(json_str)
+        let mut data = Value::from_str(json_str)
             .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
-        let metadata_value = json::take_field(&mut data, "metadata")
-            .ok_or_else(|| json::missing_field_error("metadata"))
+        let metadata_value = data.as_object_mut()
+            .and_then(|ref mut o| o.remove("metadata"))
+            .ok_or_else(|| serde_json::Error::missing_field("metadata"))
             .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
-        let result_value =
-            json::take_field(&mut data, "result").ok_or_else(|| json::missing_field_error("result"))
-                .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
+        let result_value = data.as_object_mut()
+            .and_then(|ref mut o| o.remove("result"))
+            .ok_or_else(|| serde_json::Error::missing_field("result"))
+            .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
 
         // Construct the AlgoOutput object
-        let metadata = json::decode_value::<AlgoMetadata>(metadata_value)
+        let metadata = serde_json::from_value::<AlgoMetadata>(metadata_value)
             .chain_err(|| ErrorKind::DecodeJson("algorithm response metadata"))?;
         let result = match (&*metadata.content_type, result_value) {
             ("void", _) => AlgoOutput::Json(Value::Null),
             ("json", value) => AlgoOutput::Json(value),
             ("text", value) => {
-                match json::value_as_str(&value) {
+                match value.as_str() {
                     Some(text) => AlgoOutput::Text(text.into()),
                     None => return Err(ErrorKind::MismatchedContentType("text").into()),
                 }
             }
             ("binary", value) => {
-                match json::value_as_str(&value) {
+                match value.as_str() {
                     Some(text) => {
                         let binary = base64::decode(text)
                             .chain_err(|| ErrorKind::DecodeBase64("algorithm response"))?;
