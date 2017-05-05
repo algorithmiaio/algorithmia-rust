@@ -260,7 +260,7 @@ impl AlgoUri {
     ///
     /// ```
     /// # use algorithmia::algo::{AlgoUri, Version};
-    /// let uri = AlgoUri::with_version("demo/Hello", Version::Minor(0, 1));
+    /// let uri = AlgoUri::with_version("demo/Hello", [0, 1]);
     /// assert_eq!(uri.path(), "demo/Hello/0.1");
     /// ```
     pub fn with_version<V: Into<Version>>(user_algo: &str, version: V) -> AlgoUri {

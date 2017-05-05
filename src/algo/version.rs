@@ -41,6 +41,18 @@ impl From<(u32, u32, u32)> for Version {
     }
 }
 
+impl From<[u32; 2]> for Version {
+    fn from(version: [u32; 2]) -> Self {
+        Version::Minor(version[0], version[1])
+    }
+}
+
+impl From<[u32; 3]> for Version {
+    fn from(version: [u32; 3]) -> Self {
+        Version::Revision(version[0], version[1], version[2])
+    }
+}
+
 /// Displays Version values suitable for printing
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
