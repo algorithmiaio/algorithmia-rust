@@ -293,6 +293,22 @@ mod test_decode {
     }
 }
 
+#[cfg(feature="nightly")]
+mod test_decode_specialized {
+    use prelude::*;
+
+    #[derive(Deserialize, Serialize)]
+    pub struct Custom {
+        foo: String,
+        bar: Vec<u32>,
+        baz: bool,
+    }
+    algo_entrypoint!(Custom => hello_decoded);
+    fn hello_decoded(_input: Custom) -> Result<Custom, String> {
+        unimplemented!()
+    }
+}
+
 mod test_decode_with_default {
     use prelude::*;
 
@@ -362,6 +378,22 @@ mod test_shorthand_decode {
     }
     algo_entrypoint!(Custom);
     fn apply(_input: Custom) -> Result<Box<Custom>, String> {
+        unimplemented!()
+    }
+}
+
+#[cfg(feature="nightly")]
+mod test_shorthand_decode_specialized {
+    use prelude::*;
+
+    #[derive(Deserialize, Serialize)]
+    pub struct Custom {
+        foo: String,
+        bar: Vec<u32>,
+        baz: bool,
+    }
+    algo_entrypoint!(Custom);
+    fn apply(_input: Custom) -> Result<Custom, String> {
         unimplemented!()
     }
 }
