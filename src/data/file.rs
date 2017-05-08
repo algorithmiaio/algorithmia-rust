@@ -37,6 +37,28 @@ impl Read for FileData {
     }
 }
 
+impl FileData {
+    /// Reads the result into a byte vector
+    ///
+    /// This is a convenience wrapper around `Read::read_to_end`
+    /// that allocates once with capacity of `self.size`.
+    pub fn into_bytes(mut self) -> io::Result<Vec<u8>> {
+        let mut bytes = Vec::with_capacity(self.size as usize);
+        self.read_to_end(&mut bytes)?;
+        Ok(bytes)
+    }
+
+    /// Reads the result into a `String`
+    ///
+    /// This is a convenience wrapper around `Read::read_to_string`
+    /// that allocates once with capacity of `self.size`.
+    pub fn into_string(mut self) -> io::Result<String> {
+        let mut text = String::with_capacity(self.size as usize);
+        self.read_to_string(&mut text)?;
+        Ok(text)
+    }
+}
+
 /// Algorithmia data file
 pub struct DataFile {
     path: String,
@@ -113,9 +135,8 @@ impl DataFile {
     ///
     /// match my_file.get() {
     ///   Ok(mut response) => {
-    ///     let mut data = String::new();
-    ///     match response.read_to_string(&mut data) {
-    ///       Ok(_) => println!("{}", data),
+    ///     match response.into_string() {
+    ///       Ok(data) => println!("{}", data),
     ///       Err(err) => println!("IOError: {}", err),
     ///     }
     ///   },
