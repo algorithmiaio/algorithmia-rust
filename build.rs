@@ -10,6 +10,6 @@ fn main() {
 r#"
 pub static RUSTC_VERSION: &'static str = "{rustc_version}";
 "#,
-        rustc_version = rustc_version::version(),
+        rustc_version = rustc_version::version().unwrap(),
     ).unwrap();
 }
