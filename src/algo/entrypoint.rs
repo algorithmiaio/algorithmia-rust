@@ -6,6 +6,9 @@ use serde_json;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
+#[cfg(feature="nightly")]
+pub use algorithmia_entrypoint::entrypoint;
+
 /// Alternate implementation for `EntryPoint`
 ///   that automatically decodes JSON input to the associate type
 ///

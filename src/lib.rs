@@ -19,7 +19,7 @@
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
 
-#![cfg_attr(feature="nightly", feature(specialization))]
+#![cfg_attr(feature="nightly", feature(specialization, proc_macro))]
 #![recursion_limit = "1024"]
 
 #![allow(unknown_lints)]
@@ -40,6 +40,9 @@ extern crate base64;
 extern crate chrono;
 extern crate url;
 
+#[cfg(feature="nightly")]
+extern crate algorithmia_entrypoint;
+
 use algo::{Algorithm, AlgoUri};
 use data::{DataDir, DataFile, DataObject, HasDataPath};
 use client::HttpClient;
@@ -57,6 +60,9 @@ pub mod prelude {
     pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput};
     pub use serde_json::Value;
     pub use data::HasDataPath;
+
+    #[cfg(feature="nightly")]
+    pub use algo::entrypoint;
 }
 
 mod client;
