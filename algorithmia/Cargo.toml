@@ -34,7 +34,7 @@ version = "0.10"
 default-features = false
 
 [dependencies.algorithmia-entrypoint]
-path = "../algorithmia-entrypoint"
+path = "../entrypoint"
 optional = true
 
 [build-dependencies]

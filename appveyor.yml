@@ -14,4 +14,5 @@ install:
 build: false
 
 test_script:
+- cd algorithmia
 - cargo test --verbose
