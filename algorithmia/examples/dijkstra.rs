@@ -44,8 +44,10 @@ impl<'a> RouteMap<'a> {
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);
         // println!("Input: {:?}", input_data);
-        println!("Input:\n{}",
-                 serde_json::to_string_pretty(&input_data).unwrap());
+        println!(
+            "Input:\n{}",
+            serde_json::to_string_pretty(&input_data).unwrap()
+        );
 
         match dijkstra.pipe(&input_data) {
             Ok(response) => response,

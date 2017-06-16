@@ -99,16 +99,21 @@ impl DataFile {
     /// client.file(".my/my_dir/file.jpg").put(file).unwrap();
     /// ```
     pub fn put<B>(&self, body: B) -> Result<()>
-        where B: Into<Body>
+    where
+        B: Into<Body>,
     {
         let url = self.to_url()?;
         let req = self.client.put(url).body(body);
 
         let mut res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("writing file '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Http(format!("writing file '{}'", self.to_data_uri()))
+            })?;
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| ErrorKind::Io(format!("writing file '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Io(format!("writing file '{}'", self.to_data_uri()))
+            })?;
 
         match *res.status() {
             status if status.is_success() => Ok(()),
@@ -147,7 +152,9 @@ impl DataFile {
         let url = self.to_url()?;
         let req = self.client.get(url);
         let res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri()))
+            })?;
 
         match *res.status() {
             StatusCode::Ok => {
@@ -155,25 +162,29 @@ impl DataFile {
                 match metadata.data_type {
                     DataType::File => (),
                     DataType::Dir => {
-                        return Err(ErrorKind::UnexpectedDataType("file", "directory".to_string())
-                            .into());
+                        return Err(
+                            ErrorKind::UnexpectedDataType("file", "directory".to_string())
+                                .into(),
+                        );
                     }
                 }
 
                 Ok(FileData {
                     size: metadata.content_length.unwrap_or(0),
-                    last_modified: metadata.last_modified
+                    last_modified: metadata
+                        .last_modified
                         .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
                     data: Box::new(res),
                 })
             }
             StatusCode::NotFound => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
             status => {
-                Err(ErrorKind::Api(ApiError {
+                Err(
+                    ErrorKind::Api(ApiError {
                         message: status.to_string(),
                         stacktrace: None,
-                    })
-                    .into())
+                    }).into(),
+                )
             }
         }
     }
@@ -196,10 +207,14 @@ impl DataFile {
         let url = self.to_url()?;
         let req = self.client.delete(url);
         let mut res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri()))
+            })?;
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri()))
+            })?;
 
         match *res.status() {
             status if status.is_success() => Ok(()),

@@ -125,7 +125,9 @@ impl Algorithm {
             .map_err(|err| *err)
             .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.algo_uri.path);
-        base_url.join(&path).chain_err(|| ErrorKind::InvalidAlgoUri(path))
+        base_url
+            .join(&path)
+            .chain_err(|| ErrorKind::InvalidAlgoUri(path))
     }
 
     /// Get the Algorithmia algo URI for this Algorithm
@@ -154,20 +156,22 @@ impl Algorithm {
     /// };
     /// ```
     pub fn pipe<'a, I>(&'a self, input_data: I) -> Result<AlgoResponse>
-        where I: Into<AlgoInput<'a>>
+    where
+        I: Into<AlgoInput<'a>>,
     {
         let mut res = match input_data.into() {
             AlgoInput::Text(text) => self.pipe_as(&*text, mime!(Text / Plain))?,
             AlgoInput::Json(json) => {
-                let encoded =
-                    serde_json::to_vec(&json).chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
+                let encoded = serde_json::to_vec(&json)
+                    .chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
                 self.pipe_as(&*encoded, mime!(Application / Json))?
             }
             AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, mime!(Application / OctetStream))?,
         };
 
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json).chain_err(|| "failed to read algorithm response")?;
+        res.read_to_string(&mut res_json)
+            .chain_err(|| "failed to read algorithm response")?;
         res_json.parse()
     }
 
@@ -195,14 +199,16 @@ impl Algorithm {
         let mut res = self.pipe_as(json_input, mime!(Application / Json))?;
 
         let mut res_json = String::new();
-        res.read_to_string(&mut res_json).chain_err(|| "failed to read algorithm response")?;
+        res.read_to_string(&mut res_json)
+            .chain_err(|| "failed to read algorithm response")?;
         res_json.parse()
     }
 
 
     #[doc(hidden)]
     pub fn pipe_as<B>(&self, input_data: B, content_type: Mime) -> Result<Response>
-        where B: Into<Body>
+    where
+        B: Into<Body>,
     {
 
         // Append options to URL as query parameters
@@ -220,7 +226,9 @@ impl Algorithm {
             .header(ContentType(content_type))
             .body(input_data);
 
-        req.send().chain_err(|| ErrorKind::Http(format!("calling algorithm '{}'", self.algo_uri)))
+        req.send().chain_err(|| {
+            ErrorKind::Http(format!("calling algorithm '{}'", self.algo_uri))
+        })
     }
 
     /// Builder method to explicitly configure options
@@ -297,9 +305,7 @@ impl<'a> AlgoInput<'a> {
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Value::String`.
     pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
         match *self {
-            AlgoInput::Text(ref text) => {
-                Some(Cow::Owned(Value::String(text.clone().into_owned())))
-            }
+            AlgoInput::Text(ref text) => Some(Cow::Owned(Value::String(text.clone().into_owned()))),
             AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             AlgoInput::Binary(_) => None,
         }
@@ -317,7 +323,8 @@ impl<'a> AlgoInput<'a> {
 
     /// If the `AlgoInput` is valid JSON, decode it to a particular type
     pub fn decode<D: DeserializeOwned>(&self) -> Result<D> {
-        let res_json = self.as_json().ok_or(ErrorKind::MismatchedContentType("json"))?;
+        let res_json = self.as_json()
+            .ok_or(ErrorKind::MismatchedContentType("json"))?;
         serde_json::from_value(res_json.into_owned())
             .chain_err(|| "failed to decode input to specified type")
     }
@@ -353,7 +360,8 @@ impl AlgoResponse {
 
     /// If the algorithm output is JSON, decode it into a particular type
     pub fn decode<D>(self) -> Result<D>
-        where for<'de> D: Deserialize<'de>
+    where
+        for<'de> D: Deserialize<'de>,
     {
         let ct = self.metadata.content_type.clone();
         let res_json = self.into_json()
@@ -430,8 +438,9 @@ impl FromStr for AlgoResponse {
             ("binary", value) => {
                 match value.as_str() {
                     Some(text) => {
-                        let binary = base64::decode(text)
-                            .chain_err(|| ErrorKind::DecodeBase64("algorithm response"))?;
+                        let binary =
+                            base64::decode(text)
+                                .chain_err(|| ErrorKind::DecodeBase64("algorithm response"))?;
                         AlgoOutput::Binary(binary)
                     }
                     None => return Err(ErrorKind::MismatchedContentType("binary").into()),
@@ -539,7 +548,9 @@ impl<'a> From<Value> for AlgoInput<'a> {
 
 impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
     fn from(object: &'a S) -> Self {
-        AlgoInput::Json(Cow::Owned(serde_json::to_value(object).expect("Failed to serialize")))
+        AlgoInput::Json(Cow::Owned(
+            serde_json::to_value(object).expect("Failed to serialize"),
+        ))
     }
 }
 
@@ -593,7 +604,7 @@ impl<S: Serialize> From<Box<S>> for AlgoOutput {
 }
 
 // Waiting for specialization to stabilize
-#[cfg(feature="nightly")]
+#[cfg(feature = "nightly")]
 impl<S: Serialize> From<S> for AlgoOutput {
     default fn from(object: S) -> Self {
         AlgoOutput::Json(serde_json::to_value(object).expect("Failed to serialize"))
@@ -631,16 +642,20 @@ mod tests {
     fn test_algo_without_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("anowell/Pinky/0.1.0");
-        assert_eq!(algorithm.to_url().unwrap().path(),
-                   "/v1/algo/anowell/Pinky/0.1.0");
+        assert_eq!(
+            algorithm.to_url().unwrap().path(),
+            "/v1/algo/anowell/Pinky/0.1.0"
+        );
     }
 
     #[test]
     fn test_algo_with_prefix_to_url() {
         let mock_client = mock_client();
         let algorithm = mock_client.algo("algo://anowell/Pinky/0.1");
-        assert_eq!(algorithm.to_url().unwrap().path(),
-                   "/v1/algo/anowell/Pinky/0.1");
+        assert_eq!(
+            algorithm.to_url().unwrap().path(),
+            "/v1/algo/anowell/Pinky/0.1"
+        );
     }
 
     #[test]
@@ -648,8 +663,10 @@ mod tests {
         let mock_client = mock_client();
         let pinky = AlgoUri::with_version("anowell/Pinky", "abcdef123456");
         let algorithm = mock_client.algo(pinky);
-        assert_eq!(algorithm.to_url().unwrap().path(),
-                   "/v1/algo/anowell/Pinky/abcdef123456");
+        assert_eq!(
+            algorithm.to_url().unwrap().path(),
+            "/v1/algo/anowell/Pinky/abcdef123456"
+        );
     }
 
 

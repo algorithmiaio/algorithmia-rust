@@ -22,7 +22,9 @@ pub trait HasDataPath {
             .map_err(|err| *err)
             .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
-        base_url.join(&path).chain_err(|| ErrorKind::InvalidDataUri(self.to_data_uri()))
+        base_url
+            .join(&path)
+            .chain_err(|| ErrorKind::InvalidDataUri(self.to_data_uri()))
     }
 
     /// Get the Algorithmia data URI a given Data Object
@@ -74,10 +76,7 @@ pub trait HasDataPath {
     /// assert_eq!(my_dir.basename().unwrap(), "my_dir");
     /// ```
     fn basename(&self) -> Option<String> {
-        self.path()
-            .rsplitn(2, '/')
-            .next()
-            .map(String::from)
+        self.path().rsplitn(2, '/').next().map(String::from)
     }
 
 
@@ -95,11 +94,10 @@ pub trait HasDataPath {
         let client = self.client();
         let req = client.head(url);
 
-        let res =
-            req.send()
-                .chain_err(|| {
-                    ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
-                })?;
+        let res = req.send()
+            .chain_err(|| {
+                ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
+            })?;
         match *res.status() {
             StatusCode::Ok => Ok(true),
             StatusCode::NotFound => Ok(false),
@@ -109,11 +107,12 @@ pub trait HasDataPath {
                     None => format!("{}", status),
                 };
 
-                Err(ErrorKind::Api(ApiError {
+                Err(
+                    ErrorKind::Api(ApiError {
                         message: msg,
                         stacktrace: None,
-                    })
-                    .into())
+                    }).into(),
+                )
             }
         }
     }

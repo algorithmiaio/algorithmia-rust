@@ -160,7 +160,9 @@ impl<'a> Iterator for DirectoryListing<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
             // Return folders first
-            Some(d) => Some(Ok(DataItem::Dir(DataDirItem { dir: self.dir.child(&d.name) }))),
+            Some(d) => Some(Ok(
+                DataItem::Dir(DataDirItem { dir: self.dir.child(&d.name) }),
+            )),
             None => {
                 match self.files.next() {
                     // Return files second
@@ -202,20 +204,25 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
 
     let req = dir.client.get(url);
     let mut res = req.send()
-        .chain_err(|| ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri())))?;
+        .chain_err(|| {
+            ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri()))
+        })?;
 
     if res.status().is_success() {
         if let Some(data_type) = res.headers().get::<XDataType>() {
             if "directory" != data_type.as_str() {
-                return Err(ErrorKind::UnexpectedDataType("directory", data_type.to_string())
-                    .into());
+                return Err(
+                    ErrorKind::UnexpectedDataType("directory", data_type.to_string()).into(),
+                );
             }
         }
     }
 
     let mut res_json = String::new();
     res.read_to_string(&mut res_json)
-        .chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
+        .chain_err(|| {
+            ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri()))
+        })?;
 
     match *res.status() {
         status if status.is_success() => {
@@ -288,7 +295,8 @@ impl DataDir {
     /// };
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<()> {
-        let parent = self.parent().ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?;
+        let parent = self.parent()
+            .ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?;
         let parent_url = parent.to_url()?;
 
         let input_data = FolderItem {
@@ -297,7 +305,8 @@ impl DataDir {
                 .into(),
             acl: Some(acl.into()),
         };
-        let raw_input = serde_json::to_vec(&input_data).chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
+        let raw_input = serde_json::to_vec(&input_data)
+            .chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
 
         // POST request
         let req = self.client
@@ -307,7 +316,9 @@ impl DataDir {
 
         // Parse response
         let mut res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri()))
+            })?;
 
         if res.status().is_success() {
             Ok(())
@@ -350,10 +361,14 @@ impl DataDir {
 
         // Parse response
         let mut res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri()))
+            })?;
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri()))
+            })?;
 
 
         match *res.status() {
@@ -389,10 +404,10 @@ impl DataDir {
     /// ```
     pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
         let path_ref = file_path.as_ref();
-        let file =
-            File::open(path_ref).chain_err(|| {
-                    ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display()))
-                })?;
+        let file = File::open(path_ref)
+            .chain_err(|| {
+                ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display()))
+            })?;
 
         // Safe to unwrap: we've already opened the file or returned an error
         let filename = path_ref.file_name().unwrap().to_string_lossy();
@@ -424,8 +439,10 @@ mod tests {
     #[test]
     fn test_to_url() {
         let dir = mock_client().dir("data://anowell/foo");
-        assert_eq!(dir.to_url().unwrap().path(),
-                   "/v1/connector/data/anowell/foo");
+        assert_eq!(
+            dir.to_url().unwrap().path(),
+            "/v1/connector/data/anowell/foo"
+        );
     }
 
     #[test]

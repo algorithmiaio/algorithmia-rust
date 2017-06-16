@@ -47,7 +47,9 @@ impl DataObject {
         let url = self.to_url()?;
         let req = self.client.head(url);
         let res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
+            .chain_err(|| {
+                ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
+            })?;
 
         match *res.status() {
             StatusCode::Ok => {
@@ -56,11 +58,12 @@ impl DataObject {
             }
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
-                Err(ErrorKind::Api(ApiError {
+                Err(
+                    ErrorKind::Api(ApiError {
                         message: status.to_string(),
                         stacktrace: None,
-                    })
-                    .into())
+                    }).into(),
+                )
             }
         }
     }
@@ -81,11 +84,10 @@ impl DataObject {
         let metadata = {
             let url = self.to_url()?;
             let req = self.client.head(url);
-            let res =
-                req.send()
-                    .chain_err(|| {
-                        ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
-                    })?;
+            let res = req.send()
+                .chain_err(|| {
+                    ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
+                })?;
             if *res.status() == StatusCode::NotFound {
                 return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
             }

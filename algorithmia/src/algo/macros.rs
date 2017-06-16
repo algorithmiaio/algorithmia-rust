@@ -293,7 +293,7 @@ mod test_decode {
     }
 }
 
-#[cfg(feature="nightly")]
+#[cfg(feature = "nightly")]
 mod test_decode_specialized {
     use prelude::*;
 
@@ -312,7 +312,9 @@ mod test_decode_specialized {
 mod test_decode_with_default {
     use prelude::*;
 
-    pub struct Algo { _magic: u32 }
+    pub struct Algo {
+        _magic: u32,
+    }
 
     #[derive(Deserialize, Serialize)]
     pub struct Custom {
@@ -382,7 +384,7 @@ mod test_shorthand_decode {
     }
 }
 
-#[cfg(feature="nightly")]
+#[cfg(feature = "nightly")]
 mod test_shorthand_decode_specialized {
     use prelude::*;
 

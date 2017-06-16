@@ -6,7 +6,7 @@ use serde_json;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-#[cfg(feature="nightly")]
+#[cfg(feature = "nightly")]
 pub use algorithmia_entrypoint::entrypoint;
 
 /// Alternate implementation for `EntryPoint`
@@ -38,13 +38,15 @@ pub trait DecodedEntryPoint: Default {
 }
 
 impl<T> EntryPoint for T
-    where T: DecodedEntryPoint
+where
+    T: DecodedEntryPoint,
 {
     fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input.as_json() {
             Some(obj) => {
-                let decoded = serde_json::from_value(obj.into_owned())
-                    .chain_err(|| "failed to parse input as JSON into the expected type")?;
+                let decoded =
+                    serde_json::from_value(obj.into_owned())
+                        .chain_err(|| "failed to parse input as JSON into the expected type")?;
                 self.apply_decoded(decoded)
             }
             None => Err(Error::from(ErrorKind::UnsupportedInput).into()),

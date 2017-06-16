@@ -73,11 +73,12 @@ struct HeaderData {
 
 fn parse_headers(headers: &Headers) -> Result<HeaderData> {
     if let Some(err_header) = headers.get::<XErrorMessage>() {
-        return Err(ErrorKind::Api(ApiError {
+        return Err(
+            ErrorKind::Api(ApiError {
                 message: err_header.to_string(),
                 stacktrace: None,
-            })
-            .into());
+            }).into(),
+        );
     };
 
     let data_type = match headers.get::<XDataType>() {
@@ -88,13 +89,12 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData> {
     };
 
     let content_length = headers.get::<ContentLength>().map(|c| c.0);
-    let last_modified = headers.get::<Date>()
-        .map(|d| {
-            let hdt = d.0;
-            let ts = hdt.0.to_timespec();
-            let naive_datetime = NaiveDateTime::from_timestamp(ts.sec, ts.nsec as u32);
-            UTC.from_utc_datetime(&naive_datetime)
-        });
+    let last_modified = headers.get::<Date>().map(|d| {
+        let hdt = d.0;
+        let ts = hdt.0.to_timespec();
+        let naive_datetime = NaiveDateTime::from_timestamp(ts.sec, ts.nsec as u32);
+        UTC.from_utc_datetime(&naive_datetime)
+    });
 
     Ok(HeaderData {
         data_type: data_type,

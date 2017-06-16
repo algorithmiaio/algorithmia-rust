@@ -40,7 +40,7 @@ extern crate base64;
 extern crate chrono;
 extern crate url;
 
-#[cfg(feature="nightly")]
+#[cfg(feature = "nightly")]
 extern crate algorithmia_entrypoint;
 
 use algo::{Algorithm, AlgoUri};
@@ -61,7 +61,7 @@ pub mod prelude {
     pub use serde_json::Value;
     pub use data::HasDataPath;
 
-    #[cfg(feature="nightly")]
+    #[cfg(feature = "nightly")]
     pub use algo::entrypoint;
 }
 
@@ -172,8 +172,9 @@ impl Default for Algorithmia {
     fn default() -> Algorithmia {
         let api_address = std::env::var("ALGORITHMIA_API")
             .unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
-        let api_key =
-            std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
+        let api_key = std::env::var("ALGORITHMIA_API_KEY")
+            .map(ApiAuth::from)
+            .unwrap_or(ApiAuth::None);
         Algorithmia { http_client: HttpClient::new(api_key, &api_address) }
     }
 }
