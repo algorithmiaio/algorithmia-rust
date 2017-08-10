@@ -1,6 +1,6 @@
 [package]
 name = "algorithmia"
-version = "2.1.1"
+version = "2.1.2"
 license = "MIT"
 authors = ["Anthony Nowell <anthony@algorithmia.com>"]
 
@@ -29,6 +29,9 @@ error-chain = "0.8.1"
 mime = "0.2.2"
 reqwest = "0.5"
 chrono = { version = "=0.3.0", features = ["serde"] }
+
+unicode-bidi = "=0.3.3"
+libflate = "=0.1.8"
 
 [dependencies.hyper]
 version = "0.10"
