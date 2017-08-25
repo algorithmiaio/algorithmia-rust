@@ -8,7 +8,7 @@ pub use self::path::*;
 pub use self::object::*;
 
 use error::*;
-use chrono::{DateTime, UTC, NaiveDateTime, TimeZone};
+use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
 use std::ops::Deref;
 use reqwest::header::{Headers, ContentLength, Date};
 
@@ -42,7 +42,7 @@ pub struct DataFileItem {
     /// Size of file in bytes
     pub size: u64,
     /// Last modified timestamp
-    pub last_modified: DateTime<UTC>,
+    pub last_modified: DateTime<Utc>,
     file: DataFile,
 }
 
@@ -68,7 +68,7 @@ impl Deref for DataDirItem {
 struct HeaderData {
     pub data_type: DataType,
     pub content_length: Option<u64>,
-    pub last_modified: Option<DateTime<UTC>>,
+    pub last_modified: Option<DateTime<Utc>>,
 }
 
 fn parse_headers(headers: &Headers) -> Result<HeaderData> {
@@ -93,7 +93,7 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData> {
         let hdt = d.0;
         let ts = hdt.0.to_timespec();
         let naive_datetime = NaiveDateTime::from_timestamp(ts.sec, ts.nsec as u32);
-        UTC.from_utc_datetime(&naive_datetime)
+        Utc.from_utc_datetime(&naive_datetime)
     });
 
     Ok(HeaderData {

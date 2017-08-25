@@ -25,7 +25,7 @@ use std::fs::File;
 use std::path::Path;
 use std::vec::IntoIter;
 
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use reqwest::header::ContentType;
 use reqwest::StatusCode;
 
@@ -62,7 +62,7 @@ struct FolderItem {
 struct FileItem {
     pub filename: String,
     pub size: u64,
-    pub last_modified: DateTime<UTC>,
+    pub last_modified: DateTime<Utc>,
 }
 
 /// ACL that indicates permissions for a `DataDir`

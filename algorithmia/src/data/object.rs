@@ -1,7 +1,7 @@
 use data::*;
 use error::{ApiError, Result, ResultExt, ErrorKind};
 use client::HttpClient;
-use chrono::{UTC, TimeZone};
+use chrono::{Utc, TimeZone};
 use reqwest::StatusCode;
 use super::{parse_headers, parse_data_uri};
 
@@ -101,7 +101,7 @@ impl DataObject {
                     size: metadata.content_length.unwrap_or(0),
                     last_modified: metadata.last_modified
                         // Fallback to Algorithmia public launch date :-)
-                        .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
+                        .unwrap_or_else(|| Utc.ymd(2015, 3, 14).and_hms(8, 0, 0)),
                     file: self.into(),
                 }))
             }

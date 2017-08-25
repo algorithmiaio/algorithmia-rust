@@ -11,7 +11,7 @@
 //! my_file.put("file_contents").unwrap();
 //! ```
 
-use chrono::{DateTime, UTC, TimeZone};
+use chrono::{DateTime, Utc, TimeZone};
 use client::HttpClient;
 use reqwest::StatusCode;
 use data::{HasDataPath, DataType};
@@ -26,7 +26,7 @@ pub struct FileData {
     /// Size of file in bytes
     pub size: u64,
     /// Last modified timestamp
-    pub last_modified: DateTime<UTC>,
+    pub last_modified: DateTime<Utc>,
     data: Box<Read>,
 }
 
@@ -173,7 +173,7 @@ impl DataFile {
                     size: metadata.content_length.unwrap_or(0),
                     last_modified: metadata
                         .last_modified
-                        .unwrap_or_else(|| UTC.ymd(2015, 3, 14).and_hms(8, 0, 0)),
+                        .unwrap_or_else(|| Utc.ymd(2015, 3, 14).and_hms(8, 0, 0)),
                     data: Box::new(res),
                 })
             }
