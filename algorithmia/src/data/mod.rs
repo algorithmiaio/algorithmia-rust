@@ -9,6 +9,7 @@ pub use self::object::*;
 
 use error::*;
 use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::ops::Deref;
 use reqwest::header::{Headers, ContentLength, Date};
 
@@ -90,9 +91,9 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData> {
 
     let content_length = headers.get::<ContentLength>().map(|c| c.0);
     let last_modified = headers.get::<Date>().map(|d| {
-        let hdt = d.0;
-        let ts = hdt.0.to_timespec();
-        let naive_datetime = NaiveDateTime::from_timestamp(ts.sec, ts.nsec as u32);
+        let time = SystemTime::from(d.0);
+        let ts = time.duration_since(UNIX_EPOCH).expect("date header predates unix epoch");
+        let naive_datetime = NaiveDateTime::from_timestamp(ts.as_secs() as i64, ts.subsec_nanos() as u32);
         Utc.from_utc_datetime(&naive_datetime)
     });
 

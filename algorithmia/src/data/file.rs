@@ -103,19 +103,16 @@ impl DataFile {
         B: Into<Body>,
     {
         let url = self.to_url()?;
-        let req = self.client.put(url).body(body);
-
-        let mut res = req.send()
-            .chain_err(|| {
-                ErrorKind::Http(format!("writing file '{}'", self.to_data_uri()))
-            })?;
+        let mut res = self.client.put(url).body(body).send().chain_err(|| {
+            ErrorKind::Http(format!("writing file '{}'", self.to_data_uri()))
+        })?;
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
             .chain_err(|| {
                 ErrorKind::Io(format!("writing file '{}'", self.to_data_uri()))
             })?;
 
-        match *res.status() {
+        match res.status() {
             status if status.is_success() => Ok(()),
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
@@ -150,13 +147,13 @@ impl DataFile {
     /// ```
     pub fn get(&self) -> Result<FileData> {
         let url = self.to_url()?;
-        let req = self.client.get(url);
+        let mut req = self.client.get(url);
         let res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri()))
             })?;
 
-        match *res.status() {
+        match res.status() {
             StatusCode::Ok => {
                 let metadata = parse_headers(res.headers())?;
                 match metadata.data_type {
@@ -205,7 +202,7 @@ impl DataFile {
     /// ```
     pub fn delete(&self) -> Result<()> {
         let url = self.to_url()?;
-        let req = self.client.delete(url);
+        let mut req = self.client.delete(url);
         let mut res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri()))
@@ -216,7 +213,7 @@ impl DataFile {
                 ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri()))
             })?;
 
-        match *res.status() {
+        match res.status() {
             status if status.is_success() => Ok(()),
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {

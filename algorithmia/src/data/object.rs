@@ -45,13 +45,13 @@ impl DataObject {
     /// ```
     pub fn get_type(&self) -> Result<DataType> {
         let url = self.to_url()?;
-        let req = self.client.head(url);
+        let mut req = self.client.head(url);
         let res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
             })?;
 
-        match *res.status() {
+        match res.status() {
             StatusCode::Ok => {
                 let metadata = parse_headers(res.headers())?;
                 Ok(metadata.data_type)
@@ -83,12 +83,12 @@ impl DataObject {
     pub fn into_type(self) -> Result<DataItem> {
         let metadata = {
             let url = self.to_url()?;
-            let req = self.client.head(url);
+            let mut req = self.client.head(url);
             let res = req.send()
                 .chain_err(|| {
                     ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
                 })?;
-            if *res.status() == StatusCode::NotFound {
+            if res.status() == StatusCode::NotFound {
                 return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
             }
             parse_headers(res.headers())?

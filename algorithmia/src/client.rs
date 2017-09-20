@@ -69,11 +69,11 @@ impl HttpClient {
 
 
     fn build_request(&self, verb: Method, url: Url) -> RequestBuilder {
-        let mut req = self.inner_client.request(verb, url.clone());
+        let mut req = self.inner_client.request(verb, url.clone()).unwrap();
 
-        req = req.header(UserAgent(self.user_agent.clone()));
+        req.header(UserAgent::new(self.user_agent.clone()));
         if let ApiAuth::ApiKey(ref api_key) = self.api_auth {
-            req = req.header(Authorization(format!("Simple {}", api_key)))
+            req.header(Authorization(format!("Simple {}", api_key)));
         }
         req
     }

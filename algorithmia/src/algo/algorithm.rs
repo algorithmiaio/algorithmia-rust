@@ -29,7 +29,7 @@ use serde::de::Error as SerdeError;
 use base64;
 use reqwest::header::ContentType;
 use reqwest::Url;
-use mime::Mime;
+use mime::{self, Mime};
 #[doc(hidden)]
 pub use reqwest::Response;
 
@@ -43,13 +43,13 @@ use std::ops::{Deref, DerefMut};
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
 /// Types that can be used as input to an algorithm
-pub enum AlgoInput<'a> {
+pub enum AlgoInput {
     /// Data that will be sent with `Content-Type: text/plain`
-    Text(Cow<'a, str>),
+    Text(String),
     /// Data that will be sent with `Content-Type: application/octet-stream`
-    Binary(Cow<'a, [u8]>),
+    Binary(Vec<u8>),
     /// Data that will be sent with `Content-Type: application/json`
-    Json(Cow<'a, Value>),
+    Json(Value),
 }
 
 /// Types that can store the output of an algorithm
@@ -155,18 +155,18 @@ impl Algorithm {
     ///     Err(err) => println!("ERROR: {}", err),
     /// };
     /// ```
-    pub fn pipe<'a, I>(&'a self, input_data: I) -> Result<AlgoResponse>
+    pub fn pipe<I>(&self, input_data: I) -> Result<AlgoResponse>
     where
-        I: Into<AlgoInput<'a>>,
+        I: Into<AlgoInput>,
     {
         let mut res = match input_data.into() {
-            AlgoInput::Text(text) => self.pipe_as(&*text, mime!(Text / Plain))?,
+            AlgoInput::Text(text) => self.pipe_as(text, mime::TEXT_PLAIN)?,
             AlgoInput::Json(json) => {
                 let encoded = serde_json::to_vec(&json)
                     .chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
-                self.pipe_as(&*encoded, mime!(Application / Json))?
+                self.pipe_as(encoded, mime::APPLICATION_JSON)?
             }
-            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, mime!(Application / OctetStream))?,
+            AlgoInput::Binary(bytes) => self.pipe_as(bytes, mime::APPLICATION_OCTET_STREAM)?,
         };
 
         let mut res_json = String::new();
@@ -196,7 +196,7 @@ impl Algorithm {
     ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse> {
-        let mut res = self.pipe_as(json_input, mime!(Application / Json))?;
+        let mut res = self.pipe_as(json_input.to_owned(), mime::APPLICATION_JSON)?;
 
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
@@ -221,14 +221,13 @@ impl Algorithm {
         }
 
         // We just need the path and query string
-        let req = self.client
+        self.client
             .post(url)
             .header(ContentType(content_type))
-            .body(input_data);
-
-        req.send().chain_err(|| {
-            ErrorKind::Http(format!("calling algorithm '{}'", self.algo_uri))
-        })
+            .body(input_data)
+            .send().chain_err(|| {
+                ErrorKind::Http(format!("calling algorithm '{}'", self.algo_uri))
+            })
     }
 
     /// Builder method to explicitly configure options
@@ -287,14 +286,13 @@ impl AlgoUri {
     }
 }
 
-impl<'a> AlgoInput<'a> {
+impl AlgoInput {
     /// If the `AlgoInput` is text (or a valid JSON string), returns the associated text
     #[allow(match_same_arms)]
     pub fn as_string(&self) -> Option<&str> {
         match *self {
             AlgoInput::Text(ref text) => Some(&*text),
-            AlgoInput::Json(Cow::Borrowed(json)) => json.as_str(),
-            AlgoInput::Json(Cow::Owned(ref json)) => json.as_str(),
+            AlgoInput::Json(ref json) => json.as_str(),
             _ => None,
         }
     }
@@ -303,9 +301,9 @@ impl<'a> AlgoInput<'a> {
     ///
     /// For `AlgoInput::Json`, this returns the borrowed `Json`.
     ///   For the `AlgoInput::Text` variant, the text is wrapped into an owned `Value::String`.
-    pub fn as_json(&'a self) -> Option<Cow<'a, Value>> {
+    pub fn as_json<'a>(&'a self) -> Option<Cow<'a, Value>> {
         match *self {
-            AlgoInput::Text(ref text) => Some(Cow::Owned(Value::String(text.clone().into_owned()))),
+            AlgoInput::Text(ref text) => Some(Cow::Owned(Value::String(text.to_owned()))),
             AlgoInput::Json(ref json) => Some(Cow::Borrowed(json)),
             AlgoInput::Binary(_) => None,
         }
@@ -510,47 +508,47 @@ impl From<String> for AlgoUri {
 }
 
 // AlgoInput Conversions
-impl<'a> From<()> for AlgoInput<'a> {
+impl From<()> for AlgoInput {
     fn from(_unit: ()) -> Self {
-        AlgoInput::Json(Cow::Owned(Value::Null))
+        AlgoInput::Json(Value::Null)
     }
 }
 
-impl<'a> From<&'a str> for AlgoInput<'a> {
+impl<'a> From<&'a str> for AlgoInput {
     fn from(text: &'a str) -> Self {
-        AlgoInput::Text(Cow::Borrowed(text))
+        AlgoInput::Text(text.to_owned())
     }
 }
 
-impl<'a> From<&'a [u8]> for AlgoInput<'a> {
+impl<'a> From<&'a [u8]> for AlgoInput {
     fn from(bytes: &'a [u8]) -> Self {
-        AlgoInput::Binary(Cow::Borrowed(bytes))
+        AlgoInput::Binary(bytes.to_owned())
     }
 }
 
-impl<'a> From<String> for AlgoInput<'a> {
+impl From<String> for AlgoInput {
     fn from(text: String) -> Self {
-        AlgoInput::Text(Cow::Owned(text))
+        AlgoInput::Text(text.to_owned())
     }
 }
 
-impl<'a> From<Vec<u8>> for AlgoInput<'a> {
+impl From<Vec<u8>> for AlgoInput {
     fn from(bytes: Vec<u8>) -> Self {
-        AlgoInput::Binary(Cow::Owned(bytes))
+        AlgoInput::Binary(bytes)
     }
 }
 
-impl<'a> From<Value> for AlgoInput<'a> {
+impl From<Value> for AlgoInput {
     fn from(json: Value) -> Self {
-        AlgoInput::Json(Cow::Owned(json))
+        AlgoInput::Json(json)
     }
 }
 
-impl<'a, S: Serialize> From<&'a S> for AlgoInput<'a> {
+impl<'a, S: Serialize> From<&'a S> for AlgoInput {
     fn from(object: &'a S) -> Self {
-        AlgoInput::Json(Cow::Owned(
+        AlgoInput::Json(
             serde_json::to_value(object).expect("Failed to serialize"),
-        ))
+        )
     }
 }
 
@@ -612,12 +610,12 @@ impl<S: Serialize> From<S> for AlgoOutput {
 }
 
 // The conversion that makes it easy to pipe output to another algorithm's input
-impl<'a> From<AlgoOutput> for AlgoInput<'a> {
+impl From<AlgoOutput> for AlgoInput {
     fn from(output: AlgoOutput) -> Self {
         match output {
-            AlgoOutput::Text(text) => AlgoInput::Text(Cow::Owned(text)),
-            AlgoOutput::Json(json) => AlgoInput::Json(Cow::Owned(json)),
-            AlgoOutput::Binary(bytes) => AlgoInput::Binary(Cow::Owned(bytes)),
+            AlgoOutput::Text(text) => AlgoInput::Text(text),
+            AlgoOutput::Json(json) => AlgoInput::Json(json),
+            AlgoOutput::Binary(bytes) => AlgoInput::Binary(bytes),
         }
     }
 }

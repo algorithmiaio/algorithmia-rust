@@ -92,13 +92,13 @@ pub trait HasDataPath {
     fn exists(&self) -> Result<bool> {
         let url = self.to_url()?;
         let client = self.client();
-        let req = client.head(url);
+        let mut req = client.head(url);
 
         let res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
             })?;
-        match *res.status() {
+        match res.status() {
             StatusCode::Ok => Ok(true),
             StatusCode::NotFound => Ok(false),
             status => {

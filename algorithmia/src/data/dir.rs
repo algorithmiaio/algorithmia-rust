@@ -26,6 +26,7 @@ use std::path::Path;
 use std::vec::IntoIter;
 
 use chrono::{DateTime, Utc};
+use mime;
 use reqwest::header::ContentType;
 use reqwest::StatusCode;
 
@@ -202,11 +203,9 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
         url.query_pairs_mut().append_pair("marker", m);
     }
 
-    let req = dir.client.get(url);
-    let mut res = req.send()
-        .chain_err(|| {
-            ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri()))
-        })?;
+    let mut res = dir.client.get(url).send().chain_err(|| {
+        ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri()))
+    })?;
 
     if res.status().is_success() {
         if let Some(data_type) = res.headers().get::<XDataType>() {
@@ -224,7 +223,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
             ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri()))
         })?;
 
-    match *res.status() {
+    match res.status() {
         status if status.is_success() => {
             serde_json::from_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
         }
@@ -309,13 +308,11 @@ impl DataDir {
             .chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
 
         // POST request
-        let req = self.client
+        let mut res = self.client
             .post(parent_url)
-            .header(ContentType(mime!(Application / Json)))
-            .body(raw_input);
-
-        // Parse response
-        let mut res = req.send()
+            .header(ContentType(mime::APPLICATION_JSON))
+            .body(raw_input)
+            .send()
             .chain_err(|| {
                 ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri()))
             })?;
@@ -357,10 +354,8 @@ impl DataDir {
             url.query_pairs_mut().append_pair("force", "true");
         }
 
-        let req = self.client.delete(url);
-
         // Parse response
-        let mut res = req.send()
+        let mut res = self.client.delete(url).send()
             .chain_err(|| {
                 ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri()))
             })?;
@@ -371,7 +366,7 @@ impl DataDir {
             })?;
 
 
-        match *res.status() {
+        match res.status() {
             status if status.is_success() => {
                 serde_json::from_str::<DeletedResponse>(&res_json)
                     .map(|res| res.result)

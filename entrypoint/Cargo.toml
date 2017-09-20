@@ -7,6 +7,6 @@ authors = ["Anthony Nowell <anthony@algorithmia.com>"]
 proc-macro = true
 
 [dependencies]
-syntex_syntax = "0.58.1"
+syntex_syntax = "0.59.1"
 syn = { version = "0.11.11", features = ["full"] }
 quote = "0.3"
