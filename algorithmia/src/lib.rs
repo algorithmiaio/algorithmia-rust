@@ -56,9 +56,12 @@ pub use reqwest::Body;
 /// Reexports of the most common types and traits
 pub mod prelude {
     pub use Algorithmia;
-    pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput};
+    pub use algo::{AlgoInput, AlgoOutput};
     pub use serde_json::Value;
     pub use data::HasDataPath;
+
+    #[cfg(feature = "entrypoint")]
+    pub use algo::{EntryPoint, DecodedEntryPoint};
 
     #[cfg(feature = "nightly")]
     pub use algo::entrypoint;

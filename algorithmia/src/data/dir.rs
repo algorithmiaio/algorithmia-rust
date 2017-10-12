@@ -14,7 +14,7 @@
 //! ```
 
 use client::HttpClient;
-use error::{self, ApiError, Error, ErrorKind, Result, ResultExt};
+use error::{ApiError, ErrorKind, Result, ResultExt};
 use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
 use super::header::XDataType;
@@ -228,13 +228,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
             serde_json::from_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
         }
         StatusCode::NotFound => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
-        status => {
-            let api_error = ApiError {
-                message: status.to_string(),
-                stacktrace: None,
-            };
-            Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
-        }
+        status => Err(ApiError::from_json_or_status(&res_json, status).into())
     }
 }
 
@@ -317,21 +311,20 @@ impl DataDir {
                 ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri()))
             })?;
 
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            let mut res_json = String::new();
-            res.read_to_string(&mut res_json)
-                .chain_err(|| {
-                    ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri()))
-                })?;
 
-            let api_error = ApiError {
-                message: res.status().to_string(),
-                stacktrace: None,
-            };
-            Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
+        match res.status() {
+            status if status.is_success() => Ok(()),
+            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            status => {
+                let mut res_json = String::new();
+                res.read_to_string(&mut res_json)
+                    .chain_err(|| {
+                        ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri()))
+                    })?;
+                Err(ApiError::from_json_or_status(&res_json, status).into())
+            }
         }
+
     }
 
 
@@ -373,13 +366,7 @@ impl DataDir {
                     .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
             }
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => {
-                let api_error = ApiError {
-                    message: status.to_string(),
-                    stacktrace: None,
-                };
-                Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
-            }
+            status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }
 

@@ -49,7 +49,7 @@ where
                         .chain_err(|| "failed to parse input as JSON into the expected type")?;
                 self.apply_decoded(decoded)
             }
-            None => Err(Error::from(ErrorKind::UnsupportedInput).into()),
+            None => Err(ApiError::new(ErrorType::UnsupportedInput, "Failed to parse input as JSON").into()),
         }
     }
 }

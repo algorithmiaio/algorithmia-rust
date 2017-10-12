@@ -17,7 +17,7 @@ use reqwest::StatusCode;
 use data::{HasDataPath, DataType};
 use std::io::{self, Read};
 use Body;
-use error::{self, Error, ErrorKind, Result, ResultExt, ApiError};
+use error::{Error, ErrorKind, Result, ResultExt, ApiError};
 use super::{parse_headers, parse_data_uri};
 
 
@@ -115,13 +115,7 @@ impl DataFile {
         match res.status() {
             status if status.is_success() => Ok(()),
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => {
-                let api_error = ApiError {
-                    message: status.to_string(),
-                    stacktrace: None,
-                };
-                Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
-            }
+            status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }
 
@@ -175,14 +169,7 @@ impl DataFile {
                 })
             }
             StatusCode::NotFound => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
-            status => {
-                Err(
-                    ErrorKind::Api(ApiError {
-                        message: status.to_string(),
-                        stacktrace: None,
-                    }).into(),
-                )
-            }
+            status => Err(ApiError::from_status(status).into()),
         }
     }
 
@@ -216,13 +203,7 @@ impl DataFile {
         match res.status() {
             status if status.is_success() => Ok(()),
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => {
-                let api_error = ApiError {
-                    message: status.to_string(),
-                    stacktrace: None,
-                };
-                Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
-            }
+            status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }
 }
