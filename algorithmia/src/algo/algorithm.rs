@@ -18,7 +18,6 @@
 
 use client::HttpClient;
 use error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
-use super::version::Version;
 use Body;
 
 use serde_json::{self, Value};
@@ -263,23 +262,6 @@ impl Algorithm {
 }
 
 impl AlgoUri {
-    /// Initialize `AlgoUri` with a typed `Version`
-    ///
-    /// ```
-    /// # use algorithmia::algo::{AlgoUri, Version};
-    /// let uri = AlgoUri::with_version("demo/Hello", [0, 1]);
-    /// assert_eq!(uri.path(), "demo/Hello/0.1");
-    /// ```
-    pub fn with_version<V: Into<Version>>(user_algo: &str, version: V) -> AlgoUri {
-        let path = match version.into() {
-            Version::Latest => user_algo.to_owned(),
-            ref ver => format!("{}/{}", user_algo, ver),
-        };
-
-        AlgoUri { path: path }
-    }
-
-
     /// Returns the algorithm's URI path
     pub fn path(&self) -> &str {
         &self.path
