@@ -1,6 +1,6 @@
 use algo::{AlgoInput, AlgoOutput};
 use std::error::Error as StdError;
-use error::{Error, ErrorKind, ResultExt};
+use error::{ErrorType, ApiError, ResultExt};
 use serde_json;
 
 use serde::de::DeserializeOwned;
@@ -49,7 +49,7 @@ where
                         .chain_err(|| "failed to parse input as JSON into the expected type")?;
                 self.apply_decoded(decoded)
             }
-            None => Err(ApiError::new(ErrorType::UnsupportedInput, "Failed to parse input as JSON").into()),
+            None => Err(ApiError::new(ErrorType::Input, "Failed to parse input as JSON").into()),
         }
     }
 }
@@ -59,19 +59,19 @@ pub trait EntryPoint: Default {
     #[allow(unused_variables)]
     /// Override to handle string input
     fn apply_str(&self, text: &str) -> Result<AlgoOutput, Box<StdError>> {
-        Err(Error::from(ErrorKind::UnsupportedInput).into())
+        Err(ApiError::new(ErrorType::Unsupported, "String input is not supported").into())
     }
 
     #[allow(unused_variables)]
     /// Override to handle JSON input (see also [`DecodedEntryPoint`](trait.DecodedEntryPoint.html))
     fn apply_json(&self, json: &Value) -> Result<AlgoOutput, Box<StdError>> {
-        Err(Error::from(ErrorKind::UnsupportedInput).into())
+        Err(ApiError::new(ErrorType::Unsupported, "JSON input is not supported").into())
     }
 
     #[allow(unused_variables)]
     /// Override to handle binary input
     fn apply_bytes(&self, bytes: &[u8]) -> Result<AlgoOutput, Box<StdError>> {
-        Err(Error::from(ErrorKind::UnsupportedInput).into())
+        Err(ApiError::new(ErrorType::Unsupported, "Binary input is not supported").into())
     }
 
     /// The default implementation of this method calls
@@ -92,15 +92,14 @@ pub trait EntryPoint: Default {
             AlgoInput::Text(ref text) => {
                 match self.apply_str(text) {
                     Err(err) => {
-                        match err.downcast::<Error>().map(|err| *err) {
-                            Ok(Error(ErrorKind::UnsupportedInput, _)) => {
+                        match err.downcast_ref::<ApiError>().map(|err| err.error_type) {
+                            Some(ErrorType::Unsupported) => {
                                 match input.as_json() {
                                     Some(json) => self.apply_json(&json),
-                                    None => Err(Error::from(ErrorKind::UnsupportedInput).into()),
+                                    None => Err(err.into()),
                                 }
                             }
-                            Ok(err) => Err(err.into()),
-                            Err(err) => Err(err.into()),
+                            _ => Err(err.into()),
                         }
                     }
                     ret => ret,
@@ -109,17 +108,14 @@ pub trait EntryPoint: Default {
             AlgoInput::Json(ref json) => {
                 match self.apply_json(json) {
                     Err(err) => {
-                        match err.downcast::<Error>().map(|err| *err) {
-                            Ok(Error(ErrorKind::UnsupportedInput, _)) => {
+                        match err.downcast_ref::<ApiError>().map(|err| err.error_type) {
+                            Some(ErrorType::Unsupported) => {
                                 match input.as_string() {
                                     Some(text) => self.apply_str(text),
-                                    None => {
-                                        Err(Error::from(ErrorKind::UnsupportedInput).into()).into()
-                                    }
+                                    None => Err(err.into()),
                                 }
                             }
-                            Ok(err) => Err(err.into()),
-                            Err(err) => Err(err.into()),
+                            _ => Err(err.into()),
                         }
                     }
                     ret => ret,

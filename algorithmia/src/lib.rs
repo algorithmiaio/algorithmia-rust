@@ -19,7 +19,7 @@
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
 
-#![cfg_attr(feature="nightly", feature(specialization, proc_macro))]
+#![cfg_attr(feature="nightly", feature(specialization, use_extern_macros))]
 #![recursion_limit = "1024"]
 
 #![allow(unknown_lints)]
