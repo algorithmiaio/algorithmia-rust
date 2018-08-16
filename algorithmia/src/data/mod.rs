@@ -75,7 +75,7 @@ struct HeaderData {
 fn parse_headers(headers: &Headers) -> Result<HeaderData> {
     if let Some(err_header) = headers.get::<XErrorMessage>() {
         return Err(
-            ErrorKind::Api(ApiError::new(ErrorType::Unknown, err_header.to_string())).into()
+            ErrorKind::Api(ApiError::from(err_header.to_string())).into()
         );
     };
 

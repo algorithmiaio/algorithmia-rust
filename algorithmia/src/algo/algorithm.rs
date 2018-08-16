@@ -639,10 +639,9 @@ mod tests {
     }
 
     #[test]
-    fn test_algo_typesafe_to_url() {
+    fn test_algo_with_sha_to_url() {
         let mock_client = mock_client();
-        let pinky = AlgoUri::with_version("anowell/Pinky", "abcdef123456");
-        let algorithm = mock_client.algo(pinky);
+        let algorithm = mock_client.algo("anowell/Pinky/abcdef123456");
         assert_eq!(
             algorithm.to_url().unwrap().path(),
             "/v1/algo/anowell/Pinky/abcdef123456"

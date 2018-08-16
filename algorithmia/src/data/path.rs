@@ -1,6 +1,6 @@
 use data::*;
 use super::header::XErrorMessage;
-use error::{ErrorKind, Result, ResultExt, ApiError, ErrorType};
+use error::{ErrorKind, Result, ResultExt, ApiError};
 
 use client::HttpClient;
 use reqwest::{Url, StatusCode};
@@ -106,7 +106,7 @@ pub trait HasDataPath {
                     Some(err_header) => format!("{}: {}", status, err_header),
                     None => format!("{}", status),
                 };
-                Err(ApiError::new(ErrorType::from_status(status), msg).into())
+                Err(ApiError::from(msg).into())
             }
         }
     }

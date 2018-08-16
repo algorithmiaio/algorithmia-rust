@@ -57,7 +57,7 @@ impl DataObject {
                 Ok(metadata.data_type)
             }
             StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => Err(ApiError::from_status(status).into()),
+            status => Err(ApiError::from(status.to_string()).into()),
         }
     }
 

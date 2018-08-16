@@ -169,7 +169,7 @@ impl DataFile {
                 })
             }
             StatusCode::NotFound => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
-            status => Err(ApiError::from_status(status).into()),
+            status => Err(ApiError::from(status.to_string()).into()),
         }
     }
 

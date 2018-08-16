@@ -2,7 +2,7 @@ extern crate algorithmia;
 extern crate serde_json;
 
 use algorithmia::Algorithmia;
-use algorithmia::algo::{AlgoResponse, AlgoUri, Version};
+use algorithmia::algo::AlgoResponse;
 use std::collections::HashMap;
 use std::env;
 
@@ -36,8 +36,7 @@ impl<'a> RouteMap<'a> {
             }
         };
         let client = Algorithmia::client(&*api_key);
-        let dijkstra_uri = AlgoUri::with_version("anowell/Dijkstra", Version::Latest);
-        let dijkstra = client.algo(dijkstra_uri);
+        let dijkstra = client.algo("anowell/Dijkstra");
 
         println!("Making request to: {}", dijkstra.to_url().unwrap());
 

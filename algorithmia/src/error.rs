@@ -11,11 +11,14 @@ use std::error::Error as StdError;
 /// Error Types that the Algorithmia algorithm APIs can return
 #[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ErrorType {
-    #[serde(rename="UnsupportedInputError")]
-    UnsupportedInput,
+    #[serde(rename="InputError")]
+    Input,
+
+    #[serde(rename="UnsupportedError")]
+    Unsupported,
 
     #[serde(rename="InitializationError")]
-    InitializationFailed,
+    Initialization,
 
     #[serde(rename="OutOfMemoryError")]
     OutOfMemory,
@@ -23,24 +26,33 @@ pub enum ErrorType {
     #[serde(rename="OutOfGpuMemoryError")]
     OutOfGpuMemory,
 
-    #[serde(rename="TimeoutError")]
-    Timeout,
+    #[serde(rename="LanguageError")]
+    Language,
 
-    #[serde(rename="TooManRequestsError")]
-    TooManyRequests,
+    #[serde(rename="TooLargeError")]
+    TooLarge,
 
-    #[serde(rename="UnknownError")]
-    Unknown,
+    #[serde(rename="ParsingError")]
+    Parsing,
+
+    #[serde(rename="EntityNotFoundError")]
+    EntityNotFound,
+
+    #[serde(rename="ThirdPartyCredentialError")]
+    ThirdPartyCredential,
+
+    #[serde(rename="AlgorithmError")]
+    Algorithm,
 
     // Replace with #[non_exhaustive] after https://github.com/rust-lang/rust/issues/44109
     // This also causes unreachable pattern warning on deserialize since "UknownError" is listed twice
     #[doc(hidden)]
-    #[serde(rename="UnknownError")]
+    #[serde(rename="AlgorithmError")]
     __DontMatchMe {}
 }
 
 fn unknown_error() -> ErrorType {
-    ErrorType::Unknown
+    ErrorType::Algorithm
 }
 
 
@@ -178,7 +190,9 @@ impl ApiError {
     /// ## Examples:
     ///
     /// ```
-    /// ApiError::new(ErrorType::InvalidInput, "Input missing field 'url'")
+    /// use algorithmia::error::{ApiError, ErrorType};
+    ///
+    /// ApiError::new(ErrorType::Input, "Input missing field 'url'");
     /// ```
     pub fn new<S: Into<String>>(error_type: ErrorType, message: S) -> ApiError {
         ApiError {
@@ -188,28 +202,20 @@ impl ApiError {
         }
     }
 
-    pub(crate) fn from_status(status: StatusCode) -> ApiError {
-        ApiError {
-            message: status.to_string(),
-            error_type: ErrorType::from_status(status),
-            stacktrace: Some(format!("{:?}", Backtrace::new())),
-        }
-    }
-
     pub(crate) fn from_json_or_status(json: &str, status: StatusCode) -> ApiError {
         match serde_json::from_str::<ApiErrorResponse>(json) {
             Ok(err_res) => err_res.error,
-            Err(_) => ApiError::from_status(status),
+            Err(_) => ApiError::from(status.to_string()),
         }
     }
 }
 
-impl ErrorType {
-    pub(crate) fn from_status(status: StatusCode) -> ErrorType {
-        match status {
-            StatusCode::RequestTimeout | StatusCode::GatewayTimeout => ErrorType::Timeout,
-            StatusCode::TooManyRequests => ErrorType::TooManyRequests,
-            _ => ErrorType::Unknown,
+impl <S> From<S> for ApiError where S: Into<String> {
+    fn from(message: S) -> ApiError {
+        ApiError {
+            error_type: ErrorType::Algorithm,
+            message: message.into(),
+            stacktrace: Some(format!("{:?}", Backtrace::new())),
         }
     }
 }
