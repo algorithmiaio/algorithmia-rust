@@ -39,7 +39,8 @@ extern crate base64;
 extern crate chrono;
 extern crate url;
 
-#[cfg(feature = "nightly")]
+#[cfg(feature = "entrypoint")]
+#[allow(unused_imports)]
 extern crate algorithmia_entrypoint;
 
 use algo::{Algorithm, AlgoUri};
@@ -49,9 +50,14 @@ use client::HttpClient;
 pub mod algo;
 pub mod data;
 pub mod error;
+
+#[cfg(feature="entrypoint")]
+pub mod entrypoint;
+
 pub use reqwest::{Url, IntoUrl};
 pub use client::ApiAuth;
 pub use reqwest::Body;
+
 
 /// Reexports of the most common types and traits
 pub mod prelude {
@@ -60,11 +66,8 @@ pub mod prelude {
     pub use serde_json::Value;
     pub use data::HasDataPath;
 
-    #[cfg(feature = "entrypoint")]
-    pub use algo::{EntryPoint, DecodedEntryPoint};
-
-    #[cfg(feature = "nightly")]
-    pub use algo::entrypoint;
+    #[cfg(feature="entrypoint")]
+    pub use entrypoint::{EntryPoint, DecodedEntryPoint};
 }
 
 mod client;

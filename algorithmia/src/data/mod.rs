@@ -1,4 +1,4 @@
-//! Manage data for algorithms
+//! API client for managing data through Algorithmia
 //!
 //! Instantiate from the [`Algorithmia`](../struct.Algorithmia.html) struct
 

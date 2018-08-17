@@ -1,3 +1,103 @@
+//! Algorithmia entrypoint for authoring Rust-based algorithms
+//!
+//! This module contains the traits that are used for defining the entrypoint
+//! of a rust-based algorithm on the Algorithmia platform.
+//!
+//! Rust algorithms are loaded by instantiating an `Algo` type via `Algo::default()`
+//! and each API request invokes the `apply` method on that instance.
+//! While it is possible to manually define the `Algo` type and implement
+//! either `EntryPoint` or `DecodedEntryPoint`, the `#[entrypoint]`
+//! attribute will generate these implementations for you based on the signature
+//! of the function (or impl) that it is attached to.
+//!
+//! ## `#[entrypoint]` Usage
+//!
+//! Just annotate a function with `#[entrypoint]`
+//!
+//! ```no_compile
+//! #[entrypoint]
+//! fn apply(name: String) -> Result<String, String> {
+//!     Ok(format!("Hello, {}.", name))
+//! }
+//! ```
+//!
+//! This will generate the algorithm entrypoint as long the function
+//! signature specifices supported input and output types:
+//!
+//! **Supported input types**:
+//! - String types (e.g. `&str` and `String`)
+//! - Byte types (e.g. `&[u8]` and `Vec<u8>`)
+//! - Json `&Value` type
+//! - `AlgoInput` enum type (for matching on text, json, and binary input)
+//! - Any type that implements `serde::Deserialize` (e.g. `#[derive(Deserialize)]`)
+//!
+//! **Supported output (`Ok` variant of return value)**:
+//! - `String`, `Vec<u8>`, `Value`, `AlgoOutput`
+//! - Any type that implements `serde::Serialize` (e.g. `#[derive(Serialize)]`)
+//!
+//! **Supported error types (`Err` variant of return value)**:
+//! - Any type with a conversion to `Box<std::error::Error>`. This includes `String` and basically any type that implements the `Error` trait.
+//!
+//!
+//! ## Automatic JSON serialization/deserialization
+//!
+//! Since `#[entrypoint]` supports `Deserialize` input and `Serialize` output, this example will
+//! accept a JSON array and return a JSON number:
+//!
+//! ```no_compile
+//! #[entrypoint]
+//! fn start(names: Vec<String>) -> Result<usize, String> {
+//!    Ok(name.len())
+//! }
+//! ```
+//!
+//! To use your own custom types as input and output, simply implement `Deserialize` and
+//! `Serialize` respectively.
+//!
+//! ```no_compile
+//! #[derive(Deserialize)
+//! struct Input { titles: Vec<String> }
+//!
+//! #[derive(Serialize)
+//! struct Output { count: u32 }
+//!
+//! #[entrypoint]
+//! fn start(input: Input) -> Result<Output, String> {
+//!    Ok(Output{ count: input.titles.len() })
+//! }
+//! ```
+//!
+//! ## Preloading (advanced usage)
+//!
+//! If your algorithm has a preload step that doesn't vary with user input (e.g. loading a model),
+//! you can create a type that implements `Default`, and use a method on that type as your
+//! entrypoint (the `#[entrypoint]` annotation goes on the impl of your type. Multiple API calls in
+//! succession from a single user will only instantiate the type once, but call `apply` multiple
+//! times:
+//!
+//! ```no_compile
+//! #[derive(Deserialize)
+//! struct Input { titles: Vec<String>, max: u32 }
+//!
+//! #[derive(Serialize)
+//! struct Output { titles: Vec<String> }
+//!
+//! struct App { model: Vec<u8> }
+//!
+//! #[entrypoint]
+//! impl App {
+//!     fn apply(&self, input: Input) -> Result<Output, String> {
+//!         unimplemented!();
+//!     }
+//! }
+//!
+//! impl Default for App {
+//!     fn default() -> Self {
+//!         App { model: load_model() }
+//!     }
+//! }
+//! ```
+
 use algo::{AlgoInput, AlgoOutput};
 use std::error::Error as StdError;
 use error::{ErrorType, ApiError, ResultExt};
@@ -6,8 +106,9 @@ use serde_json;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-#[cfg(feature = "nightly")]
-pub use algorithmia_entrypoint::entrypoint;
+// #[cfg(feature = "entrypoint")]
+// #[doc(hidden)]
+// pub use algorithmia_entrypoint::entrypoint;
 
 /// Alternate implementation for `EntryPoint`
 ///   that automatically decodes JSON input to the associate type

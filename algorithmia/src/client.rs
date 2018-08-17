@@ -33,7 +33,7 @@ impl HttpClient {
         HttpClient {
             api_auth: api_auth,
             base_url: base_url.into_url(),
-            inner_client: Arc::new(Client::new().expect("Failed to init client")),
+            inner_client: Arc::new(Client::new()),
             user_agent: format!(
                 "algorithmia-rust/{} (Rust {}",
                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
@@ -69,7 +69,7 @@ impl HttpClient {
 
 
     fn build_request(&self, verb: Method, url: Url) -> RequestBuilder {
-        let mut req = self.inner_client.request(verb, url.clone()).unwrap();
+        let mut req = self.inner_client.request(verb, url.clone());
 
         req.header(UserAgent::new(self.user_agent.clone()));
         if let ApiAuth::ApiKey(ref api_key) = self.api_auth {
