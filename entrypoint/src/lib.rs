@@ -116,7 +116,7 @@ impl Entrypoint {
                     use algorithmia::algo::{EntryPoint, AlgoOutput};
                     pub struct Algo(#self_type);
                     impl EntryPoint for Algo {
-                        fn #apply_fn(&self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
+                        fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                             (self.0).#fn_name(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
                         }
                     }
@@ -134,7 +134,7 @@ impl Entrypoint {
                     use algorithmia::algo::{EntryPoint, AlgoOutput};
                     #[derive(Default)] pub struct Algo;
                     impl EntryPoint for Algo {
-                        fn #apply_fn(&self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
+                        fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                             #fn_name(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
                         }
                     }
@@ -157,7 +157,7 @@ impl Entrypoint {
                     pub struct Algo(#self_type);
                     impl DecodedEntryPoint for Algo {
                         type Input = #input_type;
-                        fn apply_decoded(&self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
+                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                             (self.0).#fn_name(input).map(AlgoOutput::from).map_err(|err| err.into())
                         }
                     }
@@ -177,7 +177,7 @@ impl Entrypoint {
                     #[derive(Default)] pub struct Algo;
                     impl DecodedEntryPoint for Algo {
                         type Input = #input_type;
-                        fn apply_decoded(&self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
+                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
                             #fn_name(input).map(AlgoOutput::from).map_err(|err| err.into())
                         }
                     }

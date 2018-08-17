@@ -122,7 +122,7 @@ use serde_json::Value;
 /// impl DecodedEntryPoint for Algo {
 ///     // Expect input to be an array of 2 strings
 ///     type Input = (String, String);
-///     fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<Error>> {
+///     fn apply_decoded(&mut self, input: Self::Input) -> Result<AlgoOutput, Box<Error>> {
 ///         let msg = format!("{} - {}", input.0, input.1);
 ///         Ok(msg.into())
 ///     }
@@ -135,14 +135,14 @@ pub trait DecodedEntryPoint: Default {
     /// This method is an apply variant that will receive the decoded form of JSON input.
     ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
     #[allow(unused_variables)]
-    fn apply_decoded(&self, input: Self::Input) -> Result<AlgoOutput, Box<StdError>>;
+    fn apply_decoded(&mut self, input: Self::Input) -> Result<AlgoOutput, Box<StdError>>;
 }
 
 impl<T> EntryPoint for T
 where
     T: DecodedEntryPoint,
 {
-    fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply(&mut self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input.as_json() {
             Some(obj) => {
                 let decoded =
@@ -159,19 +159,19 @@ where
 pub trait EntryPoint: Default {
     #[allow(unused_variables)]
     /// Override to handle string input
-    fn apply_str(&self, text: &str) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply_str(&mut self, text: &str) -> Result<AlgoOutput, Box<StdError>> {
         Err(ApiError::new(ErrorType::Unsupported, "String input is not supported").into())
     }
 
     #[allow(unused_variables)]
     /// Override to handle JSON input (see also [`DecodedEntryPoint`](trait.DecodedEntryPoint.html))
-    fn apply_json(&self, json: &Value) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply_json(&mut self, json: &Value) -> Result<AlgoOutput, Box<StdError>> {
         Err(ApiError::new(ErrorType::Unsupported, "JSON input is not supported").into())
     }
 
     #[allow(unused_variables)]
     /// Override to handle binary input
-    fn apply_bytes(&self, bytes: &[u8]) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply_bytes(&mut self, bytes: &[u8]) -> Result<AlgoOutput, Box<StdError>> {
         Err(ApiError::new(ErrorType::Unsupported, "Binary input is not supported").into())
     }
 
@@ -188,7 +188,7 @@ pub trait EntryPoint: Default {
     ///
     /// - `AlgoInput::Text` input will be JSON-encoded to call `apply_json`
     /// - `AlgoInput::Json` input will be parse to see it can call `apply_str`
-    fn apply(&self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply(&mut self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
         match input {
             AlgoInput::Text(ref text) => {
                 match self.apply_str(text) {
