@@ -36,27 +36,30 @@ impl DataObject {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::{DataType, HasDataPath};
-    /// # let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_obj = client.data("data://.my/some/path");
-    /// match my_obj.get_type().ok().unwrap() {
+    /// match my_obj.get_type()? {
     ///     DataType::File => println!("{} is a file", my_obj.to_data_uri()),
     ///     DataType::Dir => println!("{} is a directory", my_obj.to_data_uri()),
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_type(&self) -> Result<DataType> {
         let url = self.to_url()?;
-        let mut req = self.client.head(url);
+        let req = self.client.head(url);
         let res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
             })?;
 
         match res.status() {
-            StatusCode::Ok => {
+            StatusCode::OK => {
                 let metadata = parse_headers(res.headers())?;
                 Ok(metadata.data_type)
             }
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => Err(ApiError::from(status.to_string()).into()),
         }
     }
@@ -66,22 +69,25 @@ impl DataObject {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::{DataItem, HasDataPath};
-    /// # let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_obj = client.data("data://.my/some/path");
-    /// match my_obj.into_type().ok().unwrap() {
+    /// match my_obj.into_type()? {
     ///     DataItem::File(f) => println!("{} is a file", f.to_data_uri()),
     ///     DataItem::Dir(d) => println!("{} is a directory", d.to_data_uri()),
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn into_type(self) -> Result<DataItem> {
         let metadata = {
             let url = self.to_url()?;
-            let mut req = self.client.head(url);
+            let req = self.client.head(url);
             let res = req.send()
                 .chain_err(|| {
                     ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
                 })?;
-            if res.status() == StatusCode::NotFound {
+            if res.status() == StatusCode::NOT_FOUND {
                 return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
             }
             parse_headers(res.headers())?

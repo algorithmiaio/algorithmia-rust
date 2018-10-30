@@ -24,8 +24,13 @@ serde_derive = "1.0"
 base64 = "0.9.0"
 error-chain = "0.8.1"
 mime = "0.3.3"
-reqwest = "0.8"
+reqwest = "0.9.4"
 chrono = { version = "0.4", features = ["serde"] }
+http = "0.1.13"
+headers = "0.1.0"
+headers-ext = "0.0.3"
+headers-core = "0.0.1"
+headers-derive = "0.0.1"
 
 [dependencies.hyper]
 version = "0.11"

@@ -3,9 +3,9 @@ extern crate algorithmia;
 use algorithmia::Algorithmia;
 use algorithmia::data::ReadAcl;
 use std::env;
+use std::error::Error;
 
-
-fn main() {
+fn main() -> Result<(), Box<Error>> {
     let mut args = env::args();
     args.next(); // discard args[0]
     let path = match args.next() {
@@ -20,7 +20,7 @@ fn main() {
         }
     };
 
-    let client = Algorithmia::client(&*api_key);
+    let client = Algorithmia::client(&*api_key)?;
     match client.dir(&*path).create(ReadAcl::Private) {
         Ok(_) => println!("Successfully created collection {}", path),
         Err(e) => println!("Error creating collection: {}", e),
@@ -30,6 +30,5 @@ fn main() {
         Ok(_) => println!("Successfully deleted collection {}", path),
         Err(e) => println!("Error deleting collection: {}", e),
     }
-
-
+    Ok(())
 }

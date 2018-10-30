@@ -11,7 +11,8 @@ use error::*;
 use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::ops::Deref;
-use reqwest::header::{Headers, ContentLength, Date};
+use headers_ext::{HeaderMapExt, ContentLength, Date};
+use http::header::{HeaderMap};
 
 mod dir;
 mod file;
@@ -21,10 +22,14 @@ mod object;
 static DATA_BASE_PATH: &'static str = "v1/connector";
 
 mod header {
-    header! { (XDataType, "X-Data-Type") => [String] }
-    header! { (XErrorMessage, "X-Error-Message") => [String] }
+    use http::header::HeaderValue;
+    pub const X_DATA_TYPE: &'static str = "x-data-type";
+    pub const X_ERROR_MESSAGE: &'static str = "x-error-message";
+    pub(crate) fn lossy_header(val: &HeaderValue) -> String {
+        String::from_utf8_lossy(val.as_bytes()).to_string()
+    }
 }
-use self::header::{XDataType, XErrorMessage};
+use self::header::{X_DATA_TYPE, X_ERROR_MESSAGE, lossy_header};
 
 /// Minimal representation of data type
 pub enum DataType {
@@ -72,23 +77,23 @@ struct HeaderData {
     pub last_modified: Option<DateTime<Utc>>,
 }
 
-fn parse_headers(headers: &Headers) -> Result<HeaderData> {
-    if let Some(err_header) = headers.get::<XErrorMessage>() {
+fn parse_headers(headers: &HeaderMap) -> Result<HeaderData> {
+    if let Some(err_header) = headers.get(X_ERROR_MESSAGE).map(lossy_header) {
         return Err(
-            ErrorKind::Api(ApiError::from(err_header.to_string())).into()
+            ErrorKind::Api(ApiError::from(err_header)).into()
         );
     };
 
-    let data_type = match headers.get::<XDataType>() {
-        Some(dt) if &*dt.to_string() == "directory" => DataType::Dir,
-        Some(dt) if &*dt.to_string() == "file" => DataType::File,
+    let data_type = match &headers.get(X_DATA_TYPE).map(lossy_header) {
+        Some(dt) if dt == "directory" => DataType::Dir,
+        Some(dt) if dt == "file" => DataType::File,
         Some(dt) => return Err(ErrorKind::InvalidDataType(dt.to_string()).into()),
         None => return Err(ErrorKind::MissingDataType.into()),
     };
 
-    let content_length = headers.get::<ContentLength>().map(|c| c.0);
-    let last_modified = headers.get::<Date>().map(|d| {
-        let time = SystemTime::from(d.0);
+    let content_length = headers.typed_get::<ContentLength>().map(|c| c.0);
+    let last_modified = headers.typed_get::<Date>().map(|d| {
+        let time = SystemTime::from(d);
         let ts = time.duration_since(UNIX_EPOCH).expect("date header predates unix epoch");
         let naive_datetime = NaiveDateTime::from_timestamp(ts.as_secs() as i64, ts.subsec_nanos() as u32);
         Utc.from_utc_datetime(&naive_datetime)

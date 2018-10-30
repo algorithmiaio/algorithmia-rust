@@ -1,5 +1,5 @@
 use data::*;
-use super::header::XErrorMessage;
+use super::header::X_ERROR_MESSAGE;
 use error::{ErrorKind, Result, ResultExt, ApiError};
 
 use client::HttpClient;
@@ -16,13 +16,8 @@ pub trait HasDataPath {
 
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Result<Url> {
-        let base_url = self.client()
-            .base_url
-            .as_ref()
-            .map_err(|err| *err)
-            .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
-        base_url
+        self.client().base_url
             .join(&path)
             .chain_err(|| ErrorKind::InvalidDataUri(self.to_data_uri()))
     }
@@ -32,7 +27,7 @@ pub trait HasDataPath {
     /// ```
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::HasDataPath;
-    /// # let client = Algorithmia::client("111112222233333444445555566");
+    /// # let client = Algorithmia::client("111112222233333444445555566").unwrap();
     /// let my_dir = client.dir(".my/my_dir");
     /// assert_eq!(my_dir.to_data_uri(), "data://.my/my_dir");
     /// ```
@@ -49,7 +44,7 @@ pub trait HasDataPath {
     /// ```
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::HasDataPath;
-    /// # let client = Algorithmia::client("111112222233333444445555566");
+    /// # let client = Algorithmia::client("111112222233333444445555566").unwrap();
     /// let my_file = client.file("data://.my/my_dir/my_file");
     /// assert_eq!(my_file.parent().unwrap().to_data_uri(), "data://.my/my_dir");
     /// ```
@@ -71,9 +66,12 @@ pub trait HasDataPath {
     /// ```
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::HasDataPath;
-    /// # let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// # let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir("data:///.my/my_dir");
     /// assert_eq!(my_dir.basename().unwrap(), "my_dir");
+    /// # Ok(())
+    /// # }
     /// ```
     fn basename(&self) -> Option<String> {
         self.path().rsplitn(2, '/').next().map(String::from)
@@ -85,24 +83,24 @@ pub trait HasDataPath {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::HasDataPath;
-    /// # let client = Algorithmia::client("111112222233333444445555566");
+    /// # let client = Algorithmia::client("111112222233333444445555566").unwrap();
     /// let my_file = client.data("data://.my/my_dir/my_file");
     /// assert_eq!(my_file.exists().unwrap(), true);
     /// ```
     fn exists(&self) -> Result<bool> {
         let url = self.to_url()?;
         let client = self.client();
-        let mut req = client.head(url);
+        let req = client.head(url);
 
         let res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
             })?;
         match res.status() {
-            StatusCode::Ok => Ok(true),
-            StatusCode::NotFound => Ok(false),
+            StatusCode::OK => Ok(true),
+            StatusCode::NOT_FOUND => Ok(false),
             status => {
-                let msg = match res.headers().get::<XErrorMessage>() {
+                let msg = match res.headers().get(X_ERROR_MESSAGE).and_then(|x| x.to_str().ok()) {
                     Some(err_header) => format!("{}: {}", status, err_header),
                     None => format!("{}", status),
                 };

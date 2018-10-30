@@ -4,11 +4,13 @@
 //!
 //! ```no_run
 //! use algorithmia::Algorithmia;
-//!
-//! let client = Algorithmia::client("111112222233333444445555566");
+//! # fn main() -> Result<(), Box<std::error::Error>> {
+//! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let my_file = client.file(".my/my_dir/some_filename");
 //!
-//! my_file.put("file_contents").unwrap();
+//! my_file.put("file_contents")?;
+//! # Ok(())
+//! # }
 //! ```
 
 use chrono::{DateTime, Utc, TimeZone};
@@ -90,13 +92,16 @@ impl DataFile {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use std::fs::File;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     ///
-    /// client.file(".my/my_dir/string.txt").put("file_contents").unwrap();
-    /// client.file(".my/my_dir/bytes.txt").put("file_contents".as_bytes()).unwrap();
+    /// client.file(".my/my_dir/string.txt").put("file_contents")?;
+    /// client.file(".my/my_dir/bytes.txt").put("file_contents".as_bytes())?;
     ///
-    /// let file = File::open("/path/to/file.jpg").unwrap();
-    /// client.file(".my/my_dir/file.jpg").put(file).unwrap();
+    /// let file = File::open("/path/to/file.jpg")?;
+    /// client.file(".my/my_dir/file.jpg").put(file)?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn put<B>(&self, body: B) -> Result<()>
     where
@@ -114,7 +119,7 @@ impl DataFile {
 
         match res.status() {
             status if status.is_success() => Ok(()),
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }
@@ -126,29 +131,24 @@ impl DataFile {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use std::io::Read;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
-    /// match my_file.get() {
-    ///   Ok(mut response) => {
-    ///     match response.into_string() {
-    ///       Ok(data) => println!("{}", data),
-    ///       Err(err) => println!("IOError: {}", err),
-    ///     }
-    ///   },
-    ///   Err(err) => println!("Error downloading file: {}", err),
-    /// };
+    /// let data = my_file.get()?.into_string()?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get(&self) -> Result<FileData> {
         let url = self.to_url()?;
-        let mut req = self.client.get(url);
+        let req = self.client.get(url);
         let res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri()))
             })?;
 
         match res.status() {
-            StatusCode::Ok => {
+            StatusCode::OK => {
                 let metadata = parse_headers(res.headers())?;
                 match metadata.data_type {
                     DataType::File => (),
@@ -168,7 +168,7 @@ impl DataFile {
                     data: Box::new(res),
                 })
             }
-            StatusCode::NotFound => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
+            StatusCode::NOT_FOUND => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
             status => Err(ApiError::from(status.to_string()).into()),
         }
     }
@@ -179,17 +179,20 @@ impl DataFile {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
     /// match my_file.delete() {
     ///   Ok(_) => println!("Successfully deleted file"),
     ///   Err(err) => println!("Error deleting file: {}", err),
     /// };
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn delete(&self) -> Result<()> {
         let url = self.to_url()?;
-        let mut req = self.client.delete(url);
+        let req = self.client.delete(url);
         let mut res = req.send()
             .chain_err(|| {
                 ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri()))
@@ -202,7 +205,7 @@ impl DataFile {
 
         match res.status() {
             status if status.is_success() => Ok(()),
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }

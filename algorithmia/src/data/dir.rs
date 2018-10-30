@@ -6,18 +6,21 @@
 //! use algorithmia::Algorithmia;
 //! use algorithmia::data::DataAcl;
 //!
-//! let client = Algorithmia::client("111112222233333444445555566");
+//! # fn main() -> Result<(), Box<std::error::Error>> {
+//! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let my_dir = client.dir(".my/my_dir");
 //!
-//! my_dir.create(DataAcl::default()).unwrap();
-//! my_dir.put_file("/path/to/file").unwrap();
+//! my_dir.create(DataAcl::default())?;
+//! my_dir.put_file("/path/to/file")?;
+//! # Ok(())
+//! # }
 //! ```
 
 use client::HttpClient;
 use error::{ApiError, ErrorKind, Result, ResultExt};
 use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
-use super::header::XDataType;
+use super::header::{X_DATA_TYPE, lossy_header};
 use serde_json;
 
 use std::io::Read;
@@ -26,8 +29,6 @@ use std::path::Path;
 use std::vec::IntoIter;
 
 use chrono::{DateTime, Utc};
-use mime;
-use reqwest::header::ContentType;
 use reqwest::StatusCode;
 
 /// Algorithmia Data Directory
@@ -208,10 +209,12 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
     })?;
 
     if res.status().is_success() {
-        if let Some(data_type) = res.headers().get::<XDataType>() {
-            if "directory" != data_type.as_str() {
+        match res.headers().get(X_DATA_TYPE).map(lossy_header) {
+            Some(ref dt) if dt == "directory" => (),
+            data_type =>  {
+                let dt = data_type.unwrap_or_else(|| "unknown".to_string());
                 return Err(
-                    ErrorKind::UnexpectedDataType("directory", data_type.to_string()).into(),
+                    ErrorKind::UnexpectedDataType("directory", dt).into(),
                 );
             }
         }
@@ -227,7 +230,7 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
         status if status.is_success() => {
             serde_json::from_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
         }
-        StatusCode::NotFound => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
+        StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
         status => Err(ApiError::from_json_or_status(&res_json, status).into())
     }
 }
@@ -257,7 +260,8 @@ impl DataDir {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::{DataItem, HasDataPath};
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// let dir_list = my_dir.list();
     /// for entry in dir_list {
@@ -267,6 +271,8 @@ impl DataDir {
     ///         Err(err) => { println!("Error: {}", err); break; },
     ///     }
     /// };
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn list(&self) -> DirectoryListing {
         DirectoryListing::new(self)
@@ -280,12 +286,15 @@ impl DataDir {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::DataAcl;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.create(DataAcl::default()) {
     ///   Ok(_) => println!("Successfully created Directory"),
     ///   Err(e) => println!("Error created directory: {}", e),
     /// };
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<()> {
         let parent = self.parent()
@@ -298,14 +307,11 @@ impl DataDir {
                 .into(),
             acl: Some(acl.into()),
         };
-        let raw_input = serde_json::to_vec(&input_data)
-            .chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
 
         // POST request
         let mut res = self.client
             .post(parent_url)
-            .header(ContentType(mime::APPLICATION_JSON))
-            .body(raw_input)
+            .json(&input_data)
             .send()
             .chain_err(|| {
                 ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri()))
@@ -314,7 +320,7 @@ impl DataDir {
 
         match res.status() {
             status if status.is_success() => Ok(()),
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
                 let mut res_json = String::new();
                 res.read_to_string(&mut res_json)
@@ -333,12 +339,15 @@ impl DataDir {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.delete(false) {
     ///   Ok(_) => println!("Successfully deleted Directory"),
     ///   Err(err) => println!("Error deleting directory: {}", err),
     /// };
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn delete(&self, force: bool) -> Result<DirectoryDeleted> {
         // DELETE request
@@ -365,7 +374,7 @@ impl DataDir {
                     .map(|res| res.result)
                     .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
             }
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }
@@ -376,13 +385,16 @@ impl DataDir {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::prelude::*;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     ///
     /// match my_dir.put_file("/path/to/file") {
     ///   Ok(_) => println!("Successfully uploaded to: {}", my_dir.to_data_uri()),
     ///   Err(err) => println!("Error uploading file: {}", err),
     /// };
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
         let path_ref = file_path.as_ref();
@@ -415,7 +427,7 @@ mod tests {
     use Algorithmia;
 
     fn mock_client() -> Algorithmia {
-        Algorithmia::client("")
+        Algorithmia::client("").unwrap()
     }
 
     #[test]

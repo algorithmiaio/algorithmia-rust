@@ -5,15 +5,19 @@
 //! ```no_run
 //! use algorithmia::Algorithmia;
 //!
+//! # fn main() -> Result<(), Box<std::error::Error>> {
+//!
 //! // Initialize with an API key
-//! let client = Algorithmia::client("111112222233333444445555566");
+//! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<int>
 //! //   since this algorithm outputs results as a JSON array of integers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let result: Vec<f64> = moving_avg.pipe(&input).unwrap().decode().unwrap();
+//! let result: Vec<f64> = moving_avg.pipe(&input)?.decode()?;
 //! println!("Completed with result: {:?}", result);
+//! # Ok(())
+//! # }
 //! ```
 
 use client::HttpClient;
@@ -26,7 +30,7 @@ use serde::de::DeserializeOwned;
 use serde::de::Error as SerdeError;
 
 use base64;
-use reqwest::header::ContentType;
+use headers_ext::ContentType;
 use reqwest::Url;
 use mime::{self, Mime};
 #[doc(hidden)]
@@ -38,6 +42,8 @@ use std::str::FromStr;
 use std::fmt;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
+use http::header::HeaderMap;
+use headers_ext::HeaderMapExt;
 
 static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
@@ -118,13 +124,8 @@ impl Algorithm {
 
     /// Get the API Endpoint URL for this Algorithm
     pub fn to_url(&self) -> Result<Url> {
-        let base_url = self.client
-            .base_url
-            .as_ref()
-            .map_err(|err| *err)
-            .chain_err(|| ErrorKind::InvalidBaseUrl)?;
         let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.algo_uri.path);
-        base_url
+        self.client.base_url
             .join(&path)
             .chain_err(|| ErrorKind::InvalidAlgoUri(path))
     }
@@ -146,7 +147,7 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566").unwrap();
     /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
     /// match moving_avg.pipe(&input) {
@@ -187,13 +188,16 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
     /// let output = match minmax.pipe_json("[2,3,4]") {
     ///    Ok(response) => response.into_json().unwrap(),
     ///    Err(err) => panic!("{}", err),
     /// };
+    /// # Ok(())
+    /// # }
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse> {
         let mut res = self.pipe_as(json_input.to_owned(), mime::APPLICATION_JSON)?;
 
@@ -220,9 +224,11 @@ impl Algorithm {
         }
 
         // We just need the path and query string
+        let mut headers = HeaderMap::new();
+        headers.typed_insert(ContentType::from(content_type));
         self.client
             .post(url)
-            .header(ContentType(content_type))
+            .headers(headers)
             .body(input_data)
             .send().chain_err(|| {
                 ErrorKind::Http(format!("calling algorithm '{}'", self.algo_uri))
@@ -241,11 +247,14 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    ///
+    /// # fn main() -> Result<(), Box<std::error::Error>> {
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// client.algo("codeb34v3r/FindMinMax/0.1")
     ///     .timeout(3)
-    ///     .pipe(vec![2,3,4])
-    ///     .unwrap();
+    ///     .pipe(vec![2,3,4])?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn timeout(&mut self, timeout: u32) -> &mut Algorithm {
         self.options.timeout(timeout);
@@ -608,7 +617,7 @@ mod tests {
     use super::*;
 
     fn mock_client() -> Algorithmia {
-        Algorithmia::client("")
+        Algorithmia::client("").unwrap()
     }
 
     #[test]

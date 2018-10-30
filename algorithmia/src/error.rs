@@ -145,6 +145,13 @@ error_chain! {
             display("API responded with invalid data type: '{}'", t)
         }
 
+        // API response included an unknown data type header
+        InvalidApiKey {
+            description("invalid API key")
+            display("API key is invalid")
+        }
+
+
         // API response included an unexpected data type header
         UnexpectedDataType(expected: &'static str, actual: String) {
             description("unexpected data type")
