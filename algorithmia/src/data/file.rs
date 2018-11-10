@@ -14,12 +14,12 @@
 //! ```
 
 use chrono::{DateTime, Utc, TimeZone};
-use client::HttpClient;
+use crate::client::HttpClient;
 use reqwest::StatusCode;
-use data::{HasDataPath, DataType};
+use crate::data::{HasDataPath, DataType};
 use std::io::{self, Read};
-use Body;
-use error::{Error, ErrorKind, Result, ResultExt, ApiError};
+use crate::Body;
+use crate::error::{Error, ErrorKind, Result, ResultExt, ApiError};
 use super::{parse_headers, parse_data_uri};
 
 

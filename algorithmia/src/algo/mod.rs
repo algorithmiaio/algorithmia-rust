@@ -20,9 +20,9 @@
 //! # }
 //! ```
 
-use client::HttpClient;
-use error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
-use Body;
+use crate::client::HttpClient;
+use crate::error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
+use crate::Body;
 
 use serde_json::{self, Value};
 use serde::{Deserialize, Serialize};
@@ -613,7 +613,7 @@ impl From<AlgoOutput> for AlgoInput {
 
 #[cfg(test)]
 mod tests {
-    use Algorithmia;
+    use crate::Algorithmia;
     use super::*;
 
     fn mock_client() -> Algorithmia {

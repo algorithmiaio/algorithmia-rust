@@ -1,6 +1,6 @@
-use data::*;
-use error::{ApiError, Result, ResultExt, ErrorKind};
-use client::HttpClient;
+use crate::data::*;
+use crate::error::{ApiError, Result, ResultExt, ErrorKind};
+use crate::client::HttpClient;
 use chrono::{Utc, TimeZone};
 use reqwest::StatusCode;
 use super::{parse_headers, parse_data_uri};

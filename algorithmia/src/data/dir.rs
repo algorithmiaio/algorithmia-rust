@@ -16,9 +16,9 @@
 //! # }
 //! ```
 
-use client::HttpClient;
-use error::{ApiError, ErrorKind, Result, ResultExt};
-use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
+use crate::client::HttpClient;
+use crate::error::{ApiError, ErrorKind, Result, ResultExt};
+use crate::data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
 use super::header::{X_DATA_TYPE, lossy_header};
 use serde_json;
@@ -422,9 +422,9 @@ impl DataDir {
 
 #[cfg(test)]
 mod tests {
-    use data::HasDataPath;
+    use crate::data::HasDataPath;
     use super::*;
-    use Algorithmia;
+    use crate::Algorithmia;
 
     fn mock_client() -> Algorithmia {
         Algorithmia::client("").unwrap()

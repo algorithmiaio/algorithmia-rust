@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::str::FromStr;
 
 pub use reqwest::Body;
-use error::{ErrorKind, Result, ResultExt};
+use crate::error::{ErrorKind, Result, ResultExt};
 
 struct Simple(HeaderValue);
 impl Credentials for Simple {
@@ -64,7 +64,7 @@ impl HttpClient {
             user_agent: format!(
                 "algorithmia-rust/{} (Rust {}",
                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
-                ::version::RUSTC_VERSION
+                crate::version::RUSTC_VERSION
             ),
         })
     }

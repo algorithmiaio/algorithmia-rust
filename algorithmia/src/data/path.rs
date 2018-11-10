@@ -1,8 +1,8 @@
-use data::*;
+use crate::data::*;
 use super::header::X_ERROR_MESSAGE;
-use error::{ErrorKind, Result, ResultExt, ApiError};
+use crate::error::{ErrorKind, Result, ResultExt, ApiError};
 
-use client::HttpClient;
+use crate::client::HttpClient;
 use reqwest::{Url, StatusCode};
 
 /// Trait used for types that can be represented with an Algorithmia Data URI

@@ -7,7 +7,7 @@ pub use self::file::*;
 pub use self::path::*;
 pub use self::object::*;
 
-use error::*;
+use crate::error::*;
 use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::ops::Deref;

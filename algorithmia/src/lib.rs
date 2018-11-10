@@ -22,7 +22,7 @@
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
 
-#![cfg_attr(feature="nightly", feature(specialization, use_extern_macros))]
+#![cfg_attr(feature="nightly", feature(specialization))]
 #![recursion_limit = "1024"]
 
 #![allow(unknown_lints)]
@@ -49,9 +49,9 @@ extern crate url;
 #[allow(unused_imports)]
 extern crate algorithmia_entrypoint;
 
-use algo::{Algorithm, AlgoUri};
-use data::{DataDir, DataFile, DataObject, HasDataPath};
-use client::HttpClient;
+use crate::algo::{Algorithm, AlgoUri};
+use crate::data::{DataDir, DataFile, DataObject, HasDataPath};
+use crate::client::HttpClient;
 
 pub mod algo;
 pub mod data;
@@ -62,18 +62,18 @@ pub mod entrypoint;
 
 pub use reqwest::{Url, IntoUrl};
 pub use reqwest::Body;
-use client::ApiAuth;
-use error::Result;
+use crate::client::ApiAuth;
+use crate::error::Result;
 
 /// Reexports of the most common types and traits
 pub mod prelude {
-    pub use Algorithmia;
-    pub use algo::{AlgoInput, AlgoOutput};
+    pub use crate::Algorithmia;
+    pub use crate::algo::{AlgoInput, AlgoOutput};
     pub use serde_json::Value;
-    pub use data::HasDataPath;
+    pub use crate::data::HasDataPath;
 
     #[cfg(feature="entrypoint")]
-    pub use entrypoint::{EntryPoint, DecodedEntryPoint};
+    pub use crate::entrypoint::{EntryPoint, DecodedEntryPoint};
 }
 
 mod client;

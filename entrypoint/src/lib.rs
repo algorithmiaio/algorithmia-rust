@@ -3,7 +3,7 @@ extern crate syn;
 #[macro_use] extern crate quote;
 
 use syn::*;
-use proc_macro::TokenStream;
+use crate::proc_macro::TokenStream;
 use quote::{Tokens, ToTokens};
 
 #[proc_macro_attribute]

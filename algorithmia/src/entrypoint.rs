@@ -98,9 +98,9 @@
 //! }
 //! ```
 
-use algo::{AlgoInput, AlgoOutput};
+use crate::algo::{AlgoInput, AlgoOutput};
 use std::error::Error as StdError;
-use error::{ErrorType, ApiError, ResultExt};
+use crate::error::{ErrorType, ApiError, ResultExt};
 use serde_json;
 
 use serde::de::DeserializeOwned;

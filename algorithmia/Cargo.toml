@@ -11,6 +11,7 @@ readme = "README.md"
 keywords = ["algorithmia", "algorithm", "client", "machine-learning"]
 categories =["algorithms", "web-programming::http-client", "science"]
 build = "build.rs"
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "algorithmiaio/algorithmia-rust" }
