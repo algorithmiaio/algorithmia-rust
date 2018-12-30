@@ -1,8 +1,8 @@
 //! Internal client
 //!
 //! Do not use directly - use the [`Algorithmia`](../struct.Algorithmia.html) struct instead
-use headers_core::HeaderValue;
-use headers_ext::{Authorization, Credentials, HeaderMapExt, UserAgent};
+use http::header::HeaderValue;
+use headers_ext::{Authorization, HeaderMapExt, UserAgent, authorization::Credentials};
 use http::header::HeaderMap;
 use reqwest::{Client, IntoUrl, Method, RequestBuilder, Url};
 use std::str::FromStr;
