@@ -13,15 +13,14 @@
 //! # }
 //! ```
 
-use chrono::{DateTime, Utc, TimeZone};
+use super::{parse_data_uri, parse_headers};
 use crate::client::HttpClient;
-use reqwest::StatusCode;
-use crate::data::{HasDataPath, DataType};
-use std::io::{self, Read};
+use crate::data::{DataType, HasDataPath};
+use crate::error::{ApiError, Error, ErrorKind, Result, ResultExt};
 use crate::Body;
-use crate::error::{Error, ErrorKind, Result, ResultExt, ApiError};
-use super::{parse_headers, parse_data_uri};
-
+use chrono::{DateTime, TimeZone, Utc};
+use reqwest::StatusCode;
+use std::io::{self, Read};
 
 /// Response and reader when downloading a `DataFile`
 pub struct FileData {
@@ -108,14 +107,15 @@ impl DataFile {
         B: Into<Body>,
     {
         let url = self.to_url()?;
-        let mut res = self.client.put(url).body(body).send().chain_err(|| {
-            ErrorKind::Http(format!("writing file '{}'", self.to_data_uri()))
-        })?;
+        let mut res = self
+            .client
+            .put(url)
+            .body(body)
+            .send()
+            .chain_err(|| ErrorKind::Http(format!("writing file '{}'", self.to_data_uri())))?;
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| {
-                ErrorKind::Io(format!("writing file '{}'", self.to_data_uri()))
-            })?;
+            .chain_err(|| ErrorKind::Io(format!("writing file '{}'", self.to_data_uri())))?;
 
         match res.status() {
             status if status.is_success() => Ok(()),
@@ -123,7 +123,6 @@ impl DataFile {
             status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }
-
 
     /// Get a file from the Algorithmia Data API
     ///
@@ -142,10 +141,9 @@ impl DataFile {
     pub fn get(&self) -> Result<FileData> {
         let url = self.to_url()?;
         let req = self.client.get(url);
-        let res = req.send()
-            .chain_err(|| {
-                ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri()))
-            })?;
+        let res = req
+            .send()
+            .chain_err(|| ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri())))?;
 
         match res.status() {
             StatusCode::OK => {
@@ -154,8 +152,7 @@ impl DataFile {
                     DataType::File => (),
                     DataType::Dir => {
                         return Err(
-                            ErrorKind::UnexpectedDataType("file", "directory".to_string())
-                                .into(),
+                            ErrorKind::UnexpectedDataType("file", "directory".to_string()).into(),
                         );
                     }
                 }
@@ -172,7 +169,6 @@ impl DataFile {
             status => Err(ApiError::from(status.to_string()).into()),
         }
     }
-
 
     /// Delete a file from from the Algorithmia Data API
     ///
@@ -193,15 +189,12 @@ impl DataFile {
     pub fn delete(&self) -> Result<()> {
         let url = self.to_url()?;
         let req = self.client.delete(url);
-        let mut res = req.send()
-            .chain_err(|| {
-                ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri()))
-            })?;
+        let mut res = req
+            .send()
+            .chain_err(|| ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri())))?;
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| {
-                ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri()))
-            })?;
+            .chain_err(|| ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri())))?;
 
         match res.status() {
             status if status.is_success() => Ok(()),

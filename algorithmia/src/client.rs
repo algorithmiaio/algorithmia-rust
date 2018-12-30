@@ -1,15 +1,15 @@
 //! Internal client
 //!
 //! Do not use directly - use the [`Algorithmia`](../struct.Algorithmia.html) struct instead
-use reqwest::{Client, Method, RequestBuilder, Url, IntoUrl};
-use headers_ext::{HeaderMapExt, Authorization, UserAgent, Credentials};
-use headers_core::{HeaderValue};
+use headers_core::HeaderValue;
+use headers_ext::{Authorization, Credentials, HeaderMapExt, UserAgent};
 use http::header::HeaderMap;
-use std::sync::Arc;
+use reqwest::{Client, IntoUrl, Method, RequestBuilder, Url};
 use std::str::FromStr;
+use std::sync::Arc;
 
-pub use reqwest::Body;
 use crate::error::{ErrorKind, Result, ResultExt};
+pub use reqwest::Body;
 
 struct Simple(HeaderValue);
 impl Credentials for Simple {
@@ -30,7 +30,7 @@ impl Credentials for Simple {
 
 impl Simple {
     /// Try to create a `Simple` authorization header.
-    pub fn new(token: &str) -> Result<Self>  {
+    pub fn new(token: &str) -> Result<Self> {
         HeaderValue::from_str(&format!("Simple {}", token))
             .map(Simple)
             .map_err(|_| ErrorKind::InvalidApiKey.into())
@@ -59,7 +59,9 @@ impl HttpClient {
     pub fn new<U: IntoUrl>(api_auth: ApiAuth, base_url: U) -> Result<HttpClient> {
         Ok(HttpClient {
             api_auth: api_auth,
-            base_url: base_url.into_url().chain_err(|| ErrorKind::InvalidBaseUrl)?,
+            base_url: base_url
+                .into_url()
+                .chain_err(|| ErrorKind::InvalidBaseUrl)?,
             inner_client: Arc::new(Client::new()),
             user_agent: format!(
                 "algorithmia-rust/{} (Rust {}",
@@ -94,15 +96,20 @@ impl HttpClient {
         self.build_request(Method::DELETE, url)
     }
 
-
     fn build_request(&self, verb: Method, url: Url) -> RequestBuilder {
         let mut headers = HeaderMap::new();
-        headers.typed_insert(UserAgent::from_str(&self.user_agent).expect("User Agent not valid ASCII"));
+        headers.typed_insert(
+            UserAgent::from_str(&self.user_agent).expect("User Agent not valid ASCII"),
+        );
         if let ApiAuth::ApiKey(ref api_key) = self.api_auth {
-            headers.typed_insert(Authorization(Simple::new(api_key).expect("API Key not valid ASCII")));
+            headers.typed_insert(Authorization(
+                Simple::new(api_key).expect("API Key not valid ASCII"),
+            ));
         }
 
-        self.inner_client.request(verb, url.clone()).headers(headers)
+        self.inner_client
+            .request(verb, url.clone())
+            .headers(headers)
     }
 }
 

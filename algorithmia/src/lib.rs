@@ -21,59 +21,44 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
-
-#![cfg_attr(feature="nightly", feature(specialization))]
+#![cfg_attr(feature = "nightly", feature(specialization))]
 #![recursion_limit = "1024"]
-
 #![allow(unknown_lints)]
 
 #[macro_use]
 extern crate serde_derive;
-extern crate hyper;
 #[macro_use]
 extern crate error_chain;
-extern crate headers_derive;
-extern crate headers_core;
-extern crate headers_ext;
-extern crate headers;
-extern crate http;
-extern crate mime;
-extern crate serde;
-extern crate serde_json;
-extern crate reqwest;
-extern crate base64;
-extern crate chrono;
-extern crate url;
 
 #[cfg(feature = "entrypoint")]
 #[allow(unused_imports)]
 extern crate algorithmia_entrypoint;
 
-use crate::algo::{Algorithm, AlgoUri};
-use crate::data::{DataDir, DataFile, DataObject, HasDataPath};
+use crate::algo::{AlgoUri, Algorithm};
 use crate::client::HttpClient;
+use crate::data::{DataDir, DataFile, DataObject, HasDataPath};
 
 pub mod algo;
 pub mod data;
 pub mod error;
 
-#[cfg(feature="entrypoint")]
+#[cfg(feature = "entrypoint")]
 pub mod entrypoint;
 
-pub use reqwest::{Url, IntoUrl};
-pub use reqwest::Body;
 use crate::client::ApiAuth;
 use crate::error::Result;
+pub use reqwest::Body;
+pub use reqwest::{IntoUrl, Url};
 
 /// Reexports of the most common types and traits
 pub mod prelude {
-    pub use crate::Algorithmia;
-    pub use crate::algo::{AlgoInput, AlgoOutput};
-    pub use serde_json::Value;
+    pub use crate::algo::AlgoIo;
     pub use crate::data::HasDataPath;
+    pub use crate::Algorithmia;
+    pub use serde_json::Value;
 
-    #[cfg(feature="entrypoint")]
-    pub use crate::entrypoint::{EntryPoint, DecodedEntryPoint};
+    #[cfg(feature = "entrypoint")]
+    pub use crate::entrypoint::{DecodedEntryPoint, EntryPoint};
 }
 
 mod client;
@@ -93,12 +78,14 @@ impl Algorithmia {
     ///   `ALGORITHMIA_API` to override the default base URL of the API
     ///   and `ALGORITHMIA_API_KEY` to optionally the API key.
     pub fn new() -> Result<Algorithmia> {
-        let api_address = std::env::var("ALGORITHMIA_API")
-            .unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
+        let api_address =
+            std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
         let auth = std::env::var("ALGORITHMIA_API_KEY")
             .map(ApiAuth::from)
             .unwrap_or(ApiAuth::None);
-        Ok(Algorithmia { http_client: HttpClient::new(auth, &api_address)? })
+        Ok(Algorithmia {
+            http_client: HttpClient::new(auth, &api_address)?,
+        })
     }
 
     /// Instantiate a new client
@@ -113,16 +100,22 @@ impl Algorithmia {
     /// let client = Algorithmia::client("simUseYourApiKey");
     /// ```
     pub fn client<A: Into<String>>(api_key: A) -> Result<Algorithmia> {
-        let api_address = std::env::var("ALGORITHMIA_API")
-            .unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
-        Ok(Algorithmia { http_client: HttpClient::new(ApiAuth::from(api_key.into()), &api_address)? })
+        let api_address =
+            std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
+        Ok(Algorithmia {
+            http_client: HttpClient::new(ApiAuth::from(api_key.into()), &api_address)?,
+        })
     }
 
     /// Instantiate a new client against alternate API servers
-    pub fn client_with_url<A: Into<String>, U: IntoUrl>(api_key: A, base_url: U) -> Result<Algorithmia> {
-        Ok(Algorithmia { http_client: HttpClient::new(ApiAuth::from(api_key.into()), base_url)? })
+    pub fn client_with_url<A: Into<String>, U: IntoUrl>(
+        api_key: A,
+        base_url: U,
+    ) -> Result<Algorithmia> {
+        Ok(Algorithmia {
+            http_client: HttpClient::new(ApiAuth::from(api_key.into()), base_url)?,
+        })
     }
-
 
     /// Instantiate an [`Algorithm`](algo/algorithm.struct.html) from this client
     ///
@@ -192,11 +185,11 @@ impl Algorithmia {
     }
 }
 
-
 /// Allow cloning in order to reuse http client (and API key) for multiple connections
 impl Clone for Algorithmia {
     fn clone(&self) -> Algorithmia {
-        Algorithmia { http_client: self.http_client.clone() }
+        Algorithmia {
+            http_client: self.http_client.clone(),
+        }
     }
 }
-

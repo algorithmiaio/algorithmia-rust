@@ -1,7 +1,7 @@
 extern crate algorithmia;
 
-use algorithmia::Algorithmia;
 use algorithmia::data::ReadAcl;
+use algorithmia::Algorithmia;
 use std::env;
 use std::error::Error;
 

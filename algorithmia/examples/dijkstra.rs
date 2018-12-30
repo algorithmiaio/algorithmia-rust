@@ -1,8 +1,8 @@
 extern crate algorithmia;
 extern crate serde_json;
 
-use algorithmia::Algorithmia;
 use algorithmia::algo::AlgoResponse;
+use algorithmia::Algorithmia;
 use std::collections::HashMap;
 use std::env;
 use std::error::Error;
@@ -29,7 +29,11 @@ struct RouteMap<'a> {
 }
 
 impl<'a> RouteMap<'a> {
-    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> Result<AlgoResponse, Box<Error>> {
+    pub fn get_dijkstra_route(
+        self,
+        start: &'a str,
+        end: &'a str,
+    ) -> Result<AlgoResponse, Box<Error>> {
         let api_key = match env::var("ALGORITHMIA_API_KEY") {
             Ok(key) => key,
             Err(e) => {

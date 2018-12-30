@@ -4,20 +4,20 @@
 
 pub use self::dir::*;
 pub use self::file::*;
-pub use self::path::*;
 pub use self::object::*;
+pub use self::path::*;
 
 use crate::error::*;
-use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
-use std::time::{SystemTime, UNIX_EPOCH};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use headers_ext::{ContentLength, Date, HeaderMapExt};
+use http::header::HeaderMap;
 use std::ops::Deref;
-use headers_ext::{HeaderMapExt, ContentLength, Date};
-use http::header::{HeaderMap};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 mod dir;
 mod file;
-mod path;
 mod object;
+mod path;
 
 static DATA_BASE_PATH: &'static str = "v1/connector";
 
@@ -29,7 +29,7 @@ mod header {
         String::from_utf8_lossy(val.as_bytes()).to_string()
     }
 }
-use self::header::{X_DATA_TYPE, X_ERROR_MESSAGE, lossy_header};
+use self::header::{lossy_header, X_DATA_TYPE, X_ERROR_MESSAGE};
 
 /// Minimal representation of data type
 pub enum DataType {
@@ -79,9 +79,7 @@ struct HeaderData {
 
 fn parse_headers(headers: &HeaderMap) -> Result<HeaderData> {
     if let Some(err_header) = headers.get(X_ERROR_MESSAGE).map(lossy_header) {
-        return Err(
-            ErrorKind::Api(ApiError::from(err_header)).into()
-        );
+        return Err(ErrorKind::Api(ApiError::from(err_header)).into());
     };
 
     let data_type = match &headers.get(X_DATA_TYPE).map(lossy_header) {
@@ -94,8 +92,11 @@ fn parse_headers(headers: &HeaderMap) -> Result<HeaderData> {
     let content_length = headers.typed_get::<ContentLength>().map(|c| c.0);
     let last_modified = headers.typed_get::<Date>().map(|d| {
         let time = SystemTime::from(d);
-        let ts = time.duration_since(UNIX_EPOCH).expect("date header predates unix epoch");
-        let naive_datetime = NaiveDateTime::from_timestamp(ts.as_secs() as i64, ts.subsec_nanos() as u32);
+        let ts = time
+            .duration_since(UNIX_EPOCH)
+            .expect("date header predates unix epoch");
+        let naive_datetime =
+            NaiveDateTime::from_timestamp(ts.as_secs() as i64, ts.subsec_nanos() as u32);
         Utc.from_utc_datetime(&naive_datetime)
     });
 
@@ -105,7 +106,6 @@ fn parse_headers(headers: &HeaderMap) -> Result<HeaderData> {
         last_modified: last_modified,
     })
 }
-
 
 fn parse_data_uri(data_uri: &str) -> String {
     match data_uri {

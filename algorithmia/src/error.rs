@@ -1,160 +1,104 @@
 //! Error types
-use std::{fmt, str};
-use std::fmt::Display;
-use serde_json;
+use error_chain::Backtrace;
 use reqwest;
 use reqwest::StatusCode;
-use error_chain::Backtrace;
-use std::error::Error as StdError;
+use serde_json;
+use std::fmt::Display;
+use std::{fmt, str};
 
+pub const INPUT_ERROR: &'static str = "InputError";
+pub const UNSUPPORTED_ERROR: &'static str = "UnsupportedError";
+pub const ALGORITHM_ERROR: &'static str = "AlgorithmError";
 
-/// Error Types that the Algorithmia algorithm APIs can return
-#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
-pub enum ErrorType {
-    #[serde(rename="InputError")]
-    Input,
-
-    #[serde(rename="UnsupportedError")]
-    Unsupported,
-
-    #[serde(rename="InitializationError")]
-    Initialization,
-
-    #[serde(rename="OutOfMemoryError")]
-    OutOfMemory,
-
-    #[serde(rename="OutOfGpuMemoryError")]
-    OutOfGpuMemory,
-
-    #[serde(rename="LanguageError")]
-    Language,
-
-    #[serde(rename="TooLargeError")]
-    TooLarge,
-
-    #[serde(rename="ParsingError")]
-    Parsing,
-
-    #[serde(rename="EntityNotFoundError")]
-    EntityNotFound,
-
-    #[serde(rename="ThirdPartyCredentialError")]
-    ThirdPartyCredential,
-
-    #[serde(rename="AlgorithmError")]
-    Algorithm,
-
-    // Replace with #[non_exhaustive] after https://github.com/rust-lang/rust/issues/44109
-    // This also causes unreachable pattern warning on deserialize since "UknownError" is listed twice
-    #[doc(hidden)]
-    #[serde(rename="AlgorithmError")]
-    __DontMatchMe {}
+fn default_error_type() -> String {
+    ALGORITHM_ERROR.into()
 }
-
-fn unknown_error() -> ErrorType {
-    ErrorType::Algorithm
-}
-
 
 error_chain! {
-    foreign_links {
-        // Error from the Algorithmia API (may be from the algorithm)
-        Api(ApiError);
-    }
-
     errors {
+        // Error from the Algorithmia API (may be from the algorithm)
+        Api(err: ApiError) {
+            display("{}", err)
+        }
+
         // Http errors calling the API
         Http(context: String) {
-            description("HTTP error")
             display("HTTP error {}", context)
         }
 
         // Base URL couldn't be parsed as a `Url`
         InvalidBaseUrl {
-            description("invalid base URL")
+            display("unable to parse base URL")
         }
 
         // Invalid Data URI
         InvalidDataUri(uri: String) {
-            description("invalid data URI")
             display("invalid data URI '{}'", uri)
         }
 
         // Invalid Algorithm URI
         InvalidAlgoUri(uri: String) {
-            description("invalid algorithm URI")
             display("invalid algorithm URI: {}", &uri)
         }
 
         // Error decoding JSON
         DecodeJson(item: &'static str) {
-            description("json decode error")
             display("failed to decode {} json", item)
         }
 
         // Error encoding JSON
         EncodeJson(item: &'static str) {
-            description("json encode error")
             display("failed to encode {} as json", item)
         }
 
         // Error decoding base64
         DecodeBase64(item: &'static str) {
-            description("base64 error")
             display("failed to decode {} as base64", item)
         }
 
         // I/O errors reading or writing data
         Io(context: String) {
-            description("I/O error")
             display("I/O error {}", context)
         }
 
         // API responded with unknown content type
         InvalidContentType(t: String) {
-            description("invalid content type")
             display("invalid content type: '{}'", t)
         }
 
         // Content was not valid for the specified content-type
         MismatchedContentType(expected: &'static str) {
-            description("mismatched content type")
             display("content did not match content type: '{}'", expected)
         }
 
         // Content type is not the expected content type
         UnexpectedContentType(expected: &'static str, actual: String) {
-            description("unexpected content type")
             display("expected content type '{}', received '{}'", expected, actual)
         }
 
         // Encountered 404 Not Found
         NotFound(url: reqwest::Url) {
-            description("404 Not Found")
             display("404 Not Found ({})", url)
         }
 
         // API response was missing a data type header
         MissingDataType {
-            description("API response missing data type")
+            display("API response missing data type")
         }
 
         // API response included an unknown data type header
         InvalidDataType(t: String) {
-            description("invalid data type")
             display("API responded with invalid data type: '{}'", t)
         }
 
         // API response included an unknown data type header
         InvalidApiKey {
-            description("invalid API key")
             display("API key is invalid")
         }
 
 
         // API response included an unexpected data type header
         UnexpectedDataType(expected: &'static str, actual: String) {
-            description("unexpected data type")
             display("expected API response with data type '{}', received '{}'", expected, actual)
         }
 
@@ -163,15 +107,14 @@ error_chain! {
     }
 }
 
-
 /// Error from the Algorithmia API (may be from the algorithm)
 #[derive(Debug, Deserialize)]
 pub struct ApiError {
     /// Error message returned from the Algorithmia API
     pub message: String,
     /// Error type
-    #[serde(default="unknown_error")]
-    pub error_type: ErrorType,
+    #[serde(default = "default_error_type")]
+    pub error_type: String,
     /// Stacktrace of algorithm exception/panic
     pub stacktrace: Option<String>,
 }
@@ -185,9 +128,9 @@ impl Display for ApiError {
     }
 }
 
-impl StdError for ApiError {
-    fn description(&self) -> &str {
-        "API error"
+impl From<ApiError> for Error {
+    fn from(err: ApiError) -> Self {
+        Error::from_kind(ErrorKind::Api(err))
     }
 }
 
@@ -197,13 +140,13 @@ impl ApiError {
     /// ## Examples:
     ///
     /// ```
-    /// use algorithmia::error::{ApiError, ErrorType};
+    /// use algorithmia::error::{ApiError, INPUT_ERROR};
     ///
-    /// ApiError::new(ErrorType::Input, "Input missing field 'url'");
+    /// ApiError::new(INPUT_ERROR, "Input missing field 'url'");
     /// ```
-    pub fn new<S: Into<String>>(error_type: ErrorType, message: S) -> ApiError {
+    pub fn new<S: Into<String>>(error_type: S, message: S) -> ApiError {
         ApiError {
-            error_type,
+            error_type: error_type.into(),
             message: message.into(),
             stacktrace: Some(format!("{:?}", Backtrace::new())),
         }
@@ -217,10 +160,13 @@ impl ApiError {
     }
 }
 
-impl <S> From<S> for ApiError where S: Into<String> {
+impl<S> From<S> for ApiError
+where
+    S: Into<String>,
+{
     fn from(message: S) -> ApiError {
         ApiError {
-            error_type: ErrorType::Algorithm,
+            error_type: ALGORITHM_ERROR.into(),
             message: message.into(),
             stacktrace: Some(format!("{:?}", Backtrace::new())),
         }
@@ -233,7 +179,6 @@ impl <S> From<S> for ApiError where S: Into<String> {
 pub struct ApiErrorResponse {
     pub error: ApiError,
 }
-
 
 /// Helper to decode API responses into errors
 #[doc(hidden)]

@@ -1,10 +1,9 @@
-use crate::data::*;
-use crate::error::{ApiError, Result, ResultExt, ErrorKind};
+use super::{parse_data_uri, parse_headers};
 use crate::client::HttpClient;
-use chrono::{Utc, TimeZone};
+use crate::data::*;
+use crate::error::{ApiError, ErrorKind, Result, ResultExt};
+use chrono::{TimeZone, Utc};
 use reqwest::StatusCode;
-use super::{parse_headers, parse_data_uri};
-
 
 /// Algorithmia data object (file or directory)
 pub struct DataObject {
@@ -49,10 +48,9 @@ impl DataObject {
     pub fn get_type(&self) -> Result<DataType> {
         let url = self.to_url()?;
         let req = self.client.head(url);
-        let res = req.send()
-            .chain_err(|| {
-                ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
-            })?;
+        let res = req
+            .send()
+            .chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
 
         match res.status() {
             StatusCode::OK => {
@@ -83,10 +81,9 @@ impl DataObject {
         let metadata = {
             let url = self.to_url()?;
             let req = self.client.head(url);
-            let res = req.send()
-                .chain_err(|| {
-                    ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
-                })?;
+            let res = req.send().chain_err(|| {
+                ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
+            })?;
             if res.status() == StatusCode::NOT_FOUND {
                 return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
             }
@@ -98,7 +95,8 @@ impl DataObject {
             DataType::File => {
                 Ok(DataItem::File(DataFileItem {
                     size: metadata.content_length.unwrap_or(0),
-                    last_modified: metadata.last_modified
+                    last_modified: metadata
+                        .last_modified
                         // Fallback to Algorithmia public launch date :-)
                         .unwrap_or_else(|| Utc.ymd(2015, 3, 14).and_hms(8, 0, 0)),
                     file: self.into(),
@@ -107,7 +105,6 @@ impl DataObject {
         }
     }
 }
-
 
 impl From<DataObject> for DataDir {
     fn from(d: DataObject) -> Self {

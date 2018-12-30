@@ -16,15 +16,15 @@
 //! # }
 //! ```
 
-use crate::client::HttpClient;
-use crate::error::{ApiError, ErrorKind, Result, ResultExt};
-use crate::data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
+use super::header::{lossy_header, X_DATA_TYPE};
 use super::parse_data_uri;
-use super::header::{X_DATA_TYPE, lossy_header};
+use crate::client::HttpClient;
+use crate::data::{DataDirItem, DataFile, DataFileItem, DataItem, HasDataPath};
+use crate::error::{ApiError, ErrorKind, Result, ResultExt};
 use serde_json;
 
-use std::io::Read;
 use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 use std::vec::IntoIter;
 
@@ -100,25 +100,18 @@ impl Default for DataAcl {
 impl From<ReadAcl> for DataAcl {
     fn from(acl: ReadAcl) -> Self {
         match acl {
-            ReadAcl::Private |
-            ReadAcl::__Nonexhaustive => {
-                DataAcl {
-                    read: vec![],
-                    _dummy: (),
-                }
-            }
-            ReadAcl::MyAlgorithms => {
-                DataAcl {
-                    read: vec!["algo://.my/*".into()],
-                    _dummy: (),
-                }
-            }
-            ReadAcl::Public => {
-                DataAcl {
-                    read: vec!["user://*".into()],
-                    _dummy: (),
-                }
-            }
+            ReadAcl::Private | ReadAcl::__Nonexhaustive => DataAcl {
+                read: vec![],
+                _dummy: (),
+            },
+            ReadAcl::MyAlgorithms => DataAcl {
+                read: vec!["algo://.my/*".into()],
+                _dummy: (),
+            },
+            ReadAcl::Public => DataAcl {
+                read: vec!["user://*".into()],
+                _dummy: (),
+            },
         }
     }
 }
@@ -162,19 +155,17 @@ impl<'a> Iterator for DirectoryListing<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
             // Return folders first
-            Some(d) => Some(Ok(
-                DataItem::Dir(DataDirItem { dir: self.dir.child(&d.name) }),
-            )),
+            Some(d) => Some(Ok(DataItem::Dir(DataDirItem {
+                dir: self.dir.child(&d.name),
+            }))),
             None => {
                 match self.files.next() {
                     // Return files second
-                    Some(f) => {
-                        Some(Ok(DataItem::File(DataFileItem {
-                            size: f.size,
-                            last_modified: f.last_modified,
-                            file: self.dir.child(&f.filename),
-                        })))
-                    }
+                    Some(f) => Some(Ok(DataItem::File(DataFileItem {
+                        size: f.size,
+                        last_modified: f.last_modified,
+                        file: self.dir.child(&f.filename),
+                    }))),
                     None => {
                         // Query if there is another page of files/folders
                         if self.query_count == 0 || self.marker.is_some() {
@@ -204,34 +195,32 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
         url.query_pairs_mut().append_pair("marker", m);
     }
 
-    let mut res = dir.client.get(url).send().chain_err(|| {
-        ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri()))
-    })?;
+    let mut res = dir
+        .client
+        .get(url)
+        .send()
+        .chain_err(|| ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri())))?;
 
     if res.status().is_success() {
         match res.headers().get(X_DATA_TYPE).map(lossy_header) {
             Some(ref dt) if dt == "directory" => (),
-            data_type =>  {
+            data_type => {
                 let dt = data_type.unwrap_or_else(|| "unknown".to_string());
-                return Err(
-                    ErrorKind::UnexpectedDataType("directory", dt).into(),
-                );
+                return Err(ErrorKind::UnexpectedDataType("directory", dt).into());
             }
         }
     }
 
     let mut res_json = String::new();
     res.read_to_string(&mut res_json)
-        .chain_err(|| {
-            ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri()))
-        })?;
+        .chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
 
     match res.status() {
         status if status.is_success() => {
             serde_json::from_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
         }
         StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
-        status => Err(ApiError::from_json_or_status(&res_json, status).into())
+        status => Err(ApiError::from_json_or_status(&res_json, status).into()),
     }
 }
 
@@ -297,19 +286,22 @@ impl DataDir {
     /// # }
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<()> {
-        let parent = self.parent()
+        let parent = self
+            .parent()
             .ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?;
         let parent_url = parent.to_url()?;
 
         let input_data = FolderItem {
-            name: self.basename()
+            name: self
+                .basename()
                 .ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?
                 .into(),
             acl: Some(acl.into()),
         };
 
         // POST request
-        let mut res = self.client
+        let mut res = self
+            .client
             .post(parent_url)
             .json(&input_data)
             .send()
@@ -317,22 +309,18 @@ impl DataDir {
                 ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri()))
             })?;
 
-
         match res.status() {
             status if status.is_success() => Ok(()),
             StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
                 let mut res_json = String::new();
-                res.read_to_string(&mut res_json)
-                    .chain_err(|| {
-                        ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri()))
-                    })?;
+                res.read_to_string(&mut res_json).chain_err(|| {
+                    ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri()))
+                })?;
                 Err(ApiError::from_json_or_status(&res_json, status).into())
             }
         }
-
     }
-
 
     /// Delete a Directory
     ///
@@ -357,28 +345,21 @@ impl DataDir {
         }
 
         // Parse response
-        let mut res = self.client.delete(url).send()
-            .chain_err(|| {
-                ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri()))
-            })?;
+        let mut res = self.client.delete(url).send().chain_err(|| {
+            ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri()))
+        })?;
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| {
-                ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri()))
-            })?;
-
+            .chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
 
         match res.status() {
-            status if status.is_success() => {
-                serde_json::from_str::<DeletedResponse>(&res_json)
-                    .map(|res| res.result)
-                    .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
-            }
+            status if status.is_success() => serde_json::from_str::<DeletedResponse>(&res_json)
+                .map(|res| res.result)
+                .chain_err(|| ErrorKind::DecodeJson("directory deletion response")),
             StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => Err(ApiError::from_json_or_status(&res_json, status).into()),
         }
     }
-
 
     /// Upload a file to an existing Directory
     ///
@@ -398,10 +379,9 @@ impl DataDir {
     /// ```
     pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
         let path_ref = file_path.as_ref();
-        let file = File::open(path_ref)
-            .chain_err(|| {
-                ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display()))
-            })?;
+        let file = File::open(path_ref).chain_err(|| {
+            ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display()))
+        })?;
 
         // Safe to unwrap: we've already opened the file or returned an error
         let filename = path_ref.file_name().unwrap().to_string_lossy();
@@ -419,11 +399,10 @@ impl DataDir {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::data::HasDataPath;
     use super::*;
+    use crate::data::HasDataPath;
     use crate::Algorithmia;
 
     fn mock_client() -> Algorithmia {

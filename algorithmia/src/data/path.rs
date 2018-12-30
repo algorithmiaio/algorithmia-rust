@@ -1,9 +1,9 @@
-use crate::data::*;
 use super::header::X_ERROR_MESSAGE;
-use crate::error::{ErrorKind, Result, ResultExt, ApiError};
+use crate::data::*;
+use crate::error::{ApiError, ErrorKind, Result, ResultExt};
 
 use crate::client::HttpClient;
-use reqwest::{Url, StatusCode};
+use reqwest::{StatusCode, Url};
 
 /// Trait used for types that can be represented with an Algorithmia Data URI
 pub trait HasDataPath {
@@ -17,7 +17,8 @@ pub trait HasDataPath {
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Result<Url> {
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
-        self.client().base_url
+        self.client()
+            .base_url
             .join(&path)
             .chain_err(|| ErrorKind::InvalidDataUri(self.to_data_uri()))
     }
@@ -77,7 +78,6 @@ pub trait HasDataPath {
         self.path().rsplitn(2, '/').next().map(String::from)
     }
 
-
     /// Determine if a file or directory exists for a particular data URI
     ///
     /// ```no_run
@@ -92,15 +92,18 @@ pub trait HasDataPath {
         let client = self.client();
         let req = client.head(url);
 
-        let res = req.send()
-            .chain_err(|| {
-                ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
-            })?;
+        let res = req.send().chain_err(|| {
+            ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
+        })?;
         match res.status() {
             StatusCode::OK => Ok(true),
             StatusCode::NOT_FOUND => Ok(false),
             status => {
-                let msg = match res.headers().get(X_ERROR_MESSAGE).and_then(|x| x.to_str().ok()) {
+                let msg = match res
+                    .headers()
+                    .get(X_ERROR_MESSAGE)
+                    .and_then(|x| x.to_str().ok())
+                {
                     Some(err_header) => format!("{}: {}", status, err_header),
                     None => format!("{}", status),
                 };

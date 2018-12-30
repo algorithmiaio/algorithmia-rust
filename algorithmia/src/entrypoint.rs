@@ -28,11 +28,11 @@
 //! - String types (e.g. `&str` and `String`)
 //! - Byte types (e.g. `&[u8]` and `Vec<u8>`)
 //! - Json `&Value` type
-//! - `AlgoInput` enum type (for matching on text, json, and binary input)
+//! - `AlgoIo` enum type (for matching on text, json, and binary input)
 //! - Any type that implements `serde::Deserialize` (e.g. `#[derive(Deserialize)]`)
 //!
 //! **Supported output (`Ok` variant of return value)**:
-//! - `String`, `Vec<u8>`, `Value`, `AlgoOutput`
+//! - `String`, `Vec<u8>`, `Value`, `AlgoIo`
 //! - Any type that implements `serde::Serialize` (e.g. `#[derive(Serialize)]`)
 //!
 //! **Supported error types (`Err` variant of return value)**:
@@ -86,7 +86,7 @@
 //!
 //! #[entrypoint]
 //! impl App {
-//!     fn apply(&self, input: Input) -> Result<Output, String> {
+//!     fn apply(&mut self, input: Input) -> Result<Output, String> {
 //!         unimplemented!();
 //!     }
 //! }
@@ -98,10 +98,10 @@
 //! }
 //! ```
 
-use crate::algo::{AlgoInput, AlgoOutput};
-use std::error::Error as StdError;
-use crate::error::{ErrorType, ApiError, ResultExt};
+use crate::algo::AlgoIo;
+use crate::error::{ApiError, ResultExt, INPUT_ERROR, UNSUPPORTED_ERROR};
 use serde_json;
+use std::error::Error as StdError;
 
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -122,7 +122,7 @@ use serde_json::Value;
 /// impl DecodedEntryPoint for Algo {
 ///     // Expect input to be an array of 2 strings
 ///     type Input = (String, String);
-///     fn apply_decoded(&mut self, input: Self::Input) -> Result<AlgoOutput, Box<Error>> {
+///     fn apply_decoded(&mut self, input: Self::Input) -> Result<AlgoIo, Box<Error>> {
 ///         let msg = format!("{} - {}", input.0, input.1);
 ///         Ok(msg.into())
 ///     }
@@ -135,22 +135,21 @@ pub trait DecodedEntryPoint: Default {
     /// This method is an apply variant that will receive the decoded form of JSON input.
     ///   If decoding failed, a `DecoderError` will be returned before this method is invoked.
     #[allow(unused_variables)]
-    fn apply_decoded(&mut self, input: Self::Input) -> Result<AlgoOutput, Box<StdError>>;
+    fn apply_decoded(&mut self, input: Self::Input) -> Result<AlgoIo, Box<StdError>>;
 }
 
 impl<T> EntryPoint for T
 where
     T: DecodedEntryPoint,
 {
-    fn apply(&mut self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
+    fn apply(&mut self, input: AlgoIo) -> Result<AlgoIo, Box<StdError>> {
         match input.as_json() {
             Some(obj) => {
-                let decoded =
-                    serde_json::from_value(obj.into_owned())
-                        .chain_err(|| "failed to parse input as JSON into the expected type")?;
+                let decoded = serde_json::from_value(obj.into_owned())
+                    .chain_err(|| "failed to parse input as JSON into the expected type")?;
                 self.apply_decoded(decoded)
             }
-            None => Err(ApiError::new(ErrorType::Input, "Failed to parse input as JSON").into()),
+            None => Err(ApiError::new(INPUT_ERROR, "Failed to parse input as JSON").into()),
         }
     }
 }
@@ -159,70 +158,58 @@ where
 pub trait EntryPoint: Default {
     #[allow(unused_variables)]
     /// Override to handle string input
-    fn apply_str(&mut self, text: &str) -> Result<AlgoOutput, Box<StdError>> {
-        Err(ApiError::new(ErrorType::Unsupported, "String input is not supported").into())
+    fn apply_str(&mut self, text: &str) -> Result<AlgoIo, Box<StdError>> {
+        Err(ApiError::new(UNSUPPORTED_ERROR, "String input is not supported").into())
     }
 
     #[allow(unused_variables)]
     /// Override to handle JSON input (see also [`DecodedEntryPoint`](trait.DecodedEntryPoint.html))
-    fn apply_json(&mut self, json: &Value) -> Result<AlgoOutput, Box<StdError>> {
-        Err(ApiError::new(ErrorType::Unsupported, "JSON input is not supported").into())
+    fn apply_json(&mut self, json: &Value) -> Result<AlgoIo, Box<StdError>> {
+        Err(ApiError::new(UNSUPPORTED_ERROR, "JSON input is not supported").into())
     }
 
     #[allow(unused_variables)]
     /// Override to handle binary input
-    fn apply_bytes(&mut self, bytes: &[u8]) -> Result<AlgoOutput, Box<StdError>> {
-        Err(ApiError::new(ErrorType::Unsupported, "Binary input is not supported").into())
+    fn apply_bytes(&mut self, bytes: &[u8]) -> Result<AlgoIo, Box<StdError>> {
+        Err(ApiError::new(UNSUPPORTED_ERROR, "Binary input is not supported").into())
     }
 
     /// The default implementation of this method calls
     /// `apply_str`, `apply_json`, or `apply_bytes` based on the input type.
     ///
-    /// - `AlgoInput::Text` results in call to  `apply_str`
-    /// - `AlgoInput::Json` results in call to  `apply_json`
-    /// - `AlgoInput::Binary` results in call to  `apply_bytes`
+    /// - `AlgoIo::Text` results in call to  `apply_str`
+    /// - `AlgoIo::Json` results in call to  `apply_json`
+    /// - `AlgoIo::Binary` results in call to  `apply_bytes`
     ///
     /// If that call returns anKind `UnsupportedInput` error, then this method
     ///   method will may attempt to coerce the input into another type
     ///   and attempt one more call:
     ///
-    /// - `AlgoInput::Text` input will be JSON-encoded to call `apply_json`
-    /// - `AlgoInput::Json` input will be parse to see it can call `apply_str`
-    fn apply(&mut self, input: AlgoInput) -> Result<AlgoOutput, Box<StdError>> {
+    /// - `AlgoIo::Text` input will be JSON-encoded to call `apply_json`
+    /// - `AlgoIo::Json` input will be parse to see it can call `apply_str`
+    fn apply(&mut self, input: AlgoIo) -> Result<AlgoIo, Box<StdError>> {
         match input {
-            AlgoInput::Text(ref text) => {
-                match self.apply_str(text) {
-                    Err(err) => {
-                        match err.downcast_ref::<ApiError>().map(|err| err.error_type) {
-                            Some(ErrorType::Unsupported) => {
-                                match input.as_json() {
-                                    Some(json) => self.apply_json(&json),
-                                    None => Err(err.into()),
-                                }
-                            }
-                            _ => Err(err.into()),
-                        }
-                    }
-                    ret => ret,
-                }
-            }
-            AlgoInput::Json(ref json) => {
-                match self.apply_json(json) {
-                    Err(err) => {
-                        match err.downcast_ref::<ApiError>().map(|err| err.error_type) {
-                            Some(ErrorType::Unsupported) => {
-                                match input.as_string() {
-                                    Some(text) => self.apply_str(text),
-                                    None => Err(err.into()),
-                                }
-                            }
-                            _ => Err(err.into()),
-                        }
-                    }
-                    ret => ret,
-                }
-            }
-            AlgoInput::Binary(ref bytes) => self.apply_bytes(bytes),
+            AlgoIo::Text(ref text) => match self.apply_str(text) {
+                Err(err) => match &err.downcast_ref::<ApiError>().map(|err| &*err.error_type) {
+                    Some(UNSUPPORTED_ERROR) => match input.as_json() {
+                        Some(json) => self.apply_json(&json),
+                        None => Err(err.into()),
+                    },
+                    _ => Err(err.into()),
+                },
+                ret => ret,
+            },
+            AlgoIo::Json(ref json) => match self.apply_json(json) {
+                Err(err) => match &err.downcast_ref::<ApiError>().map(|err| &*err.error_type) {
+                    Some(UNSUPPORTED_ERROR) => match input.as_string() {
+                        Some(text) => self.apply_str(text),
+                        None => Err(err.into()),
+                    },
+                    _ => Err(err.into()),
+                },
+                ret => ret,
+            },
+            AlgoIo::Binary(ref bytes) => self.apply_bytes(bytes),
         }
     }
 }
