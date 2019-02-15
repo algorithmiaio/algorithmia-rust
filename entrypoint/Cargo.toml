@@ -1,8 +1,12 @@
 [package]
 name = "algorithmia-entrypoint"
 version = "0.1.0"
+license = "MIT"
 authors = ["Anthony Nowell <anthony@algorithmia.com>"]
 edition = "2018"
+description = "Macro for generating Algorithmia entrypoint code"
+repository = "https://github.com/algorithmiaio/algorithmia-rust"
+homepage = "https://algorithmia.com/developers/clients/rust/"
 
 [lib]
 proc-macro = true

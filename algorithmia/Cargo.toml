@@ -1,14 +1,14 @@
 [package]
 name = "algorithmia"
-version = "2.1.1"
+version = "3.0.0-beta"
 license = "MIT"
 authors = ["Anthony Nowell <anthony@algorithmia.com>"]
-description = "Client for calling algorithms and managing data hosted on the Algorithmia marketplace"
+description = "Client for calling algorithms and managing data hosted using Algorithmia"
 documentation = "http://docs.rs/algorithmia"
 repository = "https://github.com/algorithmiaio/algorithmia-rust"
 homepage = "https://algorithmia.com/developers/clients/rust/"
 readme = "README.md"
-keywords = ["algorithmia", "algorithm", "client", "machine-learning"]
+keywords = ["algorithmia", "algorithm", "machine-learning", "ai", "ml", "client"]
 categories =["algorithms", "web-programming::http-client", "science"]
 build = "build.rs"
 edition = "2018"
