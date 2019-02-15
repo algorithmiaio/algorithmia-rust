@@ -22,8 +22,8 @@
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
 #![cfg_attr(feature = "nightly", feature(specialization))]
-#![recursion_limit = "1024"]
 #![allow(unknown_lints)]
+#![recursion_limit = "1024"]
 
 #[macro_use]
 extern crate serde_derive;
@@ -58,7 +58,7 @@ pub mod prelude {
     pub use serde_json::Value;
 
     #[cfg(feature = "entrypoint")]
-    pub use crate::entrypoint::{DecodedEntryPoint, EntryPoint};
+    pub use crate::entrypoint::{entrypoint, DecodedEntryPoint, EntryPoint};
 }
 
 mod client;

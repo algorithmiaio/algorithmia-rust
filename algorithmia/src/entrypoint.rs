@@ -106,9 +106,9 @@ use std::error::Error as StdError;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-// #[cfg(feature = "entrypoint")]
-// #[doc(hidden)]
-// pub use algorithmia_entrypoint::entrypoint;
+#[cfg(feature = "entrypoint")]
+#[doc(hidden)]
+pub use algorithmia_entrypoint::entrypoint;
 
 /// Alternate implementation for `EntryPoint`
 ///   that automatically decodes JSON input to the associate type

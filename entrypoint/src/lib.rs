@@ -1,3 +1,5 @@
+#![recursion_limit = "1024"]
+
 extern crate proc_macro;
 extern crate syn;
 #[macro_use]
@@ -133,11 +135,10 @@ impl Entrypoint {
         match self.self_type {
             Some(ref self_type) => {
                 quote! {
-                    use algorithmia::algo::{EntryPoint, AlgoOutput};
                     pub struct Algo(#self_type);
-                    impl EntryPoint for Algo {
-                        fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
-                            (self.0).#fn_name(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
+                    impl algorithmia::entrypoint::EntryPoint for Algo {
+                        fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
+                            (self.0).#fn_name(input.into()).map(algorithmia::algo::AlgoOutput::from).map_err(|err| err.into())
                         }
                     }
                     impl Default for Algo {
@@ -151,11 +152,10 @@ impl Entrypoint {
             }
             None => {
                 quote! {
-                    use algorithmia::algo::{EntryPoint, AlgoOutput};
                     #[derive(Default)] pub struct Algo;
-                    impl EntryPoint for Algo {
-                        fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
-                            #fn_name(input.into()).map(AlgoOutput::from).map_err(|err| err.into())
+                    impl algorithmia::entrypoint::EntryPoint for Algo {
+                        fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
+                            #fn_name(input.into()).map(algorithmia::algo::AlgoIo::from).map_err(|err| err.into())
                         }
                     }
 
@@ -173,12 +173,11 @@ impl Entrypoint {
         match self.self_type {
             Some(ref self_type) => {
                 quote! {
-                    use algorithmia::algo::{EntryPoint, AlgoOutput};
                     pub struct Algo(#self_type);
-                    impl DecodedEntryPoint for Algo {
+                    impl algorithmia::entrypoint::DecodedEntryPoint for Algo {
                         type Input = #input_type;
-                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
-                            (self.0).#fn_name(input).map(AlgoOutput::from).map_err(|err| err.into())
+                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoOutput, Box<::std::error::Error>> {
+                            (self.0).#fn_name(input).map(algorithmia::algo::AlgoOutput::from).map_err(|err| err.into())
                         }
                     }
 
@@ -193,12 +192,11 @@ impl Entrypoint {
             }
             None => {
                 quote! {
-                    use algorithmia::algo::{EntryPoint, AlgoOutput};
                     #[derive(Default)] pub struct Algo;
-                    impl DecodedEntryPoint for Algo {
+                    impl algorithmia::entrypoint::DecodedEntryPoint for Algo {
                         type Input = #input_type;
-                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<AlgoOutput, Box<::std::error::Error>> {
-                            #fn_name(input).map(AlgoOutput::from).map_err(|err| err.into())
+                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
+                            #fn_name(input).map(algorithmia::algo::AlgoIo::from).map_err(|err| err.into())
                         }
                     }
 

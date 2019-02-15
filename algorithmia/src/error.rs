@@ -134,6 +134,8 @@ impl From<ApiError> for Error {
     }
 }
 
+impl std::error::Error for ApiError {}
+
 impl ApiError {
     /// Creates an ApiError - intended for creating ApiErrors from Rust algorithms
     ///
