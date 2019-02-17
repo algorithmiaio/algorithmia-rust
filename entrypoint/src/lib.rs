@@ -125,7 +125,7 @@ impl Entrypoint {
             "& str" | "String" => self.impl_entrypoint(Ident::new("apply_str"), "&str"),
             "& [ u8 ]" | "Vec < u8 >" => self.impl_entrypoint(Ident::new("apply_bytes"), "&[u8]"),
             "& Value" => self.impl_entrypoint(Ident::new("apply_json"), "&Value"),
-            "AlgoInput" => self.impl_entrypoint(Ident::new("apply"), "AlgoInput"),
+            "AlgoIo" => self.impl_entrypoint(Ident::new("apply"), "AlgoIo"),
             _ => self.impl_decoded_entrypoint(),
         }
     }
@@ -144,7 +144,7 @@ impl Entrypoint {
                     pub struct Algo(#self_type);
                     impl algorithmia::entrypoint::EntryPoint for Algo {
                         fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
-                            (self.0).#fn_name(input.into()).map(|out| algorithmia::algo::AlgoOutput::from(Box::new(out))).map_err(|err| err.into())
+                            (self.0).#fn_name(input.into()).map(|out| algorithmia::algo::AlgoIo::from(Box::new(out))).map_err(|err| err.into())
                         }
                     }
                     impl Default for Algo {
@@ -182,8 +182,8 @@ impl Entrypoint {
                     pub struct Algo(#self_type);
                     impl algorithmia::entrypoint::DecodedEntryPoint for Algo {
                         type Input = #input_type;
-                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoOutput, Box<::std::error::Error>> {
-                            (self.0).#fn_name(input).map(|out| algorithmia::algo::AlgoOutput::from(Box::new(out))).map_err(|err| err.into())
+                        fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
+                            (self.0).#fn_name(input).map(|out| algorithmia::algo::AlgoIo::from(Box::new(out))).map_err(|err| err.into())
                         }
                     }
 

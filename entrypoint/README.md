@@ -71,11 +71,11 @@ impl Default for App {
 - String types (e.g. `&str` and `String`
 - Byte types (e.g. `&[u8]` and `Vec<u8>`
 - Json `&Value` type
-- AlgoInput enum type (for matching on text, json, and binary input)
+- AlgoIo enum type (for matching on text, json, and binary input)
 - Any type that implements `serde::Deserialize` (e.g. `#[derive(Deserialize)]`
 
 **Valid output (`Ok` variant of return value)**:
-- `String`, `Vec<u8>`, `Value`, `AlgoOutput`
+- `String`, `Vec<u8>`, `Value`, `AlgoIo`
 - Any type that implements `serde::Serialize` (e.g. `#[derive(Serialize)]`
 
 **Valid error types (`Err` variant of return value)**:
