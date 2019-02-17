@@ -543,6 +543,28 @@ impl<S: Serialize> From<S> for AlgoIo {
     }
 }
 
+macro_rules! impl_serialize_to_algo_io {
+    ($t:ty) => {
+        #[cfg(not(feature = "nightly"))]
+        impl From<$t> for AlgoIo {
+            fn from(t: $t) -> Self {
+                AlgoIo::Json(serde_json::to_value(t).expect("Failed to serialize"))
+            }
+        }
+    }
+}
+
+// Impl conversions for primitives until specialization stabilizes
+impl_serialize_to_algo_io!(u32);
+impl_serialize_to_algo_io!(i32);
+impl_serialize_to_algo_io!(u64);
+impl_serialize_to_algo_io!(i64);
+impl_serialize_to_algo_io!(usize);
+impl_serialize_to_algo_io!(isize);
+impl_serialize_to_algo_io!(f32);
+impl_serialize_to_algo_io!(f64);
+impl_serialize_to_algo_io!(bool);
+
 #[cfg(test)]
 mod tests {
     use super::*;
