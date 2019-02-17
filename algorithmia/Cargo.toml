@@ -29,15 +29,11 @@ reqwest = "0.9.4"
 chrono = { version = "0.4", features = ["serde"] }
 http = "0.1.13"
 headers-ext = "0.0.4"
-
+algorithmia-entrypoint = { version = "0.1", optional = true }
 
 [dependencies.hyper]
 version = "0.11"
 default-features = false
-
-[dependencies.algorithmia-entrypoint]
-path = "../entrypoint"
-optional = true
 
 [build-dependencies]
 rustc_version = "0.2.1"
