@@ -551,7 +551,7 @@ macro_rules! impl_serialize_to_algo_io {
                 AlgoIo::Json(serde_json::to_value(t).expect("Failed to serialize"))
             }
         }
-    }
+    };
 }
 
 // Impl conversions for primitives until specialization stabilizes

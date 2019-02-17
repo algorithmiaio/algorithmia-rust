@@ -11,7 +11,6 @@ use syn::*;
 
 #[proc_macro_attribute]
 pub fn entrypoint(_args: TokenStream, input: TokenStream) -> TokenStream {
-    // TODO: support #[entrypoint(apply=run, default=init)] when attached to `impl`
     // let args_path = parse_path(&args.to_string()).ok();
     let item =
         parse_item(&input.to_string()).expect("#[entrypoint] must be attached to a function");
@@ -55,8 +54,6 @@ impl Entrypoint {
                     FnArg::Ignored(ref ty) => ty.clone(),
                 };
 
-                // TODO: assert that fn_decl.output includes a `Result` token
-
                 Entrypoint {
                     fn_name: item.ident,
                     self_type: None,
@@ -89,8 +86,15 @@ impl Entrypoint {
                 assert_eq!(
                     fn_decl.inputs.len(),
                     2,
-                    "#[entrypoint] within an impl must take &self and an input arg"
+                    "#[entrypoint] within an impl take a reference to self and a single input arg"
                 );
+                match fn_decl.inputs[0] {
+                    FnArg::SelfRef(..) => {}
+                    _ => panic!(
+                        "First argument of #[entrypoint] apply method must be a reference to self"
+                    ),
+                }
+
                 let input_type = match fn_decl.inputs[1] {
                     FnArg::SelfRef(..) | FnArg::SelfValue(..) => {
                         panic!("Are you using self as a second argument?")
@@ -131,14 +135,16 @@ impl Entrypoint {
         let ref fn_name = self.fn_name;
         let input_type = parse_type(input_type).unwrap();
 
-        // TODO: if specialization hasn't landed, consider generating the auto-boxing code for Serialize types
+        // We're auto-boxing the Ok variant of the Result output
+        // until specialization lands because there is a conversion
+        // Box<Serialize> but not impl Serialize
         match self.self_type {
             Some(ref self_type) => {
                 quote! {
                     pub struct Algo(#self_type);
                     impl algorithmia::entrypoint::EntryPoint for Algo {
                         fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
-                            (self.0).#fn_name(input.into()).map(algorithmia::algo::AlgoOutput::from).map_err(|err| err.into())
+                            (self.0).#fn_name(input.into()).map(|out| algorithmia::algo::AlgoOutput::from(Box::new(out))).map_err(|err| err.into())
                         }
                     }
                     impl Default for Algo {
@@ -155,7 +161,7 @@ impl Entrypoint {
                     #[derive(Default)] pub struct Algo;
                     impl algorithmia::entrypoint::EntryPoint for Algo {
                         fn #apply_fn(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
-                            #fn_name(input.into()).map(algorithmia::algo::AlgoIo::from).map_err(|err| err.into())
+                            #fn_name(input.into()).map(|out| algorithmia::algo::AlgoIo::from(Box::new(out))).map_err(|err| err.into())
                         }
                     }
 
@@ -177,7 +183,7 @@ impl Entrypoint {
                     impl algorithmia::entrypoint::DecodedEntryPoint for Algo {
                         type Input = #input_type;
                         fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoOutput, Box<::std::error::Error>> {
-                            (self.0).#fn_name(input).map(algorithmia::algo::AlgoOutput::from).map_err(|err| err.into())
+                            (self.0).#fn_name(input).map(|out| algorithmia::algo::AlgoOutput::from(Box::new(out))).map_err(|err| err.into())
                         }
                     }
 
@@ -196,7 +202,7 @@ impl Entrypoint {
                     impl algorithmia::entrypoint::DecodedEntryPoint for Algo {
                         type Input = #input_type;
                         fn apply_decoded(&mut self, input: #input_type) -> ::std::result::Result<algorithmia::algo::AlgoIo, Box<::std::error::Error>> {
-                            #fn_name(input).map(algorithmia::algo::AlgoIo::from).map_err(|err| err.into())
+                            #fn_name(input).map(|out| algorithmia::algo::AlgoIo::from(Box::new(out))).map_err(|err| err.into())
                         }
                     }
 
