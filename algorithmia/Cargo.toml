@@ -46,3 +46,6 @@ rustc_version = "0.2.1"
 nightly = []
 entrypoint = ["algorithmia-entrypoint"]
 default = []
+
+[package.metadata.docs.rs]
+features = ["entrypoint"]
