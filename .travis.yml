@@ -3,6 +3,7 @@ sudo: false
 cache: cargo
 
 rust:
+  - 1.31.1
   - stable
   - beta
   - nightly
