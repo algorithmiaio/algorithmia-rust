@@ -46,7 +46,7 @@ pub mod error;
 pub mod entrypoint;
 
 use crate::client::ApiAuth;
-use crate::error::Result;
+use crate::error::Error;
 pub use reqwest::Body;
 pub use reqwest::{IntoUrl, Url};
 
@@ -77,7 +77,7 @@ impl Algorithmia {
     /// The Algorithmia client uses environment variables
     ///   `ALGORITHMIA_API` to override the default base URL of the API
     ///   and `ALGORITHMIA_API_KEY` to optionally the API key.
-    pub fn new() -> Result<Algorithmia> {
+    pub fn new() -> Result<Algorithmia, Error> {
         let api_address =
             std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
         let auth = std::env::var("ALGORITHMIA_API_KEY")
@@ -99,7 +99,7 @@ impl Algorithmia {
     /// // Initialize a client
     /// let client = Algorithmia::client("simUseYourApiKey");
     /// ```
-    pub fn client<A: Into<String>>(api_key: A) -> Result<Algorithmia> {
+    pub fn client<A: Into<String>>(api_key: A) -> Result<Algorithmia, Error> {
         let api_address =
             std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
         Ok(Algorithmia {
@@ -111,7 +111,7 @@ impl Algorithmia {
     pub fn client_with_url<A: Into<String>, U: IntoUrl>(
         api_key: A,
         base_url: U,
-    ) -> Result<Algorithmia> {
+    ) -> Result<Algorithmia, Error> {
         Ok(Algorithmia {
             http_client: HttpClient::new(ApiAuth::from(api_key.into()), base_url)?,
         })

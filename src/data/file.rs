@@ -16,7 +16,7 @@
 use super::{parse_data_uri, parse_headers};
 use crate::client::HttpClient;
 use crate::data::{DataType, HasDataPath};
-use crate::error::{ApiError, Error, ErrorKind, Result, ResultExt};
+use crate::error::{ApiError, Error, ErrorKind, ResultExt};
 use crate::Body;
 use chrono::{DateTime, TimeZone, Utc};
 use reqwest::StatusCode;
@@ -102,7 +102,7 @@ impl DataFile {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn put<B>(&self, body: B) -> Result<()>
+    pub fn put<B>(&self, body: B) -> Result<(), Error>
     where
         B: Into<Body>,
     {
@@ -138,7 +138,7 @@ impl DataFile {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get(&self) -> Result<FileData> {
+    pub fn get(&self) -> Result<FileData, Error> {
         let url = self.to_url()?;
         let req = self.client.get(url);
         let res = req
@@ -186,7 +186,7 @@ impl DataFile {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self) -> Result<()> {
+    pub fn delete(&self) -> Result<(), Error> {
         let url = self.to_url()?;
         let req = self.client.delete(url);
         let mut res = req

@@ -1,6 +1,6 @@
 use super::header::X_ERROR_MESSAGE;
 use crate::data::*;
-use crate::error::{ApiError, ErrorKind, Result, ResultExt};
+use crate::error::{ApiError, Error, ErrorKind, ResultExt};
 
 use crate::client::HttpClient;
 use reqwest::{StatusCode, Url};
@@ -15,7 +15,7 @@ pub trait HasDataPath {
     fn client(&self) -> &HttpClient;
 
     /// Get the API Endpoint URL for a particular data URI
-    fn to_url(&self) -> Result<Url> {
+    fn to_url(&self) -> Result<Url, Error> {
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
         self.client()
             .base_url
@@ -87,7 +87,7 @@ pub trait HasDataPath {
     /// let my_file = client.data("data://.my/my_dir/my_file");
     /// assert_eq!(my_file.exists().unwrap(), true);
     /// ```
-    fn exists(&self) -> Result<bool> {
+    fn exists(&self) -> Result<bool, Error> {
         let url = self.to_url()?;
         let client = self.client();
         let req = client.head(url);

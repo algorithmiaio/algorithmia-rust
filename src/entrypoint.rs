@@ -55,10 +55,10 @@
 //! `Serialize` respectively.
 //!
 //! ```no_compile
-//! #[derive(Deserialize)
+//! #[derive(Deserialize)]
 //! struct Input { titles: Vec<String> }
 //!
-//! #[derive(Serialize)
+//! #[derive(Serialize)]
 //! struct Output { count: u32 }
 //!
 //! #[entrypoint]
@@ -76,10 +76,10 @@
 //! times:
 //!
 //! ```no_compile
-//! #[derive(Deserialize)
+//! #[derive(Deserialize)]
 //! struct Input { titles: Vec<String>, max: u32 }
 //!
-//! #[derive(Serialize)
+//! #[derive(Serialize)]
 //! struct Output { titles: Vec<String> }
 //!
 //! struct App { model: Vec<u8> }
@@ -99,7 +99,7 @@
 //! ```
 
 use crate::algo::AlgoIo;
-use crate::error::{ApiError, ResultExt, INPUT_ERROR, UNSUPPORTED_ERROR};
+use crate::error::{ApiError, ResultExt};
 use serde_json;
 use std::error::Error as StdError;
 
@@ -109,6 +109,11 @@ use serde_json::Value;
 #[cfg(feature = "entrypoint")]
 #[doc(hidden)]
 pub use algorithmia_entrypoint::entrypoint;
+
+/// Algorithm input was not valid
+const INPUT_ERROR: &'static str = "InputError";
+/// Algorithm input is not supported by this algorithm
+const UNSUPPORTED_ERROR: &'static str = "UnsupportedError";
 
 /// Alternate implementation for `EntryPoint`
 ///   that automatically decodes JSON input to the associate type

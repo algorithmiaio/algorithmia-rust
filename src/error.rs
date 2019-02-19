@@ -6,15 +6,18 @@ use serde_json;
 use std::fmt::Display;
 use std::{fmt, str};
 
-pub const INPUT_ERROR: &'static str = "InputError";
-pub const UNSUPPORTED_ERROR: &'static str = "UnsupportedError";
-pub const ALGORITHM_ERROR: &'static str = "AlgorithmError";
+/// Default error type for errors originating in algorithm code
+const ALGORITHM_ERROR: &'static str = "AlgorithmError";
 
 fn default_error_type() -> String {
     ALGORITHM_ERROR.into()
 }
 
 error_chain! {
+    types {
+        Error, ErrorKind, ResultExt;
+    }
+
     errors {
         // Error from the Algorithmia API (may be from the algorithm)
         Api(err: ApiError) {

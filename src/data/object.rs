@@ -1,7 +1,7 @@
 use super::{parse_data_uri, parse_headers};
 use crate::client::HttpClient;
 use crate::data::*;
-use crate::error::{ApiError, ErrorKind, Result, ResultExt};
+use crate::error::{ApiError, Error, ErrorKind, ResultExt};
 use chrono::{TimeZone, Utc};
 use reqwest::StatusCode;
 
@@ -45,7 +45,7 @@ impl DataObject {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn get_type(&self) -> Result<DataType> {
+    pub fn get_type(&self) -> Result<DataType, Error> {
         let url = self.to_url()?;
         let req = self.client.head(url);
         let res = req
@@ -77,7 +77,7 @@ impl DataObject {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn into_type(self) -> Result<DataItem> {
+    pub fn into_type(self) -> Result<DataItem, Error> {
         let metadata = {
             let url = self.to_url()?;
             let req = self.client.head(url);

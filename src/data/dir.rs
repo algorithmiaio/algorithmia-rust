@@ -20,7 +20,7 @@ use super::header::{lossy_header, X_DATA_TYPE};
 use super::parse_data_uri;
 use crate::client::HttpClient;
 use crate::data::{DataDirItem, DataFile, DataFileItem, DataItem, HasDataPath};
-use crate::error::{ApiError, ErrorKind, Result, ResultExt};
+use crate::error::{ApiError, Error, ErrorKind, ResultExt};
 use serde_json;
 
 use std::fs::File;
@@ -150,7 +150,7 @@ impl<'a> DirectoryListing<'a> {
 }
 
 impl<'a> Iterator for DirectoryListing<'a> {
-    type Item = Result<DataItem>;
+    type Item = Result<DataItem, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
@@ -189,7 +189,7 @@ impl<'a> Iterator for DirectoryListing<'a> {
     }
 }
 
-fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow> {
+fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, Error> {
     let mut url = dir.to_url()?;
     if let Some(ref m) = marker {
         url.query_pairs_mut().append_pair("marker", m);
@@ -285,7 +285,7 @@ impl DataDir {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<()> {
+    pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
         let parent = self
             .parent()
             .ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?;
@@ -337,7 +337,7 @@ impl DataDir {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn delete(&self, force: bool) -> Result<DirectoryDeleted> {
+    pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
         // DELETE request
         let mut url = self.to_url()?;
         if force {
@@ -377,7 +377,7 @@ impl DataDir {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
+    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), Error> {
         let path_ref = file_path.as_ref();
         let file = File::open(path_ref).chain_err(|| {
             ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display()))

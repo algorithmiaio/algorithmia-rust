@@ -21,7 +21,7 @@
 //! ```
 
 use crate::client::HttpClient;
-use crate::error::{ApiErrorResponse, Error, ErrorKind, Result, ResultExt};
+use crate::error::{ApiErrorResponse, Error, ErrorKind, ResultExt};
 use crate::Body;
 
 use serde::de::DeserializeOwned;
@@ -112,7 +112,7 @@ impl Algorithm {
     }
 
     /// Get the API Endpoint URL for this Algorithm
-    pub fn to_url(&self) -> Result<Url> {
+    pub fn to_url(&self) -> Result<Url, Error> {
         let path = format!("{}/{}", ALGORITHM_BASE_PATH, self.algo_uri.path);
         self.client
             .base_url
@@ -145,7 +145,7 @@ impl Algorithm {
     ///     Err(err) => println!("ERROR: {}", err),
     /// };
     /// ```
-    pub fn pipe<I>(&self, input_data: I) -> Result<AlgoResponse>
+    pub fn pipe<I>(&self, input_data: I) -> Result<AlgoResponse, Error>
     where
         I: Into<AlgoIo>,
     {
@@ -188,7 +188,7 @@ impl Algorithm {
     /// };
     /// # Ok(())
     /// # }
-    pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse> {
+    pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
         let mut res = self.pipe_as(json_input.to_owned(), mime::APPLICATION_JSON)?;
 
         let mut res_json = String::new();
@@ -198,7 +198,7 @@ impl Algorithm {
     }
 
     #[doc(hidden)]
-    pub fn pipe_as<B>(&self, input_data: B, content_type: Mime) -> Result<Response>
+    pub fn pipe_as<B>(&self, input_data: B, content_type: Mime) -> Result<Response, Error>
     where
         B: Into<Body>,
     {
@@ -297,7 +297,7 @@ impl AlgoIo {
 
     /// If the `AlgoIo` is valid JSON, decode it to a particular type
     ///
-    pub fn decode<D: DeserializeOwned>(&self) -> Result<D> {
+    pub fn decode<D: DeserializeOwned>(&self) -> Result<D, Error> {
         let res_json = self
             .as_json()
             .ok_or(ErrorKind::MismatchedContentType("json"))?;
@@ -335,7 +335,7 @@ impl AlgoResponse {
     }
 
     /// If the algorithm output is JSON, decode it into a particular type
-    pub fn decode<D>(self) -> Result<D>
+    pub fn decode<D>(self) -> Result<D, Error>
     where
         for<'de> D: Deserialize<'de>,
     {

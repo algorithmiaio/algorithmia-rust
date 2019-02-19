@@ -7,7 +7,7 @@ pub use self::file::*;
 pub use self::object::*;
 pub use self::path::*;
 
-use crate::error::*;
+use crate::error::{ApiError, Error, ErrorKind};
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use headers_ext::{ContentLength, Date, HeaderMapExt};
 use http::header::HeaderMap;
@@ -77,7 +77,7 @@ struct HeaderData {
     pub last_modified: Option<DateTime<Utc>>,
 }
 
-fn parse_headers(headers: &HeaderMap) -> Result<HeaderData> {
+fn parse_headers(headers: &HeaderMap) -> Result<HeaderData, Error> {
     if let Some(err_header) = headers.get(X_ERROR_MESSAGE).map(lossy_header) {
         return Err(ErrorKind::Api(ApiError::from(err_header)).into());
     };

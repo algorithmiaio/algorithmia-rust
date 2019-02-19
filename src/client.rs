@@ -8,7 +8,7 @@ use reqwest::{Client, IntoUrl, Method, RequestBuilder, Url};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::error::{ErrorKind, Result, ResultExt};
+use crate::error::{Error, ErrorKind, ResultExt};
 pub use reqwest::Body;
 
 struct Simple(HeaderValue);
@@ -30,7 +30,7 @@ impl Credentials for Simple {
 
 impl Simple {
     /// Try to create a `Simple` authorization header.
-    pub fn new(token: &str) -> Result<Self> {
+    pub fn new(token: &str) -> Result<Self, Error> {
         HeaderValue::from_str(&format!("Simple {}", token))
             .map(Simple)
             .map_err(|_| ErrorKind::InvalidApiKey.into())
@@ -56,7 +56,7 @@ pub struct HttpClient {
 
 impl HttpClient {
     /// Instantiate an `HttpClient` - creates a new `reqwest` client
-    pub fn new<U: IntoUrl>(api_auth: ApiAuth, base_url: U) -> Result<HttpClient> {
+    pub fn new<U: IntoUrl>(api_auth: ApiAuth, base_url: U) -> Result<HttpClient, Error> {
         Ok(HttpClient {
             api_auth: api_auth,
             base_url: base_url
