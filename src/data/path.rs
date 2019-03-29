@@ -1,6 +1,6 @@
-use super::header::X_ERROR_MESSAGE;
+use crate::client::header::X_ERROR_MESSAGE;
 use crate::data::*;
-use crate::error::{ApiError, Error, ErrorKind, ResultExt};
+use crate::error::{ApiError, Error, ResultExt};
 
 use crate::client::HttpClient;
 use reqwest::{StatusCode, Url};
@@ -17,10 +17,12 @@ pub trait HasDataPath {
     /// Get the API Endpoint URL for a particular data URI
     fn to_url(&self) -> Result<Url, Error> {
         let path = format!("{}/{}", super::DATA_BASE_PATH, self.path());
-        self.client()
-            .base_url
-            .join(&path)
-            .chain_err(|| ErrorKind::InvalidDataUri(self.to_data_uri()))
+        self.client().base_url.join(&path).with_context(|| {
+            format!(
+                "Failed to construct URL from data URI {}",
+                self.to_data_uri()
+            )
+        })
     }
 
     /// Get the Algorithmia data URI a given Data Object
@@ -92,9 +94,9 @@ pub trait HasDataPath {
         let client = self.client();
         let req = client.head(url);
 
-        let res = req.send().chain_err(|| {
-            ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
-        })?;
+        let res = req
+            .send()
+            .with_context(|| format!("checking existence of '{}'", self.to_data_uri()))?;
         match res.status() {
             StatusCode::OK => Ok(true),
             StatusCode::NOT_FOUND => Ok(false),

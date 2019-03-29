@@ -8,7 +8,7 @@ use reqwest::{Client, IntoUrl, Method, RequestBuilder, Url};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::error::{Error, ErrorKind, ResultExt};
+use crate::error::{Error, ResultExt};
 pub use reqwest::Body;
 
 struct Simple(HeaderValue);
@@ -33,7 +33,7 @@ impl Simple {
     pub fn new(token: &str) -> Result<Self, Error> {
         HeaderValue::from_str(&format!("Simple {}", token))
             .map(Simple)
-            .map_err(|_| ErrorKind::InvalidApiKey.into())
+            .context("API key is invalid")
     }
 }
 /// Represent the different ways to auth with the API
@@ -59,9 +59,7 @@ impl HttpClient {
     pub fn new<U: IntoUrl>(api_auth: ApiAuth, base_url: U) -> Result<HttpClient, Error> {
         Ok(HttpClient {
             api_auth: api_auth,
-            base_url: base_url
-                .into_url()
-                .chain_err(|| ErrorKind::InvalidBaseUrl)?,
+            base_url: base_url.into_url().context("Invalid base URL")?,
             inner_client: Arc::new(Client::new()),
             user_agent: format!(
                 "algorithmia-rust/{} (Rust {}",
@@ -134,5 +132,14 @@ impl From<String> for ApiAuth {
 impl From<()> for ApiAuth {
     fn from(_: ()) -> Self {
         ApiAuth::None
+    }
+}
+
+pub(crate) mod header {
+    use http::header::HeaderValue;
+    pub const X_DATA_TYPE: &'static str = "x-data-type";
+    pub const X_ERROR_MESSAGE: &'static str = "x-error-message";
+    pub(crate) fn lossy_header(val: &HeaderValue) -> String {
+        String::from_utf8_lossy(val.as_bytes()).to_string()
     }
 }

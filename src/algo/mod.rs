@@ -21,7 +21,7 @@
 //! ```
 
 use crate::client::HttpClient;
-use crate::error::{ApiErrorResponse, Error, ErrorKind, ResultExt};
+use crate::error::{err_msg, ApiErrorResponse, Error, ResultExt};
 use crate::Body;
 
 use serde::de::DeserializeOwned;
@@ -117,7 +117,7 @@ impl Algorithm {
         self.client
             .base_url
             .join(&path)
-            .chain_err(|| ErrorKind::InvalidAlgoUri(path))
+            .with_context(|| format!("invalid algorithm URI {}", path))
     }
 
     /// Get the Algorithmia algo URI for this Algorithm
@@ -153,7 +153,7 @@ impl Algorithm {
             AlgoIo::Text(text) => self.pipe_as(text, mime::TEXT_PLAIN)?,
             AlgoIo::Json(json) => {
                 let encoded = serde_json::to_vec(&json)
-                    .chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
+                    .context("failed to encode algorithm input as JSON")?;
                 self.pipe_as(encoded, mime::APPLICATION_JSON)?
             }
             AlgoIo::Binary(bytes) => self.pipe_as(bytes, mime::APPLICATION_OCTET_STREAM)?,
@@ -161,7 +161,7 @@ impl Algorithm {
 
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| "failed to read algorithm response")?;
+            .context("failed to read algorithm response")?;
         res_json.parse()
     }
 
@@ -193,7 +193,7 @@ impl Algorithm {
 
         let mut res_json = String::new();
         res.read_to_string(&mut res_json)
-            .chain_err(|| "failed to read algorithm response")?;
+            .context("failed to read algorithm response")?;
         res_json.parse()
     }
 
@@ -219,7 +219,7 @@ impl Algorithm {
             .headers(headers)
             .body(input_data)
             .send()
-            .chain_err(|| ErrorKind::Http(format!("calling algorithm '{}'", self.algo_uri)))
+            .with_context(|| format!("calling algorithm '{}'", self.algo_uri))
     }
 
     /// Builder method to explicitly configure options
@@ -300,9 +300,8 @@ impl AlgoIo {
     pub fn decode<D: DeserializeOwned>(&self) -> Result<D, Error> {
         let res_json = self
             .as_json()
-            .ok_or(ErrorKind::MismatchedContentType("json"))?;
-        serde_json::from_value(res_json.into_owned())
-            .chain_err(|| "failed to decode input to specified type")
+            .ok_or_else(|| err_msg("failed to decode as JSON"))?;
+        serde_json::from_value(res_json.into_owned()).context("failed to decode to specified type")
     }
 }
 
@@ -340,10 +339,13 @@ impl AlgoResponse {
         for<'de> D: Deserialize<'de>,
     {
         let ct = self.metadata.content_type.clone();
-        let res_json = self
-            .into_json()
-            .ok_or_else(|| ErrorKind::UnexpectedContentType("json", ct))?;
-        serde_json::from_value(res_json).chain_err(|| ErrorKind::DecodeJson("algorithm response"))
+        let res_json = self.into_json().ok_or_else(|| {
+            err_msg(format!(
+                "Expected 'json' content type but received '{}'",
+                ct
+            ))
+        })?;
+        serde_json::from_value(res_json).context("failed to decode algorithm response")
     }
 }
 
@@ -387,44 +389,42 @@ impl FromStr for AlgoResponse {
     fn from_str(json_str: &str) -> ::std::result::Result<Self, Self::Err> {
         // Early return if the response decodes into ApiErrorResponse
         if let Ok(err_res) = serde_json::from_str::<ApiErrorResponse>(json_str) {
-            return Err(ErrorKind::Api(err_res.error).into());
+            return Err(err_res.error.into());
         }
 
         // Parse into Json object
         let mut data =
-            Value::from_str(json_str).chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
+            Value::from_str(json_str).context("failed to decode JSON as algorithm response")?;
         let metadata_value = data
             .as_object_mut()
             .and_then(|ref mut o| o.remove("metadata"))
             .ok_or_else(|| serde_json::Error::missing_field("metadata"))
-            .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
+            .context("failed to decode JSON as algorithm response")?;
         let result_value = data
             .as_object_mut()
             .and_then(|ref mut o| o.remove("result"))
             .ok_or_else(|| serde_json::Error::missing_field("result"))
-            .chain_err(|| ErrorKind::DecodeJson("algorithm response"))?;
+            .context("failed to decode JSON as algorithm response")?;
 
         // Construct the AlgoIo object
         let metadata = serde_json::from_value::<AlgoMetadata>(metadata_value)
-            .chain_err(|| ErrorKind::DecodeJson("algorithm response metadata"))?;
+            .context("failed to decode JSON as algorithm response metadata")?;
         let result = match (&*metadata.content_type, result_value) {
             ("void", _) => AlgoIo::Json(Value::Null),
             ("json", value) => AlgoIo::Json(value),
             ("text", value) => match value.as_str() {
                 Some(text) => AlgoIo::Text(text.into()),
-                None => return Err(ErrorKind::MismatchedContentType("text").into()),
+                None => bail!("content did not match content type 'text'"),
             },
             ("binary", value) => match value.as_str() {
                 Some(text) => {
                     let binary = base64::decode(text)
-                        .chain_err(|| ErrorKind::DecodeBase64("algorithm response"))?;
+                        .context("failed to decode base64 as algorithm response")?;
                     AlgoIo::Binary(binary)
                 }
-                None => return Err(ErrorKind::MismatchedContentType("binary").into()),
+                None => bail!("content did not match content type 'binary'"),
             },
-            (content_type, _) => {
-                return Err(ErrorKind::InvalidContentType(content_type.into()).into());
-            }
+            (content_type, _) => bail!("content did not match content type '{}'", content_type),
         };
 
         // Construct the AlgoResponse object

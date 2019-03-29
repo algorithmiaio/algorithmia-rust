@@ -16,10 +16,9 @@
 use super::{parse_data_uri, parse_headers};
 use crate::client::HttpClient;
 use crate::data::{DataType, HasDataPath};
-use crate::error::{ApiError, Error, ErrorKind, ResultExt};
+use crate::error::{process_http_response, Error, ResultExt};
 use crate::Body;
 use chrono::{DateTime, TimeZone, Utc};
-use reqwest::StatusCode;
 use std::io::{self, Read};
 
 /// Response and reader when downloading a `DataFile`
@@ -107,21 +106,15 @@ impl DataFile {
         B: Into<Body>,
     {
         let url = self.to_url()?;
-        let mut res = self
-            .client
+        self.client
             .put(url)
             .body(body)
             .send()
-            .chain_err(|| ErrorKind::Http(format!("writing file '{}'", self.to_data_uri())))?;
-        let mut res_json = String::new();
-        res.read_to_string(&mut res_json)
-            .chain_err(|| ErrorKind::Io(format!("writing file '{}'", self.to_data_uri())))?;
+            .with_context(|| format!("request error writing file '{}'", self.to_data_uri()))
+            .and_then(process_http_response)
+            .with_context(|| format!("response error writing file '{}'", self.to_data_uri()))?;
 
-        match res.status() {
-            status if status.is_success() => Ok(()),
-            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => Err(ApiError::from_json_or_status(&res_json, status).into()),
-        }
+        Ok(())
     }
 
     /// Get a file from the Algorithmia Data API
@@ -143,31 +136,25 @@ impl DataFile {
         let req = self.client.get(url);
         let res = req
             .send()
-            .chain_err(|| ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri())))?;
+            .with_context(|| format!("request error downloading file '{}'", self.to_data_uri()))
+            .and_then(process_http_response)
+            .with_context(|| format!("response error downloading file '{}'", self.to_data_uri()))?;
 
-        match res.status() {
-            StatusCode::OK => {
-                let metadata = parse_headers(res.headers())?;
-                match metadata.data_type {
-                    DataType::File => (),
-                    DataType::Dir => {
-                        return Err(
-                            ErrorKind::UnexpectedDataType("file", "directory".to_string()).into(),
-                        );
-                    }
-                }
-
-                Ok(FileData {
-                    size: metadata.content_length.unwrap_or(0),
-                    last_modified: metadata
-                        .last_modified
-                        .unwrap_or_else(|| Utc.ymd(2015, 3, 14).and_hms(8, 0, 0)),
-                    data: Box::new(res),
-                })
+        let metadata = parse_headers(res.headers())?;
+        match metadata.data_type {
+            DataType::File => (),
+            DataType::Dir => {
+                bail!("expected API response with data type 'file', received 'directory'")
             }
-            StatusCode::NOT_FOUND => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
-            status => Err(ApiError::from(status.to_string()).into()),
         }
+
+        Ok(FileData {
+            size: metadata.content_length.unwrap_or(0),
+            last_modified: metadata
+                .last_modified
+                .unwrap_or_else(|| Utc.ymd(2015, 3, 14).and_hms(8, 0, 0)),
+            data: Box::new(res),
+        })
     }
 
     /// Delete a file from from the Algorithmia Data API
@@ -189,17 +176,11 @@ impl DataFile {
     pub fn delete(&self) -> Result<(), Error> {
         let url = self.to_url()?;
         let req = self.client.delete(url);
-        let mut res = req
-            .send()
-            .chain_err(|| ErrorKind::Http(format!("deleting file '{}'", self.to_data_uri())))?;
-        let mut res_json = String::new();
-        res.read_to_string(&mut res_json)
-            .chain_err(|| ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri())))?;
+        req.send()
+            .with_context(|| format!("request error deleting file '{}'", self.to_data_uri()))
+            .and_then(process_http_response)
+            .with_context(|| format!("response error deleting file '{}'", self.to_data_uri()))?;
 
-        match res.status() {
-            status if status.is_success() => Ok(()),
-            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => Err(ApiError::from_json_or_status(&res_json, status).into()),
-        }
+        Ok(())
     }
 }

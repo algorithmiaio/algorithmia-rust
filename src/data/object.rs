@@ -1,9 +1,8 @@
 use super::{parse_data_uri, parse_headers};
 use crate::client::HttpClient;
 use crate::data::*;
-use crate::error::{ApiError, Error, ErrorKind, ResultExt};
+use crate::error::{process_http_response, Error, ResultExt};
 use chrono::{TimeZone, Utc};
-use reqwest::StatusCode;
 
 /// Algorithmia data object (file or directory)
 pub struct DataObject {
@@ -50,16 +49,12 @@ impl DataObject {
         let req = self.client.head(url);
         let res = req
             .send()
-            .chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
+            .with_context(|| format!("request error getting type of '{}'", self.to_data_uri()))
+            .and_then(process_http_response)
+            .with_context(|| format!("response error getting type of '{}'", self.to_data_uri()))?;
 
-        match res.status() {
-            StatusCode::OK => {
-                let metadata = parse_headers(res.headers())?;
-                Ok(metadata.data_type)
-            }
-            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => Err(ApiError::from(status.to_string()).into()),
-        }
+        let metadata = parse_headers(res.headers())?;
+        Ok(metadata.data_type)
     }
 
     /// Determine if a data URI is for a file or directory and convert into the appropriate type
@@ -81,12 +76,13 @@ impl DataObject {
         let metadata = {
             let url = self.to_url()?;
             let req = self.client.head(url);
-            let res = req.send().chain_err(|| {
-                ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
-            })?;
-            if res.status() == StatusCode::NOT_FOUND {
-                return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
-            }
+            let res = req
+                .send()
+                .with_context(|| format!("request error getting type of '{}'", self.to_data_uri()))
+                .and_then(process_http_response)
+                .with_context(|| {
+                    format!("response error getting type of '{}'", self.to_data_uri())
+                })?;
             parse_headers(res.headers())?
         };
 

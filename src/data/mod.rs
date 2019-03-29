@@ -7,7 +7,7 @@ pub use self::file::*;
 pub use self::object::*;
 pub use self::path::*;
 
-use crate::error::{ApiError, Error, ErrorKind};
+use crate::error::{err_msg, Error};
 use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use headers_ext::{ContentLength, Date, HeaderMapExt};
 use http::header::HeaderMap;
@@ -21,15 +21,7 @@ mod path;
 
 static DATA_BASE_PATH: &'static str = "v1/connector";
 
-mod header {
-    use http::header::HeaderValue;
-    pub const X_DATA_TYPE: &'static str = "x-data-type";
-    pub const X_ERROR_MESSAGE: &'static str = "x-error-message";
-    pub(crate) fn lossy_header(val: &HeaderValue) -> String {
-        String::from_utf8_lossy(val.as_bytes()).to_string()
-    }
-}
-use self::header::{lossy_header, X_DATA_TYPE, X_ERROR_MESSAGE};
+use crate::client::header::{lossy_header, X_DATA_TYPE};
 
 /// Minimal representation of data type
 pub enum DataType {
@@ -78,15 +70,16 @@ struct HeaderData {
 }
 
 fn parse_headers(headers: &HeaderMap) -> Result<HeaderData, Error> {
-    if let Some(err_header) = headers.get(X_ERROR_MESSAGE).map(lossy_header) {
-        return Err(ErrorKind::Api(ApiError::from(err_header)).into());
-    };
-
     let data_type = match &headers.get(X_DATA_TYPE).map(lossy_header) {
         Some(dt) if dt == "directory" => DataType::Dir,
         Some(dt) if dt == "file" => DataType::File,
-        Some(dt) => return Err(ErrorKind::InvalidDataType(dt.to_string()).into()),
-        None => return Err(ErrorKind::MissingDataType.into()),
+        Some(dt) => {
+            return Err(err_msg(format!(
+                "API responded with invalid data type: '{}'",
+                dt.to_string()
+            )));
+        }
+        None => return Err(err_msg("API response missing data type")),
     };
 
     let content_length = headers.typed_get::<ContentLength>().map(|c| c.0);

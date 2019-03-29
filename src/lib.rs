@@ -27,8 +27,6 @@
 
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate error_chain;
 
 #[cfg(feature = "entrypoint")]
 #[allow(unused_imports)]
@@ -38,9 +36,10 @@ use crate::algo::{AlgoUri, Algorithm};
 use crate::client::HttpClient;
 use crate::data::{DataDir, DataFile, DataObject, HasDataPath};
 
+#[macro_use]
+pub mod error;
 pub mod algo;
 pub mod data;
-pub mod error;
 
 #[cfg(feature = "entrypoint")]
 pub mod entrypoint;
