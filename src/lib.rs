@@ -21,16 +21,11 @@
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
-#![cfg_attr(feature = "nightly", feature(specialization))]
 #![allow(unknown_lints)]
 #![recursion_limit = "1024"]
 
 #[macro_use]
 extern crate serde_derive;
-
-#[cfg(feature = "entrypoint")]
-#[allow(unused_imports)]
-extern crate algorithmia_entrypoint;
 
 use crate::algo::{AlgoUri, Algorithm};
 use crate::client::HttpClient;
@@ -41,8 +36,8 @@ pub mod error;
 pub mod algo;
 pub mod data;
 
-#[cfg(feature = "entrypoint")]
-pub mod entrypoint;
+#[cfg(feature = "faas")]
+pub mod faas;
 
 use crate::client::ApiAuth;
 use crate::error::Error;
@@ -56,8 +51,8 @@ pub mod prelude {
     pub use crate::Algorithmia;
     pub use serde_json::Value;
 
-    #[cfg(feature = "entrypoint")]
-    pub use crate::entrypoint::{entrypoint, DecodedEntryPoint, EntryPoint};
+    #[cfg(feature = "faas")]
+    pub use crate::faas::setup_handler;
 }
 
 mod client;

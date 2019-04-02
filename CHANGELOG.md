@@ -16,6 +16,5 @@ Major version to reduce complexity and make the client easier to use.
 - Error API surface decreased significantly
 
 # TODO
-Make AlgoIo opaque - not exposing serde types
-Make entrypoint take a 2nd arg that is `&mut MyType: Default` rather than the convoluted `impl MyType` with apply that takes self
-Experiment with removing entrypoint traits and macro, and providing just a setup_handler macro
+- Make AlgoIo opaque - not exposing serde types
+- Experiment with reqwest::async

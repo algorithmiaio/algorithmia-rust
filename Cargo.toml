@@ -19,7 +19,7 @@ appveyor = { repository = "algorithmiaio/algorithmia-rust" }
 
 [dependencies]
 url = "1.7"
-serde = "1.0"
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_derive = "1.0"
 base64 = "0.10.1"
@@ -28,7 +28,6 @@ reqwest = "0.9.4"
 chrono = { version = "0.4", features = ["serde"] }
 http = "0.1.15"
 headers-ext = "0.0.4"
-algorithmia-entrypoint = { path = "./entrypoint", optional = true }
 backtrace = "0.3"
 
 [dependencies.hyper]
@@ -38,10 +37,12 @@ default-features = false
 [build-dependencies]
 rustc_version = "0.2.1"
 
+[dev-dependencies]
+algorithmia = { path = ".", features = ["faas"] }
+
 [features]
-nightly = []
-entrypoint = ["algorithmia-entrypoint"]
+faas = []
 default = []
 
 [package.metadata.docs.rs]
-features = ["entrypoint"]
+features = ["faas"]

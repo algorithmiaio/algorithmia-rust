@@ -75,7 +75,7 @@ Alternatively, you can work with raw JSON strings:
 
 ```rust
 let response = algo.pipe_json(r#"["transformer", "terraforms", "retransform"]"#)?;
-let output = response.as_json()?.to_string();
+let output = response.to_json()?;
 // -> "[\"transformer\", \"retransform\"]"
 ```
 
