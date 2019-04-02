@@ -1,0 +1,4 @@
+/tmp
+/target
+/Cargo.lock
+/src/version.rs

@@ -28,6 +28,6 @@ fn apply(input: Input) -> Result<Output, CustomError> {
     })
 }
 
-fn main() -> Result<(), Box<Error>> {
+fn main() {
     setup_handler(apply)
 }

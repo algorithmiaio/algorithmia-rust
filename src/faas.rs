@@ -72,7 +72,7 @@ impl AlgoFailure {
     }
 }
 
-pub fn setup_handler<F, IN, OUT, E, E2>(mut apply: F) -> Result<(), Box<Error>>
+pub fn setup_handler<F, IN, OUT, E, E2>(mut apply: F)
 where
     F: FnMut(IN) -> Result<OUT, E>,
     IN: TryFrom<AlgoIo, Err = E2>,
@@ -100,12 +100,11 @@ where
             Err(_) => {
                 let err = line.context("failed to read stdin").unwrap_err();
                 serde_json::to_string(&AlgoFailure::system(&err as &dyn Error))
-                    .expect("Failed to encode JSON")
+                    .expect(&format!("Failed to read stdin and failed to encode the error: {}", err))
             }
         };
         algoout(&output_json);
     }
-    Ok(())
 }
 
 impl From<AlgoIo> for AlgoSuccess {

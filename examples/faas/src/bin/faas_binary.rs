@@ -8,6 +8,6 @@ fn apply(input: ByteVec) -> Result<ByteVec, Box<Error>> {
     Ok(input)
 }
 
-fn main() -> Result<(), Box<Error>> {
+fn main() {
     setup_handler(apply)
 }

@@ -36,9 +36,6 @@ default-features = false
 [build-dependencies]
 rustc_version = "0.2.1"
 
-[dev-dependencies]
-algorithmia = { path = ".", features = ["faas"] }
-
 [features]
 faas = []
 default = []

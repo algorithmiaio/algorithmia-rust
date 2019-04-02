@@ -13,7 +13,7 @@ fn apply(input: String, shared_state: &mut Dict) -> Result<Dict, Box<Error>> {
     Ok(shared_state.clone())
 }
 
-fn main() -> Result<(), Box<Error>> {
+fn main() {
     let mut initial_state = Dict::new();
     setup_handler(|input| apply(input, &mut initial_state))
 }

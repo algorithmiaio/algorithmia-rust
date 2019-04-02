@@ -1,0 +1,9 @@
+[package]
+name = "faas"
+version = "0.1.0"
+authors = ["Anthony Nowell <anthony@algorithmia.com>"]
+edition = "2018"
+
+[dependencies]
+algorithmia = { path = "../..", features = ["faas"] }
+serde = { version = "1.0", features = ["derive"] }

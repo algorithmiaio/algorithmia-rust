@@ -5,6 +5,6 @@ fn apply(input: AlgoIo) -> Result<AlgoIo, Box<Error>> {
     Ok(input)
 }
 
-fn main() -> Result<(), Box<Error>> {
+fn main() {
     setup_handler(apply)
 }
