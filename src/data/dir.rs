@@ -27,6 +27,7 @@ use std::path::Path;
 use std::vec::IntoIter;
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Algorithmia Data Directory
 pub struct DataDir {

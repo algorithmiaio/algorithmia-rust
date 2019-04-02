@@ -2,6 +2,7 @@
 use crate::client::header::{lossy_header, X_ERROR_MESSAGE};
 use backtrace::Backtrace;
 use reqwest::Response;
+use serde::{Deserialize, Serialize};
 use serde_json;
 use std::error::Error as StdError;
 use std::fmt::Display;
@@ -138,7 +139,7 @@ where
 }
 
 /// Error from the Algorithmia API (may be from the algorithm)
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ApiError {
     /// Error message returned from the Algorithmia API
     pub message: String,

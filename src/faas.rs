@@ -4,6 +4,7 @@ use serde_json;
 use crate::algo::TryFrom;
 use crate::error::{err_msg, ResultExt};
 use crate::prelude::AlgoIo;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::error::Error;
 use std::fs::OpenOptions;

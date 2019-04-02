@@ -24,9 +24,6 @@
 #![allow(unknown_lints)]
 #![recursion_limit = "1024"]
 
-#[macro_use]
-extern crate serde_derive;
-
 use crate::algo::{AlgoUri, Algorithm};
 use crate::client::HttpClient;
 use crate::data::{DataDir, DataFile, DataObject, HasDataPath};
