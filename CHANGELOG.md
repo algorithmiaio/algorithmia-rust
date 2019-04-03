@@ -14,7 +14,7 @@ Major version to reduce complexity and make the client easier to use.
 - Entrypoint traits accept `&mut self` to allow for easier state manipulation
 - Entrypoint codegen autoboxes return types (for lack of specialization)
 - Error API surface decreased significantly
+- AlgoIo is now an opaque struct
 
 # TODO
-- Make AlgoIo opaque - not exposing serde types
 - Experiment with reqwest::async

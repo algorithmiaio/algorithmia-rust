@@ -51,7 +51,12 @@ static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 
 /// Types that store either input or ouput to an algorithm
 #[derive(Debug, Clone)]
-pub enum AlgoIo {
+pub struct AlgoIo {
+    data: AlgoData,
+}
+
+#[derive(Debug, Clone)]
+enum AlgoData {
     /// Text input or output
     Text(String),
     /// Binary input or output
@@ -152,14 +157,14 @@ impl Algorithm {
     where
         I: Into<AlgoIo>,
     {
-        let mut res = match input_data.into() {
-            AlgoIo::Text(text) => self.pipe_as(text, mime::TEXT_PLAIN)?,
-            AlgoIo::Json(json) => {
+        let mut res = match input_data.into().data {
+            AlgoData::Text(text) => self.pipe_as(text, mime::TEXT_PLAIN)?,
+            AlgoData::Json(json) => {
                 let encoded = serde_json::to_vec(&json)
                     .context("failed to encode algorithm input as JSON")?;
                 self.pipe_as(encoded, mime::APPLICATION_JSON)?
             }
-            AlgoIo::Binary(bytes) => self.pipe_as(bytes, mime::APPLICATION_OCTET_STREAM)?,
+            AlgoData::Binary(bytes) => self.pipe_as(bytes, mime::APPLICATION_OCTET_STREAM)?,
         };
 
         let mut res_json = String::new();
@@ -268,37 +273,37 @@ impl AlgoIo {
     /// If the `AlgoIo` is text (or a valid JSON string), returns the associated text
     #[allow(match_same_arms)]
     pub fn as_string(&self) -> Option<&str> {
-        match self {
-            AlgoIo::Text(text) => Some(text),
-            AlgoIo::Json(json) => json.as_str(),
-            AlgoIo::Binary(_) => None,
+        match &self.data {
+            AlgoData::Text(text) => Some(text),
+            AlgoData::Json(json) => json.as_str(),
+            AlgoData::Binary(_) => None,
         }
     }
 
     /// If the `AlgoIo` is binary, returns the associated byte slice
     pub fn as_bytes(&self) -> Option<&[u8]> {
-        match self {
-            AlgoIo::Text(_) | AlgoIo::Json(_) => None,
-            AlgoIo::Binary(bytes) => Some(bytes),
+        match &self.data {
+            AlgoData::Text(_) | AlgoData::Json(_) => None,
+            AlgoData::Binary(bytes) => Some(bytes),
         }
     }
 
     /// If the `AlgoIo` is Json (or JSON encodable text), returns the associated JSON string
     pub fn to_json(&self) -> Option<String> {
-        match self {
-            AlgoIo::Text(text) => Some(json!(text).to_string()),
-            AlgoIo::Json(json) => Some(json.to_string()),
-            AlgoIo::Binary(_) => None,
+        match &self.data {
+            AlgoData::Text(text) => Some(json!(text).to_string()),
+            AlgoData::Json(json) => Some(json.to_string()),
+            AlgoData::Binary(_) => None,
         }
     }
 
     /// If the `AlgoIo` is valid JSON, decode it to a particular type
     ///
     pub fn decode<D: DeserializeOwned>(self) -> Result<D, Error> {
-        let res_json = match self {
-            AlgoIo::Text(text) => json!(text),
-            AlgoIo::Json(json) => json,
-            AlgoIo::Binary(_) => bail!("cannot decode binary data as JSON"),
+        let res_json = match self.data {
+            AlgoData::Text(text) => json!(text),
+            AlgoData::Json(json) => json,
+            AlgoData::Binary(_) => bail!("cannot decode binary data as JSON"),
         };
 
         serde_json::from_value(res_json).context("failed to decode algorithm I/O to specified type")
@@ -335,10 +340,10 @@ impl<D: DeserializeOwned> TryFrom<AlgoIo> for D {
 impl TryFrom<AlgoIo> for ByteVec {
     type Err = Error;
     fn try_from(val: AlgoIo) -> Result<Self, Self::Err> {
-        match val {
-            AlgoIo::Text(_) => bail!("Cannot convert text to byte vector"),
-            AlgoIo::Json(_) => bail!("Cannot convert JSON to byte vector"),
-            AlgoIo::Binary(bytes) => Ok(ByteVec::from(bytes)),
+        match val.data {
+            AlgoData::Text(_) => bail!("Cannot convert text to byte vector"),
+            AlgoData::Json(_) => bail!("Cannot convert JSON to byte vector"),
+            AlgoData::Binary(bytes) => Ok(ByteVec::from(bytes)),
         }
     }
 }
@@ -413,18 +418,18 @@ impl FromStr for AlgoResponse {
         // Construct the AlgoIo object
         let metadata = serde_json::from_value::<AlgoMetadata>(metadata_value)
             .context("failed to decode JSON as algorithm response metadata")?;
-        let result = match (&*metadata.content_type, result_value) {
-            ("void", _) => AlgoIo::Json(Value::Null),
-            ("json", value) => AlgoIo::Json(value),
+        let data = match (&*metadata.content_type, result_value) {
+            ("void", _) => AlgoData::Json(Value::Null),
+            ("json", value) => AlgoData::Json(value),
             ("text", value) => match value.as_str() {
-                Some(text) => AlgoIo::Text(text.into()),
+                Some(text) => AlgoData::Text(text.into()),
                 None => bail!("content did not match content type 'text'"),
             },
             ("binary", value) => match value.as_str() {
                 Some(text) => {
                     let binary = base64::decode(text)
                         .context("failed to decode base64 as algorithm response")?;
-                    AlgoIo::Binary(binary)
+                    AlgoData::Binary(binary)
                 }
                 None => bail!("content did not match content type 'binary'"),
             },
@@ -434,7 +439,7 @@ impl FromStr for AlgoResponse {
         // Construct the AlgoResponse object
         Ok(AlgoResponse {
             metadata: metadata,
-            result: result,
+            result: AlgoIo { data },
             _dummy: (),
         })
     }
@@ -448,20 +453,20 @@ impl fmt::Display for AlgoUri {
 
 impl fmt::Display for AlgoResponse {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &self.result {
-            AlgoIo::Text(s) => f.write_str(s),
-            AlgoIo::Json(s) => f.write_str(&s.to_string()),
-            AlgoIo::Binary(bytes) => f.write_str(&String::from_utf8_lossy(bytes)),
+        match &self.result.data {
+            AlgoData::Text(s) => f.write_str(s),
+            AlgoData::Json(s) => f.write_str(&s.to_string()),
+            AlgoData::Binary(bytes) => f.write_str(&String::from_utf8_lossy(bytes)),
         }
     }
 }
 
 impl Read for AlgoResponse {
     fn read(&mut self, mut buf: &mut [u8]) -> io::Result<usize> {
-        match &self.result {
-            AlgoIo::Text(s) => buf.write(s.as_bytes()),
-            AlgoIo::Json(s) => buf.write(s.to_string().as_bytes()),
-            AlgoIo::Binary(bytes) => buf.write(bytes),
+        match &self.result.data {
+            AlgoData::Text(s) => buf.write(s.as_bytes()),
+            AlgoData::Json(s) => buf.write(s.to_string().as_bytes()),
+            AlgoData::Binary(bytes) => buf.write(bytes),
         }
     }
 }
@@ -493,13 +498,15 @@ impl From<String> for AlgoUri {
 // AlgoIo Conversions
 impl<S: Serialize> From<S> for AlgoIo {
     fn from(object: S) -> Self {
-        AlgoIo::Json(serde_json::to_value(object).expect("Failed to serialize"))
+        let data = AlgoData::Json(serde_json::to_value(object).expect("Failed to serialize"));
+        AlgoIo { data }
     }
 }
 
 impl From<ByteVec> for AlgoIo {
     fn from(bytes: ByteVec) -> Self {
-        AlgoIo::Binary(bytes.into())
+        let data = AlgoData::Binary(bytes.into());
+        AlgoIo { data }
     }
 }
 

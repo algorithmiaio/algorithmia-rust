@@ -72,7 +72,6 @@ impl AlgoFailure {
     }
 }
 
-
 /// Configures the Algorithmia-compatible FaaS handler
 ///
 /// This function is only used when authoring an algorithm to run on the Algorithmia platform.
@@ -184,8 +183,10 @@ where
             }
             Err(_) => {
                 let err = line.context("failed to read stdin").unwrap_err();
-                serde_json::to_string(&AlgoFailure::system(&err as &dyn Error))
-                    .expect(&format!("Failed to read stdin and failed to encode the error: {}", err))
+                serde_json::to_string(&AlgoFailure::system(&err as &dyn Error)).expect(&format!(
+                    "Failed to read stdin and failed to encode the error: {}",
+                    err
+                ))
             }
         };
         algoout(&output_json);
@@ -253,7 +254,9 @@ fn build_input(stdin: String) -> Result<AlgoIo, Box<dyn Error>> {
             AlgoIo::Binary(bytes)
         }
         ("json", json_obj) => AlgoIo::Json(json_obj),
-        (_, _) => return Err(err_msg(format!("Content type '{}' is invalid", content_type)).into()),
+        (_, _) => {
+            return Err(err_msg(format!("Content type '{}' is invalid", content_type)).into())
+        }
     };
     Ok(input)
 }
