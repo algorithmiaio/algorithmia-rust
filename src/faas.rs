@@ -1,7 +1,9 @@
+//! Support for running Rust-based algorithms on the Algorithmia platform [feature = "faas"]
+
 use base64;
 use serde_json;
 
-use crate::algo::TryFrom;
+use crate::algo::{AlgoData, ByteVec, TryFrom};
 use crate::error::{err_msg, ResultExt};
 use crate::prelude::AlgoIo;
 use serde::{Deserialize, Serialize};
@@ -195,10 +197,10 @@ where
 
 impl From<AlgoIo> for AlgoSuccess {
     fn from(output: AlgoIo) -> AlgoSuccess {
-        match output {
-            AlgoIo::Text(text) => AlgoSuccess::new(Value::String(text), "text"),
-            AlgoIo::Json(json_obj) => AlgoSuccess::new(json_obj, "json"),
-            AlgoIo::Binary(bytes) => {
+        match output.data {
+            AlgoData::Text(text) => AlgoSuccess::new(Value::String(text), "text"),
+            AlgoData::Json(json_obj) => AlgoSuccess::new(json_obj, "json"),
+            AlgoData::Binary(bytes) => {
                 let result = base64::encode(&bytes);
                 AlgoSuccess::new(Value::String(result), "binary")
             }
@@ -247,13 +249,13 @@ fn build_input(stdin: String) -> Result<AlgoIo, Box<dyn Error>> {
     let req = serde_json::from_str(&stdin).context("Error decoding JSON request")?;
     let Request { data, content_type } = req;
     let input = match (&*content_type, data) {
-        ("text", Value::String(text)) => AlgoIo::Text(text),
+        ("text", Value::String(text)) => AlgoIo::from(text),
         ("binary", Value::String(ref encoded)) => {
             let bytes =
                 base64::decode(encoded).context("Error decoding request input as binary")?;
-            AlgoIo::Binary(bytes)
+            AlgoIo::from(ByteVec::from(bytes))
         }
-        ("json", json_obj) => AlgoIo::Json(json_obj),
+        ("json", json_obj) => AlgoIo::from(json_obj),
         (_, _) => {
             return Err(err_msg(format!("Content type '{}' is invalid", content_type)).into())
         }

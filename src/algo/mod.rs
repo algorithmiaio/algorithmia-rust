@@ -52,11 +52,11 @@ static ALGORITHM_BASE_PATH: &'static str = "v1/algo";
 /// Types that store either input or ouput to an algorithm
 #[derive(Debug, Clone)]
 pub struct AlgoIo {
-    data: AlgoData,
+    pub(crate) data: AlgoData,
 }
 
 #[derive(Debug, Clone)]
-enum AlgoData {
+pub(crate) enum AlgoData {
     /// Text input or output
     Text(String),
     /// Binary input or output
@@ -271,7 +271,6 @@ impl AlgoUri {
 
 impl AlgoIo {
     /// If the `AlgoIo` is text (or a valid JSON string), returns the associated text
-    #[allow(match_same_arms)]
     pub fn as_string(&self) -> Option<&str> {
         match &self.data {
             AlgoData::Text(text) => Some(text),
