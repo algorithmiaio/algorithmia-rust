@@ -5,7 +5,6 @@
 //! ```no_run
 //! use algorithmia::Algorithmia;
 //!
-//!# fn main() -> Result<(), Box<std::error::Error>> {
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
@@ -15,8 +14,7 @@
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
 //! let result: Vec<f64> = moving_avg.pipe(&input)?.decode()?;
 //! println!("Completed with result: {:?}", result);
-//! # Ok(())
-//! # }
+//! # Ok::<(), Box<std::error::Error>>(())
 //! ```
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
@@ -115,11 +113,9 @@ impl Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let factor = client.algo("anowell/Dijkstra/0.1");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn algo<A: Into<AlgoUri>>(&self, algorithm: A) -> Algorithm {
         Algorithm::new(self.http_client.clone(), algorithm.into())
@@ -131,11 +127,9 @@ impl Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let rustfoo = client.dir("data://.my/rustfoo");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn dir(&self, path: &str) -> DataDir {
         DataDir::new(self.http_client.clone(), path)
@@ -147,11 +141,9 @@ impl Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let rustfoo = client.file("data://.my/rustfoo");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn file(&self, path: &str) -> DataFile {
         DataFile::new(self.http_client.clone(), path)
@@ -165,11 +157,9 @@ impl Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let rustfoo = client.data("data://.my/rustfoo/what_am_i");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn data(&self, path: &str) -> DataObject {
         DataObject::new(self.http_client.clone(), path)

@@ -5,8 +5,6 @@
 //! ```no_run
 //! use algorithmia::Algorithmia;
 //!
-//! # fn main() -> Result<(), Box<std::error::Error>> {
-//!
 //! // Initialize with an API key
 //! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
@@ -16,8 +14,7 @@
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
 //! let result: Vec<f64> = moving_avg.pipe(&input)?.decode()?;
 //! println!("Completed with result: {:?}", result);
-//! # Ok(())
-//! # }
+//! # Ok::<(), Box<std::error::Error>>(())
 //! ```
 
 use crate::client::HttpClient;
@@ -145,13 +142,11 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566").unwrap();
     /// let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
     /// let input = (vec![0,1,2,3,15,4,5,6,7], 3);
     /// let res: Vec<f32> = moving_avg.pipe(&input)?.decode()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn pipe<I>(&self, input_data: I) -> Result<AlgoResponse, Error>
     where
@@ -186,13 +181,11 @@ impl Algorithm {
     ///
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let minmax  = client.algo("codeb34v3r/FindMinMax/0.1");
     ///
     /// let output: Vec<u8> = minmax.pipe_json("[2,3,4]")?.decode()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse, Error> {
         let mut res = self.pipe_as(json_input.to_owned(), mime::APPLICATION_JSON)?;
 
@@ -240,13 +233,11 @@ impl Algorithm {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     ///
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// client.algo("codeb34v3r/FindMinMax/0.1")
     ///     .timeout(3)
     ///     .pipe(vec![2,3,4])?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn timeout(&mut self, timeout: u32) -> &mut Algorithm {
         self.options.timeout(timeout);

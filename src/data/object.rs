@@ -34,15 +34,13 @@ impl DataObject {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::{DataType, HasDataPath};
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// # let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_obj = client.data("data://.my/some/path");
     /// match my_obj.get_type()? {
     ///     DataType::File => println!("{} is a file", my_obj.to_data_uri()),
     ///     DataType::Dir => println!("{} is a directory", my_obj.to_data_uri()),
     /// }
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn get_type(&self) -> Result<DataType, Error> {
         let url = self.to_url()?;
@@ -62,15 +60,13 @@ impl DataObject {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::{DataItem, HasDataPath};
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// # let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_obj = client.data("data://.my/some/path");
     /// match my_obj.into_type()? {
     ///     DataItem::File(f) => println!("{} is a file", f.to_data_uri()),
     ///     DataItem::Dir(d) => println!("{} is a directory", d.to_data_uri()),
     /// }
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn into_type(self) -> Result<DataItem, Error> {
         let metadata = {

@@ -6,14 +6,12 @@
 //! use algorithmia::Algorithmia;
 //! use algorithmia::data::DataAcl;
 //!
-//! # fn main() -> Result<(), Box<std::error::Error>> {
 //! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let my_dir = client.dir(".my/my_dir");
 //!
 //! my_dir.create(DataAcl::default())?;
 //! my_dir.put_file("/path/to/file")?;
-//! # Ok(())
-//! # }
+//! # Ok::<(), Box<std::error::Error>>(())
 //! ```
 
 use super::parse_data_uri;
@@ -242,7 +240,6 @@ impl DataDir {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::{DataItem, HasDataPath};
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// let dir_list = my_dir.list();
@@ -253,8 +250,7 @@ impl DataDir {
     ///         Err(err) => { println!("Error: {}", err); break; },
     ///     }
     /// };
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn list(&self) -> DirectoryListing {
         DirectoryListing::new(self)
@@ -268,15 +264,13 @@ impl DataDir {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::DataAcl;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.create(DataAcl::default()) {
     ///   Ok(_) => println!("Successfully created Directory"),
     ///   Err(e) => println!("Error created directory: {}", e),
     /// };
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
         let parent = self.parent().ok_or_else(|| {
@@ -319,15 +313,13 @@ impl DataDir {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.delete(false) {
     ///   Ok(_) => println!("Successfully deleted Directory"),
     ///   Err(err) => println!("Error deleting directory: {}", err),
     /// };
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
         // DELETE request
@@ -362,7 +354,6 @@ impl DataDir {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::prelude::*;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     ///
@@ -370,8 +361,7 @@ impl DataDir {
     ///   Ok(_) => println!("Successfully uploaded to: {}", my_dir.to_data_uri()),
     ///   Err(err) => println!("Error uploading file: {}", err),
     /// };
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), Error> {
         let path_ref = file_path.as_ref();

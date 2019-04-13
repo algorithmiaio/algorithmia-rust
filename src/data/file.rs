@@ -4,13 +4,11 @@
 //!
 //! ```no_run
 //! use algorithmia::Algorithmia;
-//! # fn main() -> Result<(), Box<std::error::Error>> {
 //! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let my_file = client.file(".my/my_dir/some_filename");
 //!
 //! my_file.put("file_contents")?;
-//! # Ok(())
-//! # }
+//! # Ok::<(), Box<std::error::Error>>(())
 //! ```
 
 use super::{parse_data_uri, parse_headers};
@@ -90,7 +88,6 @@ impl DataFile {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use std::fs::File;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     ///
     /// client.file(".my/my_dir/string.txt").put("file_contents")?;
@@ -98,8 +95,7 @@ impl DataFile {
     ///
     /// let file = File::open("/path/to/file.jpg")?;
     /// client.file(".my/my_dir/file.jpg").put(file)?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn put<B>(&self, body: B) -> Result<(), Error>
     where
@@ -123,13 +119,11 @@ impl DataFile {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use std::io::Read;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
     /// let data = my_file.get()?.into_string()?;
-    /// # Ok(())
-    /// # }
+    /// # Ok::<_, Box<std::error::Error>>(())
     /// ```
     pub fn get(&self) -> Result<FileData, Error> {
         let url = self.to_url()?;
@@ -162,7 +156,6 @@ impl DataFile {
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_file = client.file(".my/my_dir/sample.txt");
     ///
@@ -170,8 +163,7 @@ impl DataFile {
     ///   Ok(_) => println!("Successfully deleted file"),
     ///   Err(err) => println!("Error deleting file: {}", err),
     /// };
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn delete(&self) -> Result<(), Error> {
         let url = self.to_url()?;

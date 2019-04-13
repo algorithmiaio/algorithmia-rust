@@ -69,12 +69,10 @@ pub trait HasDataPath {
     /// ```
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::HasDataPath;
-    /// # fn main() -> Result<(), Box<std::error::Error>> {
     /// # let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir("data:///.my/my_dir");
     /// assert_eq!(my_dir.basename().unwrap(), "my_dir");
-    /// # Ok(())
-    /// # }
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     fn basename(&self) -> Option<String> {
         self.path().rsplitn(2, '/').next().map(String::from)
@@ -85,9 +83,10 @@ pub trait HasDataPath {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::HasDataPath;
-    /// # let client = Algorithmia::client("111112222233333444445555566").unwrap();
+    /// # let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_file = client.data("data://.my/my_dir/my_file");
     /// assert_eq!(my_file.exists().unwrap(), true);
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     fn exists(&self) -> Result<bool, Error> {
         let url = self.to_url()?;
