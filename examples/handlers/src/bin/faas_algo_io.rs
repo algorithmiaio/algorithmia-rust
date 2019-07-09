@@ -6,5 +6,5 @@ fn apply(input: AlgoIo) -> Result<AlgoIo, Box<Error>> {
 }
 
 fn main() {
-    setup_handler(apply)
+    handler::run(apply)
 }

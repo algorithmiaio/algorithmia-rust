@@ -6,5 +6,5 @@ fn apply(input: u32) -> Result<u32, Box<Error>> {
 }
 
 fn main() {
-    setup_handler(apply)
+    handler::run(apply)
 }

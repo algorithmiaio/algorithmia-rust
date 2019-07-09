@@ -1,4 +1,4 @@
-//! Support for running Rust-based algorithms on the Algorithmia platform [feature = "faas"]
+//! Support for running Rust-based algorithms on the Algorithmia platform [feature = "handler"]
 
 use base64;
 use serde_json;
@@ -99,7 +99,7 @@ impl AlgoFailure {
 /// }
 ///
 /// fn main() {
-///     setup_handler(apply)
+///     handler::run(apply)
 /// }
 /// ```
 ///
@@ -119,7 +119,7 @@ impl AlgoFailure {
 /// }
 ///
 /// fn main() {
-///     setup_handler(apply)
+///     handler::run(apply)
 /// }
 /// ```
 ///
@@ -138,7 +138,7 @@ impl AlgoFailure {
 /// ## Preloading and Maintaining State (Advanced Usage)
 ///
 /// If your algorithm has a preload step that doesn't vary with user input (e.g. loading a model),
-/// you can perform that prior to calling `setup_handler` and then passing in a reference to that stay via a capturing closure:
+/// you can perform that prior to calling `handler::run` and then passing in a reference to that stay via a capturing closure:
 ///
 /// ```rust
 /// #[derive(Deserialize)]
@@ -155,13 +155,13 @@ impl AlgoFailure {
 ///
 /// fn main() {
 ///     let app = App { model: load_model() };
-///     setup_handler(|input| apply(input, &app) )
+///     handler::run(|input| apply(input, &app) )
 /// }
 /// ```
-pub fn setup_handler<F, IN, OUT, E, E2>(mut apply: F)
+pub fn run<F, IN, OUT, E, E2>(mut apply: F)
 where
     F: FnMut(IN) -> Result<OUT, E>,
-    IN: TryFrom<AlgoIo, Err = E2>,
+    IN: TryFrom<AlgoIo, Error = E2>,
     OUT: Into<AlgoIo>,
     E: Into<Box<Error>>,
     E2: Into<Box<Error>>,
@@ -193,6 +193,21 @@ where
         };
         algoout(&output_json);
     }
+}
+
+pub fn load_and_run<F, LOAD, IN, OUT, STATE, E, E2, E3>(load: LOAD, mut apply: F) -> Result<(), Box<Error>>
+where
+    F: FnMut(IN, &mut STATE) -> Result<OUT, E>,
+    LOAD: FnOnce() -> Result<STATE, E3>,
+    IN: TryFrom<AlgoIo, Error = E2>,
+    OUT: Into<AlgoIo>,
+    E: Into<Box<Error>>,
+    E2: Into<Box<Error>>,
+    E3: Into<Box<Error>>,
+{
+    let mut state = load().map_err(|err| err.into())?;
+    run(|input| apply(input, &mut state));
+    Ok(())
 }
 
 impl From<AlgoIo> for AlgoSuccess {

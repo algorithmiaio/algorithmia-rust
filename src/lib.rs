@@ -31,8 +31,8 @@ pub mod error;
 pub mod algo;
 pub mod data;
 
-#[cfg(feature = "faas")]
-pub mod faas;
+#[cfg(feature = "handler")]
+pub mod handler;
 
 use crate::client::ApiAuth;
 use crate::error::Error;
@@ -46,8 +46,8 @@ pub mod prelude {
     pub use crate::Algorithmia;
     pub use serde_json::Value;
 
-    #[cfg(feature = "faas")]
-    pub use crate::faas::setup_handler;
+    #[cfg(feature = "handler")]
+    pub use crate::handler;
 }
 
 mod client;

@@ -307,29 +307,32 @@ impl Deref for AlgoResponse {
     }
 }
 
+
+// We need our own TryFrom trait because we can't implement
+// the conversions from AlgoIo to any generic DeserializeOwned type until specialization
 #[doc(hidden)]
 pub trait TryFrom<T>: Sized {
-    type Err;
-    fn try_from(val: AlgoIo) -> Result<Self, Self::Err>;
+    type Error;
+    fn try_from(val: AlgoIo) -> Result<Self, Self::Error>;
 }
 
 impl TryFrom<AlgoIo> for AlgoIo {
-    type Err = Error;
-    fn try_from(val: AlgoIo) -> Result<Self, Self::Err> {
+    type Error = std::convert::Infallible;
+    fn try_from(val: AlgoIo) -> Result<Self, Self::Error> {
         Ok(val)
     }
 }
 
 impl<D: DeserializeOwned> TryFrom<AlgoIo> for D {
-    type Err = Error;
-    fn try_from(val: AlgoIo) -> Result<Self, Self::Err> {
+    type Error = Error;
+    fn try_from(val: AlgoIo) -> Result<Self, Self::Error> {
         val.decode()
     }
 }
 
 impl TryFrom<AlgoIo> for ByteVec {
-    type Err = Error;
-    fn try_from(val: AlgoIo) -> Result<Self, Self::Err> {
+    type Error = Error;
+    fn try_from(val: AlgoIo) -> Result<Self, Self::Error> {
         match val.data {
             AlgoData::Text(_) => bail!("Cannot convert text to byte vector"),
             AlgoData::Json(_) => bail!("Cannot convert JSON to byte vector"),
@@ -337,6 +340,7 @@ impl TryFrom<AlgoIo> for ByteVec {
         }
     }
 }
+
 
 impl AlgoResponse {
     /// If the algorithm output is JSON, decode it into a particular type

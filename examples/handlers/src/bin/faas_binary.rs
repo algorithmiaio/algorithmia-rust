@@ -9,5 +9,5 @@ fn apply(input: ByteVec) -> Result<ByteVec, Box<Error>> {
 }
 
 fn main() {
-    setup_handler(apply)
+    handler::run(apply)
 }

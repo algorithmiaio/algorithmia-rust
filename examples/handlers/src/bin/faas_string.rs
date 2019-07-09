@@ -5,5 +5,5 @@ fn apply(input: String) -> Result<String, String> {
 }
 
 fn main() {
-    setup_handler(apply)
+    handler::run(apply)
 }

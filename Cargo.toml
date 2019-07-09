@@ -37,8 +37,8 @@ default-features = false
 rustc_version = "0.2.1"
 
 [features]
-faas = []
+handler = []
 default = []
 
 [package.metadata.docs.rs]
-features = ["faas"]
+features = ["handler"]

@@ -29,5 +29,5 @@ fn apply(input: Input) -> Result<Output, CustomError> {
 }
 
 fn main() {
-    setup_handler(apply)
+    handler::run(apply)
 }
