@@ -1,7 +1,7 @@
-use algo::{AlgoInput, AlgoOutput, JsonValue};
+use crate::algo::{AlgoInput, AlgoOutput, JsonValue};
 use std::error::Error as StdError;
-use error::{Error, ErrorKind, ResultExt};
-use json;
+use crate::error::{Error, ErrorKind, ResultExt};
+use crate::json;
 
 #[cfg(feature="with-serde")]
 use serde::Deserialize;

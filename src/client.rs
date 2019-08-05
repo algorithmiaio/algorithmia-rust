@@ -36,7 +36,7 @@ impl HttpClient {
             inner_client: Arc::new(Client::new().expect("Failed to init client")),
             user_agent: format!("algorithmia-rust/{} (Rust {}",
                                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
-                                ::version::RUSTC_VERSION),
+                                crate::version::RUSTC_VERSION),
         }
     }
 

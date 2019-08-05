@@ -7,7 +7,7 @@ pub use self::file::*;
 pub use self::path::*;
 pub use self::object::*;
 
-use error::*;
+use crate::error::*;
 use chrono::{DateTime, UTC, NaiveDateTime, TimeZone};
 use std::ops::Deref;
 use reqwest::header::{Headers, ContentLength, Date};

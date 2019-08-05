@@ -16,10 +16,10 @@
 //! println!("Completed with result: {:?}", result);
 //! ```
 
-use client::HttpClient;
-use error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
+use crate::client::HttpClient;
+use crate::error::{Error, ErrorKind, Result, ResultExt, ApiErrorResponse};
 use super::version::Version;
-use {json, Body};
+use crate::{json, Body};
 
 #[cfg(feature="with-serde")]
 use serde_json::{self, Value};
@@ -711,7 +711,7 @@ impl<'a> From<AlgoOutput> for AlgoInput<'a> {
 
 #[cfg(test)]
 mod tests {
-    use Algorithmia;
+    use crate::Algorithmia;
     use super::*;
 
     fn mock_client() -> Algorithmia {

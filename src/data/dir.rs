@@ -13,12 +13,12 @@
 //! my_dir.put_file("/path/to/file").unwrap();
 //! ```
 
-use client::HttpClient;
-use error::{self, ApiError, Error, ErrorKind, Result, ResultExt};
-use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
+use crate::client::HttpClient;
+use crate::error::{self, ApiError, Error, ErrorKind, Result, ResultExt};
+use crate::data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
 use super::header::XDataType;
-use json;
+use crate::json;
 
 use std::io::Read;
 use std::fs::File;
@@ -449,9 +449,9 @@ impl DataDir {
 
 #[cfg(test)]
 mod tests {
-    use data::HasDataPath;
+    use crate::data::HasDataPath;
     use super::*;
-    use Algorithmia;
+    use crate::Algorithmia;
 
     fn mock_client() -> Algorithmia {
         Algorithmia::client("")

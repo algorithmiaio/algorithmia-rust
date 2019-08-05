@@ -45,15 +45,15 @@ extern crate base64;
 extern crate chrono;
 extern crate url;
 
-use algo::{Algorithm, AlgoUri};
-use data::{DataDir, DataFile, DataObject, HasDataPath};
-use client::HttpClient;
+use crate::algo::{Algorithm, AlgoUri};
+use crate::data::{DataDir, DataFile, DataObject, HasDataPath};
+use crate::client::HttpClient;
 
 pub mod algo;
 pub mod data;
 pub mod error;
 pub use reqwest::{Url, IntoUrl};
-pub use client::ApiAuth;
+pub use crate::client::ApiAuth;
 pub use reqwest::Body;
 
 #[cfg(feature="with-serde")]
@@ -66,9 +66,9 @@ mod json;
 
 /// Reexports of the most common types and traits
 pub mod prelude {
-    pub use Algorithmia;
-    pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
-    pub use data::HasDataPath;
+    pub use crate::Algorithmia;
+    pub use crate::algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
+    pub use crate::data::HasDataPath;
 }
 
 mod client;

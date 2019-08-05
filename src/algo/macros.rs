@@ -247,7 +247,7 @@ macro_rules! algo_entrypoint {
 
 // Testing all the variants with unused code
 mod test_str {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(&str => hello_text);
     fn hello_text(_input: &str) -> Result<String, String> {
         unimplemented!()
@@ -255,7 +255,7 @@ mod test_str {
 }
 
 mod test_bytes {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(&[u8] => hello_bytes);
     fn hello_bytes(_input: &[u8]) -> Result<Vec<u8>, String> {
         unimplemented!()
@@ -263,7 +263,7 @@ mod test_bytes {
 }
 
 mod test_json {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(&JsonValue => hello_json);
     fn hello_json(_input: &JsonValue) -> Result<JsonValue, String> {
         unimplemented!()
@@ -271,7 +271,7 @@ mod test_json {
 }
 
 mod test_enum {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(AlgoInput => hello_enum);
     fn hello_enum(_input: AlgoInput) -> Result<AlgoOutput, String> {
         unimplemented!()
@@ -279,7 +279,7 @@ mod test_enum {
 }
 
 mod test_decode {
-    use prelude::*;
+    use crate::prelude::*;
 
     #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
     #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
@@ -295,7 +295,7 @@ mod test_decode {
 }
 
 mod test_decode_with_default {
-    use prelude::*;
+    use crate::prelude::*;
 
     pub struct Algo { _magic: u32 }
 
@@ -321,7 +321,7 @@ mod test_decode_with_default {
 }
 
 mod test_shorthand_str {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(&str => apply);
     fn apply(_input: &str) -> Result<String, String> {
         unimplemented!()
@@ -330,7 +330,7 @@ mod test_shorthand_str {
 
 
 mod test_shorthand_bytes {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(&[u8]);
     fn apply(_input: &[u8]) -> Result<Vec<u8>, String> {
         unimplemented!()
@@ -338,7 +338,7 @@ mod test_shorthand_bytes {
 }
 
 mod test_shorthand_json {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(&JsonValue);
     fn apply(_input: &JsonValue) -> Result<JsonValue, String> {
         unimplemented!()
@@ -346,7 +346,7 @@ mod test_shorthand_json {
 }
 
 mod test_shorthand_enum {
-    use prelude::*;
+    use crate::prelude::*;
     algo_entrypoint!(AlgoInput);
     fn apply(_input: AlgoInput) -> Result<AlgoOutput, String> {
         unimplemented!()
@@ -354,7 +354,7 @@ mod test_shorthand_enum {
 }
 
 mod test_shorthand_decode {
-    use prelude::*;
+    use crate::prelude::*;
 
     #[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
     #[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
