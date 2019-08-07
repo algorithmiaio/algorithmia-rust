@@ -1,10 +1,11 @@
 extern crate algorithmia;
 extern crate serde_json;
 
+use algorithmia::algo::AlgoResponse;
 use algorithmia::Algorithmia;
-use algorithmia::algo::{AlgoResponse, AlgoUri, Version};
 use std::collections::HashMap;
 use std::env;
+use std::error::Error;
 
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
@@ -28,36 +29,35 @@ struct RouteMap<'a> {
 }
 
 impl<'a> RouteMap<'a> {
-    pub fn get_dijkstra_route(self, start: &'a str, end: &'a str) -> AlgoResponse {
+    pub fn get_dijkstra_route(
+        self,
+        start: &'a str,
+        end: &'a str,
+    ) -> Result<AlgoResponse, Box<Error>> {
         let api_key = match env::var("ALGORITHMIA_API_KEY") {
             Ok(key) => key,
             Err(e) => {
                 panic!("Error getting ALGORITHMIA_API_KEY: {}", e);
             }
         };
-        let client = Algorithmia::client(&*api_key);
-        let dijkstra_uri = AlgoUri::with_version("anowell/Dijkstra", Version::Latest);
-        let dijkstra = client.algo(dijkstra_uri);
+        let client = Algorithmia::client(&*api_key)?;
+        let dijkstra = client.algo("anowell/Dijkstra");
 
         println!("Making request to: {}", dijkstra.to_url().unwrap());
 
         // Declaring type explicitly to enforce valid input types during build
         let input_data: DijkstraInput = (self.map, start, end);
         // println!("Input: {:?}", input_data);
-        println!("Input:\n{}",
-                 serde_json::to_string_pretty(&input_data).unwrap());
+        println!(
+            "Input:\n{}",
+            serde_json::to_string_pretty(&input_data).unwrap()
+        );
 
-        match dijkstra.pipe(&input_data) {
-            Ok(response) => response,
-            Err(err) => {
-                println!("{}", err);
-                std::process::exit(1);
-            }
-        }
+        dijkstra.pipe(&input_data).map_err(Into::into)
     }
 }
 
-fn main() {
+fn main() -> Result<(), Box<Error>> {
     let mut args = env::args();
     args.next(); // discard args[0]
     let start = args.next().unwrap_or_else(|| "a".to_string());
@@ -72,9 +72,10 @@ fn main() {
         ),
     };
 
-    let output = input_map.get_dijkstra_route(&start, &end);
+    let output = input_map.get_dijkstra_route(&start, &end)?;
     let duration = output.metadata.duration;
-    let result: Route = output.decode().unwrap();
+    let result: Route = output.decode()?;
     println!("Shortest route: {}", result.join("->"));
     println!("Completed in {} seconds.", duration);
+    Ok(())
 }

@@ -14,4 +14,6 @@ install:
 build: false
 
 test_script:
-- cargo test --verbose
+  - cargo build -v
+  - cargo test -v
+  - cargo build -v --features "handler"

@@ -1,152 +1,273 @@
 //! Error types
-use std::{fmt, str};
+use crate::client::header::{lossy_header, X_ERROR_MESSAGE};
+use backtrace::Backtrace;
+use reqwest::Response;
+use serde::{Deserialize, Serialize};
+use serde_json;
+use std::error::Error as StdError;
 use std::fmt::Display;
-use json;
-use reqwest;
+use std::{fmt, str};
 
-error_chain! {
-    errors {
-        /// Error from the Algorithmia API (may be from the algorithm)
-        Api(err: ApiError) {
-            description("API error")
-            display("API error - {}", err.message)
+/// Default error type for errors originating in algorithm code
+const ALGORITHM_ERROR: &'static str = "AlgorithmError";
+
+macro_rules! bail {
+    ($e:expr) => {
+        return Err($crate::error::err_msg($e));
+    };
+    ($fmt:expr, $($arg:tt)+) => {
+        return Err($crate::error::err_msg(format!($fmt, $($arg)+)));
+    };
+}
+
+#[derive(Debug)]
+pub struct Error {
+    kind: ErrorKind,
+    ctx: String,
+}
+
+#[derive(Debug)]
+pub(crate) enum ErrorKind {
+    // Error from the Algorithmia API (may be from the algorithm)
+    Api(ApiError),
+
+    // Http errors calling the API (optionally with message from server)
+    Http(reqwest::Error, Option<ApiError>),
+
+    // Error context generated in this client
+    Client,
+
+    // Error context generated in this client
+    Inner(Box<dyn StdError + Send + Sync + 'static>),
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self.kind {
+            ErrorKind::Http(err, _) => match err.status() {
+                Some(status) => write!(f, "{}: {}", status, self.ctx),
+                None => write!(f, "{}", self.ctx),
+            },
+            _ => write!(f, "{}", self.ctx),
         }
-
-        /// Http errors calling the API
-        Http(context: String) {
-            description("HTTP error")
-            display("HTTP error {}", context)
-        }
-
-        /// Base URL couldn't be parsed as a `Url`
-        InvalidBaseUrl {
-            description("invalid base URL")
-        }
-
-        /// Invalid Data URI
-        InvalidDataUri(uri: String) {
-            description("invalid data URI")
-            display("invalid data URI '{}'", uri)
-        }
-
-        /// Invalid Algorithm URI
-        InvalidAlgoUri(uri: String) {
-            description("invalid algorithm URI")
-            display("invalid algorithm URI: {}", &uri)
-        }
-
-        /// Error decoding JSON
-        DecodeJson(item: &'static str) {
-            description("json decode error")
-            display("failed to decode {} json", item)
-        }
-
-        /// Error encoding JSON
-        EncodeJson(item: &'static str) {
-            description("json encode error")
-            display("failed to encode {} as json", item)
-        }
-
-        /// Error decoding base64
-        DecodeBase64(item: &'static str) {
-            description("base64 error")
-            display("failed to decode {} as base64", item)
-        }
-
-        /// I/O errors reading or writing data
-        Io(context: String) {
-            description("I/O error")
-            display("I/O error {}", context)
-        }
-
-        /// API responded with unknown content type
-        InvalidContentType(t: String) {
-            description("invalid content type")
-            display("invalid content type: '{}'", t)
-        }
-
-        /// Content was not valid for the specified content-type
-        MismatchedContentType(expected: &'static str) {
-            description("mismatched content type")
-            display("content did not match content type: '{}'", expected)
-        }
-
-        /// Content type is not the expected content type
-        UnexpectedContentType(expected: &'static str, actual: String) {
-            description("unexpected content type")
-            display("expected content type '{}', received '{}'", expected, actual)
-        }
-
-        /// Encountered 404 Not Found
-        NotFound(url: reqwest::Url) {
-            description("404 Not Found")
-            display("404 Not Found ({})", url)
-        }
-
-        /// API response was missing a data type header
-        MissingDataType {
-            description("API response missing data type")
-        }
-
-        /// API response included an unknown data type header
-        InvalidDataType(t: String) {
-            description("invalid data type")
-            display("API responded with invalid data type: '{}'", t)
-        }
-
-        /// API response included an unexpected data type header
-        UnexpectedDataType(expected: &'static str, actual: String) {
-            description("unexpected data type")
-            display("expected API response with data type '{}', received '{}'", expected, actual)
-        }
-
-        /// Entrypoint not defined for input type
-        UnsupportedInput {
-            description("unsupported input type")
-        }
-
-        #[doc(hidden)]
-        __DontMatchMe {}
     }
 }
 
+impl Error {
+    /// If the Algorithmia API returned an error, return the error response
+    pub fn api_error(&self) -> Option<&ApiError> {
+        match &self.kind {
+            ErrorKind::Api(e) => Some(e),
+            ErrorKind::Http(_, api_err) => api_err.as_ref(),
+            _ => None,
+        }
+    }
+
+    /// If an HTTP error occurred, return the relevant status code
+    pub fn status(&self) -> Option<http::status::StatusCode> {
+        match &self.kind {
+            ErrorKind::Http(e, _) => e.status(),
+            _ => None,
+        }
+    }
+}
+
+pub(crate) trait ResultExt<T> {
+    fn context<D>(self, context: D) -> Result<T, Error>
+    where
+        D: Display + Send + Sync + 'static;
+
+    fn with_context<F, D>(self, f: F) -> Result<T, Error>
+    where
+        D: Display + Send + Sync + 'static,
+        F: FnOnce() -> D;
+}
+
+pub(crate) trait IntoErrorKind {
+    fn into_error_kind(self) -> ErrorKind;
+}
+
+impl IntoErrorKind for Error {
+    fn into_error_kind(self) -> ErrorKind {
+        self.kind
+    }
+}
+
+impl IntoErrorKind for reqwest::Error {
+    fn into_error_kind(self) -> ErrorKind {
+        ErrorKind::Http(self, None)
+    }
+}
+
+macro_rules! impl_into_error_kind {
+    ($p:ty) => {
+        impl IntoErrorKind for $p {
+            fn into_error_kind(self) -> ErrorKind {
+                ErrorKind::Inner(Box::new(self))
+            }
+        }
+    };
+}
+
+impl_into_error_kind!(std::io::Error);
+impl_into_error_kind!(serde_json::error::Error);
+impl_into_error_kind!(reqwest::header::InvalidHeaderValue);
+impl_into_error_kind!(url::ParseError);
+impl_into_error_kind!(base64::DecodeError);
+
+impl<T, E> ResultExt<T> for Result<T, E>
+where
+    E: IntoErrorKind,
+{
+    fn context<D>(self, context: D) -> Result<T, Error>
+    where
+        D: Display + Send + Sync + 'static,
+    {
+        self.with_context(|| context)
+    }
+
+    fn with_context<F, D>(self, f: F) -> Result<T, Error>
+    where
+        D: Display + Send + Sync + 'static,
+        F: FnOnce() -> D,
+    {
+        self.map_err(|source| Error {
+            kind: source.into_error_kind(),
+            ctx: f().to_string(),
+        })
+    }
+}
 
 /// Error from the Algorithmia API (may be from the algorithm)
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ApiError {
     /// Error message returned from the Algorithmia API
     pub message: String,
+    /// Error type
+    pub error_type: Option<String>,
     /// Stacktrace of algorithm exception/panic
     pub stacktrace: Option<String>,
 }
 
 impl Display for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.stacktrace {
-            Some(ref trace) => write!(f, "{}\n{}", self.message, trace),
-            None => write!(f, "{}", self.message),
+        if let Some(error_type) = &self.error_type {
+            write!(f, "{}: ", error_type)?;
+        }
+        write!(f, "{}", self.message)?;
+        if let Some(trace) = &self.stacktrace {
+            write!(f, "\n{}", trace)?;
+        }
+        Ok(())
+    }
+}
+
+impl From<ApiError> for Error {
+    fn from(err: ApiError) -> Self {
+        Error {
+            kind: ErrorKind::Api(err),
+            ctx: String::new(), // TODO: should we allow this
+        }
+    }
+}
+
+pub(crate) fn err_msg<D: Display>(msg: D) -> Error {
+    Error::from(msg.to_string())
+}
+
+impl From<String> for Error {
+    fn from(msg: String) -> Self {
+        Error {
+            kind: ErrorKind::Client,
+            ctx: msg,
+        }
+    }
+}
+
+impl StdError for ApiError {}
+
+impl StdError for Error {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        match &self.kind {
+            ErrorKind::Api(e) => Some(e as &(dyn StdError + 'static)),
+            ErrorKind::Http(_, Some(e)) => Some(e as &(dyn StdError + 'static)),
+            ErrorKind::Http(e, None) => Some(e as &(dyn StdError + 'static)),
+            ErrorKind::Inner(e) => Some(e.as_ref() as &(dyn StdError + 'static)),
+            ErrorKind::Client => None,
+        }
+    }
+}
+
+impl ApiError {
+    /// Creates an ApiError - intended for creating ApiErrors from Rust algorithms
+    ///
+    /// ## Examples:
+    ///
+    /// ```
+    /// use algorithmia::error::ApiError;
+    ///
+    /// ApiError::new("InputError", "Input missing field 'url'");
+    /// ```
+    pub fn new<S: Into<String>>(error_type: S, message: S) -> ApiError {
+        ApiError {
+            error_type: Some(error_type.into()),
+            message: message.into(),
+            stacktrace: Some(format!("{:?}", Backtrace::new())),
+        }
+    }
+}
+
+impl<S> From<S> for ApiError
+where
+    S: Into<String>,
+{
+    fn from(message: S) -> ApiError {
+        ApiError {
+            error_type: Some(ALGORITHM_ERROR.into()),
+            message: message.into(),
+            stacktrace: Some(format!("{:?}", Backtrace::new())),
         }
     }
 }
 
 /// Struct for decoding Algorithmia API error responses
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 #[doc(hidden)]
 pub struct ApiErrorResponse {
     pub error: ApiError,
 }
 
-
 /// Helper to decode API responses into errors
-#[doc(hidden)]
-pub fn decode(json_str: &str) -> Error {
-    let decoded_error = json::decode_str::<ApiErrorResponse>(json_str);
-    match decoded_error.chain_err(|| ErrorKind::DecodeJson("api error response")) {
-        Ok(err_res) => ErrorKind::Api(err_res.error).into(),
-        Err(err) => err,
+impl Error {
+    pub fn from_json(json: &str) -> Error {
+        let decoded_error = serde_json::from_str::<ApiErrorResponse>(json);
+        match decoded_error.context("Failed to decode API error response") {
+            Ok(err_res) => Error::from(err_res.error),
+            Err(err) => err,
+        }
+    }
+}
+
+pub(crate) fn process_http_response(mut resp: Response) -> Result<Response, Error> {
+    let status = resp.status();
+    if status.is_success() {
+        Ok(resp)
+    } else {
+        let api_err = match resp.json::<ApiErrorResponse>() {
+            Ok(err_res) => Some(err_res.error),
+            Err(_) => match resp.headers().get(X_ERROR_MESSAGE).map(lossy_header) {
+                Some(message) => Some(ApiError {
+                    message,
+                    error_type: None,
+                    stacktrace: None,
+                }),
+                None => None,
+            },
+        };
+
+        Response::error_for_status(resp).map_err(|e| Error {
+            kind: ErrorKind::Http(e, api_err),
+            ctx: String::new(),
+        })
     }
 }

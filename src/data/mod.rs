@@ -1,29 +1,27 @@
-//! Manage data for algorithms
+//! API client for managing data through Algorithmia
 //!
 //! Instantiate from the [`Algorithmia`](../struct.Algorithmia.html) struct
 
 pub use self::dir::*;
 pub use self::file::*;
-pub use self::path::*;
 pub use self::object::*;
+pub use self::path::*;
 
-use error::*;
-use chrono::{DateTime, UTC, NaiveDateTime, TimeZone};
+use crate::error::{err_msg, Error};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use headers_ext::{ContentLength, Date, HeaderMapExt};
+use http::header::HeaderMap;
 use std::ops::Deref;
-use reqwest::header::{Headers, ContentLength, Date};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 mod dir;
 mod file;
-mod path;
 mod object;
+mod path;
 
 static DATA_BASE_PATH: &'static str = "v1/connector";
 
-mod header {
-    header! { (XDataType, "X-Data-Type") => [String] }
-    header! { (XErrorMessage, "X-Error-Message") => [String] }
-}
-use self::header::{XDataType, XErrorMessage};
+use crate::client::header::{lossy_header, X_DATA_TYPE};
 
 /// Minimal representation of data type
 pub enum DataType {
@@ -42,7 +40,7 @@ pub struct DataFileItem {
     /// Size of file in bytes
     pub size: u64,
     /// Last modified timestamp
-    pub last_modified: DateTime<UTC>,
+    pub last_modified: DateTime<Utc>,
     file: DataFile,
 }
 
@@ -68,33 +66,32 @@ impl Deref for DataDirItem {
 struct HeaderData {
     pub data_type: DataType,
     pub content_length: Option<u64>,
-    pub last_modified: Option<DateTime<UTC>>,
+    pub last_modified: Option<DateTime<Utc>>,
 }
 
-fn parse_headers(headers: &Headers) -> Result<HeaderData> {
-    if let Some(err_header) = headers.get::<XErrorMessage>() {
-        return Err(ErrorKind::Api(ApiError {
-                message: err_header.to_string(),
-                stacktrace: None,
-            })
-            .into());
+fn parse_headers(headers: &HeaderMap) -> Result<HeaderData, Error> {
+    let data_type = match &headers.get(X_DATA_TYPE).map(lossy_header) {
+        Some(dt) if dt == "directory" => DataType::Dir,
+        Some(dt) if dt == "file" => DataType::File,
+        Some(dt) => {
+            return Err(err_msg(format!(
+                "API responded with invalid data type: '{}'",
+                dt.to_string()
+            )));
+        }
+        None => return Err(err_msg("API response missing data type")),
     };
 
-    let data_type = match headers.get::<XDataType>() {
-        Some(dt) if &*dt.to_string() == "directory" => DataType::Dir,
-        Some(dt) if &*dt.to_string() == "file" => DataType::File,
-        Some(dt) => return Err(ErrorKind::InvalidDataType(dt.to_string()).into()),
-        None => return Err(ErrorKind::MissingDataType.into()),
-    };
-
-    let content_length = headers.get::<ContentLength>().map(|c| c.0);
-    let last_modified = headers.get::<Date>()
-        .map(|d| {
-            let hdt = d.0;
-            let ts = hdt.0.to_timespec();
-            let naive_datetime = NaiveDateTime::from_timestamp(ts.sec, ts.nsec as u32);
-            UTC.from_utc_datetime(&naive_datetime)
-        });
+    let content_length = headers.typed_get::<ContentLength>().map(|c| c.0);
+    let last_modified = headers.typed_get::<Date>().map(|d| {
+        let time = SystemTime::from(d);
+        let ts = time
+            .duration_since(UNIX_EPOCH)
+            .expect("date header predates unix epoch");
+        let naive_datetime =
+            NaiveDateTime::from_timestamp(ts.as_secs() as i64, ts.subsec_nanos() as u32);
+        Utc.from_utc_datetime(&naive_datetime)
+    });
 
     Ok(HeaderData {
         data_type: data_type,
@@ -102,7 +99,6 @@ fn parse_headers(headers: &Headers) -> Result<HeaderData> {
         last_modified: last_modified,
     })
 }
-
 
 fn parse_data_uri(data_uri: &str) -> String {
     match data_uri {

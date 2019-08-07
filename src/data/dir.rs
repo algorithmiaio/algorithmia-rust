@@ -6,31 +6,26 @@
 //! use algorithmia::Algorithmia;
 //! use algorithmia::data::DataAcl;
 //!
-//! let client = Algorithmia::client("111112222233333444445555566");
+//! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let my_dir = client.dir(".my/my_dir");
 //!
-//! my_dir.create(DataAcl::default()).unwrap();
-//! my_dir.put_file("/path/to/file").unwrap();
+//! my_dir.create(DataAcl::default())?;
+//! my_dir.put_file("/path/to/file")?;
+//! # Ok::<(), Box<std::error::Error>>(())
 //! ```
 
-use client::HttpClient;
-use error::{self, ApiError, Error, ErrorKind, Result, ResultExt};
-use data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
-use super::header::XDataType;
-use json;
+use crate::client::header::{lossy_header, X_DATA_TYPE};
+use crate::client::HttpClient;
+use crate::data::{DataDirItem, DataFile, DataFileItem, DataItem, HasDataPath};
+use crate::error::{err_msg, process_http_response, Error, ResultExt};
 
-use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use std::vec::IntoIter;
 
-use chrono::{DateTime, UTC};
-use reqwest::header::ContentType;
-use reqwest::StatusCode;
-
-#[cfg(feature="with-rustc-serialize")]
-use rustc_serialize::{Decodable, Decoder};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Algorithmia Data Directory
 pub struct DataDir {
@@ -38,70 +33,39 @@ pub struct DataDir {
     client: HttpClient,
 }
 
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
+#[derive(Debug, Deserialize)]
 struct DeletedResponse {
     result: DirectoryDeleted,
 }
 
 /// Response when deleting a file form the Data API
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct DirectoryDeleted {
     /// Number of files that were deleted
     ///
     /// Note: some backing stores may indicate deletion succeeds for non-existing files
     pub deleted: u64,
     // Placeholder for API stability if additional fields are added later
-    #[cfg_attr(feature="with-serde", serde(skip_deserializing))]
+    #[serde(skip_deserializing)]
     _dummy: (),
 }
 
-#[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 struct FolderItem {
     pub name: String,
     pub acl: Option<DataAcl>,
 }
 
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 struct FileItem {
     pub filename: String,
     pub size: u64,
-    pub last_modified: DateTime<UTC>,
-}
-
-// Manual implemented Decodable: https://github.com/lifthrasiir/rust-chrono/issues/43
-#[cfg(feature="with-rustc-serialize")]
-#[deprecated(since="2.1.0", note="rustc-serialize has been deprecated")]
-impl Decodable for FileItem {
-    fn decode<D: Decoder>(d: &mut D) -> ::std::result::Result<FileItem, D::Error> {
-        use std::error::Error;
-        d.read_struct("root", 0, |d| {
-            Ok(FileItem {
-                filename: d.read_struct_field("filename", 0, |d| Decodable::decode(d))?,
-                size: d.read_struct_field("size", 0, |d| Decodable::decode(d))?,
-                last_modified: {
-                    let json_str: String =
-                        d.read_struct_field("last_modified", 0, |d| Decodable::decode(d))?;
-                    match json_str.parse() {
-                        Ok(datetime) => datetime,
-                        Err(err) => return Err(d.error(err.description())),
-                    }
-                },
-            })
-        })
-    }
+    pub last_modified: DateTime<Utc>,
 }
 
 /// ACL that indicates permissions for a `DataDir`
 /// See also: [`ReadAcl`](enum.ReadAcl.html) enum to construct a `DataACL`
-#[cfg_attr(feature="with-serde", derive(Deserialize, Serialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable, RustcEncodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct DataAcl {
     /// Read ACL
     pub read: Vec<String>,
@@ -132,33 +96,24 @@ impl Default for DataAcl {
 impl From<ReadAcl> for DataAcl {
     fn from(acl: ReadAcl) -> Self {
         match acl {
-            ReadAcl::Private |
-            ReadAcl::__Nonexhaustive => {
-                DataAcl {
-                    read: vec![],
-                    _dummy: (),
-                }
-            }
-            ReadAcl::MyAlgorithms => {
-                DataAcl {
-                    read: vec!["algo://.my/*".into()],
-                    _dummy: (),
-                }
-            }
-            ReadAcl::Public => {
-                DataAcl {
-                    read: vec!["user://*".into()],
-                    _dummy: (),
-                }
-            }
+            ReadAcl::Private | ReadAcl::__Nonexhaustive => DataAcl {
+                read: vec![],
+                _dummy: (),
+            },
+            ReadAcl::MyAlgorithms => DataAcl {
+                read: vec!["algo://.my/*".into()],
+                _dummy: (),
+            },
+            ReadAcl::Public => DataAcl {
+                read: vec!["user://*".into()],
+                _dummy: (),
+            },
         }
     }
 }
 
 /// Response when querying an existing Directory
-#[cfg_attr(feature="with-serde", derive(Deserialize))]
-#[cfg_attr(feature="with-rustc-serialize", derive(RustcDecodable))]
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 struct DirectoryShow {
     pub acl: Option<DataAcl>,
     pub folders: Option<Vec<FolderItem>>,
@@ -191,22 +146,22 @@ impl<'a> DirectoryListing<'a> {
 }
 
 impl<'a> Iterator for DirectoryListing<'a> {
-    type Item = Result<DataItem>;
+    type Item = Result<DataItem, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.folders.next() {
             // Return folders first
-            Some(d) => Some(Ok(DataItem::Dir(DataDirItem { dir: self.dir.child(&d.name) }))),
+            Some(d) => Some(Ok(DataItem::Dir(DataDirItem {
+                dir: self.dir.child(&d.name),
+            }))),
             None => {
                 match self.files.next() {
                     // Return files second
-                    Some(f) => {
-                        Some(Ok(DataItem::File(DataFileItem {
-                            size: f.size,
-                            last_modified: f.last_modified,
-                            file: self.dir.child(&f.filename),
-                        })))
-                    }
+                    Some(f) => Some(Ok(DataItem::File(DataFileItem {
+                        size: f.size,
+                        last_modified: f.last_modified,
+                        file: self.dir.child(&f.filename),
+                    }))),
                     None => {
                         // Query if there is another page of files/folders
                         if self.query_count == 0 || self.marker.is_some() {
@@ -230,42 +185,34 @@ impl<'a> Iterator for DirectoryListing<'a> {
     }
 }
 
-fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow> {
+fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow, Error> {
     let mut url = dir.to_url()?;
     if let Some(ref m) = marker {
         url.query_pairs_mut().append_pair("marker", m);
     }
 
-    let req = dir.client.get(url);
-    let mut res = req.send()
-        .chain_err(|| ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri())))?;
+    let mut res = dir
+        .client
+        .get(url)
+        .send()
+        .with_context(|| format!("request error listing directory '{}'", dir.to_data_uri()))
+        .and_then(process_http_response)
+        .with_context(|| format!("response error listing directory '{}'", dir.to_data_uri()))?;
 
-    if res.status().is_success() {
-        if let Some(data_type) = res.headers().get::<XDataType>() {
-            if "directory" != data_type.as_str() {
-                return Err(ErrorKind::UnexpectedDataType("directory", data_type.to_string())
-                    .into());
-            }
+    match res.headers().get(X_DATA_TYPE).map(lossy_header) {
+        Some(ref dt) if dt == "directory" => (),
+        data_type => {
+            let dt = data_type.unwrap_or_else(|| "unknown".to_string());
+            bail!("expected content type '{}', received '{}'", "directory", dt)
         }
     }
 
-    let mut res_json = String::new();
-    res.read_to_string(&mut res_json)
-        .chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
-
-    match *res.status() {
-        status if status.is_success() => {
-            json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
-        }
-        StatusCode::NotFound => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
-        status => {
-            let api_error = ApiError {
-                message: status.to_string(),
-                stacktrace: None,
-            };
-            Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
-        }
-    }
+    res.json().with_context(|| {
+        format!(
+            "JSON decoding error listing directory '{}'",
+            dir.to_data_uri()
+        )
+    })
 }
 
 impl HasDataPath for DataDir {
@@ -293,7 +240,7 @@ impl DataDir {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::{DataItem, HasDataPath};
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// let dir_list = my_dir.list();
     /// for entry in dir_list {
@@ -303,6 +250,7 @@ impl DataDir {
     ///         Err(err) => { println!("Error: {}", err); break; },
     ///     }
     /// };
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn list(&self) -> DirectoryListing {
         DirectoryListing::new(self)
@@ -316,119 +264,109 @@ impl DataDir {
     /// ```no_run
     /// # use algorithmia::Algorithmia;
     /// # use algorithmia::data::DataAcl;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.create(DataAcl::default()) {
     ///   Ok(_) => println!("Successfully created Directory"),
     ///   Err(e) => println!("Error created directory: {}", e),
     /// };
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
-    pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<()> {
-        let parent = self.parent().ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?;
+    pub fn create<Acl: Into<DataAcl>>(&self, acl: Acl) -> Result<(), Error> {
+        let parent = self.parent().ok_or_else(|| {
+            err_msg(format!(
+                "URI {} does not have a valid parent",
+                self.to_data_uri()
+            ))
+        })?;
         let parent_url = parent.to_url()?;
 
         let input_data = FolderItem {
-            name: self.basename()
-                .ok_or_else(|| ErrorKind::InvalidDataUri(self.to_data_uri()))?
+            name: self
+                .basename()
+                .ok_or_else(|| {
+                    err_msg(format!(
+                        "Data URI {} does not have a valid basename",
+                        self.to_data_uri()
+                    ))
+                })?
                 .into(),
             acl: Some(acl.into()),
         };
-        let raw_input = json::encode(&input_data).chain_err(|| ErrorKind::EncodeJson("directory creation parameters"))?;
 
         // POST request
-        let req = self.client
+        self.client
             .post(parent_url)
-            .header(ContentType(mime!(Application / Json)))
-            .body(raw_input);
+            .json(&input_data)
+            .send()
+            .with_context(|| format!("request error creating directory '{}'", self.to_data_uri()))
+            .and_then(process_http_response)
+            .with_context(|| {
+                format!("response error creating directory '{}'", self.to_data_uri())
+            })?;
 
-        // Parse response
-        let mut res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("creating directory '{}'", self.to_data_uri())))?;
-
-        if res.status().is_success() {
-            Ok(())
-        } else {
-            let mut res_json = String::new();
-            res.read_to_string(&mut res_json)
-                .chain_err(|| {
-                    ErrorKind::Io(format!("creating directory '{}'", self.to_data_uri()))
-                })?;
-
-            let api_error = ApiError {
-                message: res.status().to_string(),
-                stacktrace: None,
-            };
-            Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
-        }
+        Ok(())
     }
-
 
     /// Delete a Directory
     ///
     /// # Examples
     /// ```no_run
     /// # use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     /// match my_dir.delete(false) {
     ///   Ok(_) => println!("Successfully deleted Directory"),
     ///   Err(err) => println!("Error deleting directory: {}", err),
     /// };
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
-    pub fn delete(&self, force: bool) -> Result<DirectoryDeleted> {
+    pub fn delete(&self, force: bool) -> Result<DirectoryDeleted, Error> {
         // DELETE request
         let mut url = self.to_url()?;
         if force {
             url.query_pairs_mut().append_pair("force", "true");
         }
 
-        let req = self.client.delete(url);
-
         // Parse response
-        let mut res = req.send()
-            .chain_err(|| ErrorKind::Http(format!("deleting directory '{}'", self.to_data_uri())))?;
-        let mut res_json = String::new();
-        res.read_to_string(&mut res_json)
-            .chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
+        let mut res = self
+            .client
+            .delete(url)
+            .send()
+            .with_context(|| format!("request error deleting directory '{}'", self.to_data_uri()))
+            .and_then(process_http_response)
+            .with_context(|| {
+                format!("response error deleting directory '{}'", self.to_data_uri())
+            })?;
 
-
-        match *res.status() {
-            status if status.is_success() => {
-                json::decode_str::<DeletedResponse>(&res_json)
-                    .map(|res| res.result)
-                    .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
-            }
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
-            status => {
-                let api_error = ApiError {
-                    message: status.to_string(),
-                    stacktrace: None,
-                };
-                Err(Error::from(ErrorKind::Api(api_error))).chain_err(|| error::decode(&res_json))
-            }
-        }
+        res.json::<DeletedResponse>()
+            .map(|res| res.result)
+            .with_context(|| {
+                format!(
+                    "JSON decoding error deleting directory '{}'",
+                    self.to_data_uri()
+                )
+            })
     }
-
 
     /// Upload a file to an existing Directory
     ///
     /// # Examples
     /// ```no_run
     /// # use algorithmia::prelude::*;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let my_dir = client.dir(".my/my_dir");
     ///
     /// match my_dir.put_file("/path/to/file") {
     ///   Ok(_) => println!("Successfully uploaded to: {}", my_dir.to_data_uri()),
     ///   Err(err) => println!("Error uploading file: {}", err),
     /// };
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
-    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
+    pub fn put_file<P: AsRef<Path>>(&self, file_path: P) -> Result<(), Error> {
         let path_ref = file_path.as_ref();
-        let file =
-            File::open(path_ref).chain_err(|| {
-                    ErrorKind::Io(format!("opening file for upload '{}'", path_ref.display()))
-                })?;
+        let file = File::open(path_ref)
+            .with_context(|| format!("opening file for upload '{}'", path_ref.display()))?;
 
         // Safe to unwrap: we've already opened the file or returned an error
         let filename = path_ref.file_name().unwrap().to_string_lossy();
@@ -446,22 +384,23 @@ impl DataDir {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use data::HasDataPath;
     use super::*;
-    use Algorithmia;
+    use crate::data::HasDataPath;
+    use crate::Algorithmia;
 
     fn mock_client() -> Algorithmia {
-        Algorithmia::client("")
+        Algorithmia::client("").unwrap()
     }
 
     #[test]
     fn test_to_url() {
         let dir = mock_client().dir("data://anowell/foo");
-        assert_eq!(dir.to_url().unwrap().path(),
-                   "/v1/connector/data/anowell/foo");
+        assert_eq!(
+            dir.to_url().unwrap().path(),
+            "/v1/connector/data/anowell/foo"
+        );
     }
 
     #[test]

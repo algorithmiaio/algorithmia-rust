@@ -1,11 +1,20 @@
 extern crate algorithmia;
 
-use algorithmia::Algorithmia;
 use algorithmia::data::ReadAcl;
+use algorithmia::Algorithmia;
 use std::env;
+use std::error::Error;
 
+fn print_cause_chain(err: &dyn Error) {
+    eprintln!("{}", err);
+    let mut e = err;
+    while let Some(cause) = e.source() {
+        eprintln!("caused by {}", cause);
+        e = cause;
+    }
+}
 
-fn main() {
+fn main() -> Result<(), Box<Error>> {
     let mut args = env::args();
     args.next(); // discard args[0]
     let path = match args.next() {
@@ -20,16 +29,15 @@ fn main() {
         }
     };
 
-    let client = Algorithmia::client(&*api_key);
-    match client.dir(&*path).create(ReadAcl::Private) {
+    let client = Algorithmia::client(&*api_key)?;
+    match &client.dir(&*path).create(ReadAcl::Private) {
         Ok(_) => println!("Successfully created collection {}", path),
-        Err(e) => println!("Error creating collection: {}", e),
+        Err(e) => print_cause_chain(e),
     }
 
-    match client.dir(&*path).delete(true) {
+    match &client.dir(&*path).delete(true) {
         Ok(_) => println!("Successfully deleted collection {}", path),
-        Err(e) => println!("Error deleting collection: {}", e),
+        Err(e) => print_cause_chain(e),
     }
-
-
+    Ok(())
 }

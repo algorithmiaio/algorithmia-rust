@@ -18,7 +18,7 @@ Instantiate an Algorithmia client using your API key:
 ```rust
 use algorithmia::Algorithmia;
 
-let client = Algorithmia::client("YOUR_API_KEY");
+let client = Algorithmia::client("YOUR_API_KEY")?;
 ```
 
 Now you're ready to call algorithms.
@@ -39,8 +39,8 @@ If the algorithm output is text, call the `as_string` method on the response.
 
 ```rust
 let algo = client.algo("algo://demo/Hello/0.1.1");
-let response = algo.pipe("HAL 9000").unwrap();
-println!("{}", response.as_string().unwrap());
+let response = algo.pipe("HAL 9000")?;
+println!("{}", response.into_string()?);
 ```
 
 ### JSON input/output
@@ -52,8 +52,8 @@ This includes many primitive types, tuples, `Vec`, and other collection types fr
 
 ```rust
 let algo = client.algo("algo://WebPredict/ListAnagrams/0.1.0");
-let response = algo.pipe(vec!["transformer", "terraforms", "retransform"]).unwrap();
-let output: Vec<String> = response.decode().unwrap();
+let response = algo.pipe(vec!["transformer", "terraforms", "retransform"])?;
+let output: Vec<String> = response.decode()?;
 // -> ["transformer", "retransform"] as Vec<String>
 ```
 
@@ -74,8 +74,8 @@ See [serde.rs](https://serde.rs/) for more details on using serde.
 Alternatively, you can work with raw JSON strings:
 
 ```rust
-let response = algo.pipe_json(r#"["transformer", "terraforms", "retransform"]"#);
-let output = response.as_json().unwrap().to_string();
+let response = algo.pipe_json(r#"["transformer", "terraforms", "retransform"]"#)?;
+let output = response.to_json()?;
 // -> "[\"transformer\", \"retransform\"]"
 ```
 
@@ -88,8 +88,8 @@ to obtain a byte vector (`Vec<u8>`).
 ```rust
 let mut input = Vec::new();
 File::open("/path/to/bender.jpg").read_to_end(&mut input);
-let response = client.algo("opencv/SmartThumbnail/0.1").pipe(&input).unwrap();
-let output = response.as_bytes().unwrap();
+let response = client.algo("opencv/SmartThumbnail/0.1").pipe(&input)?;
+let output = response.as_bytes()?;
 // -> Vec<u8>
 ```
 
@@ -108,7 +108,7 @@ match algo.pipe(&[]) {
 ```
 
 Note: this crate makes use of the `error-chain` crate, so for many error variants,
-there may be additional errors chained to `err.cause()`.
+there may be additional errors chained to `err.source()`.
 
 ### Request options
 
@@ -118,7 +118,7 @@ This includes support for changing the timeout or indicating that the API should
 ```rust
 let mut algo = client.algo("algo://demo/Hello/0.1.1");
 let algo = algo.timeout(10).stdout(true);
-let response = algo.pipe(input).unwrap();
+let response = algo.pipe(input)?;
 if let Some(ref stdout) = response.metadata.stdout {
     println!("{}", stdout);
 }
@@ -168,17 +168,17 @@ which returns a `Result`-wrapped `DataResponse` that implements `Read`:
 
 ```rust
 // Download and locally save file
-let mut t800_png_reader = client.file("data://.my/robots/T-800.png").get().unwrap();
-let mut t800_png = File::create("/path/to/save/t800.png").unwrap();
+let mut t800_png_reader = client.file("data://.my/robots/T-800.png").get()?;
+let mut t800_png = File::create("/path/to/save/t800.png")?;
 std::io::copy(&mut t800_png_reader, &mut t800_png);
 
 // Get the file's contents as a string
-let mut t800_text_reader = robots.file("data://.my/robots/T-800.txt").get().unwrap();
+let mut t800_text_reader = robots.file("data://.my/robots/T-800.txt").get()?;
 let mut t800_text = String::new();
 t800_text_reader.read_to_string(&mut t800_text);
 
 // Get the file's contents as a byte array
-let mut t800_png_reader = robots.file("data://.my/robots/T-800.png").get().unwrap();
+let mut t800_png_reader = robots.file("data://.my/robots/T-800.png").get()?;
 let mut t800_bytes = Vec::new();
 t800_png_reader.read_to_end(&mut t800_bytes);
 ```
@@ -216,6 +216,7 @@ For examples that use this client, see:
 - [Algorithmia CLI](https://github.com/algorithmiaio/algorithmia-cli) - CLI build with this client
 - [Algorithmia FUSE](https://github.com/anowell/algorithmia-fuse) - experimental filesystem build with this client
 
+
 ## Build & Test
 
 This project is built and tested with cargo:
@@ -225,9 +226,3 @@ cargo build
 cargo test
 cargo doc --no-deps
 ```
-
-Pro-tip: before building docs, clone existing docs to track changes
-```bash
-git clone -b gh-pages git@github.com:algorithmiaio/algorithmia-rust.git target/doc
-```
-

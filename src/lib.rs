@@ -6,82 +6,77 @@
 //! use algorithmia::Algorithmia;
 //!
 //! // Initialize with an API key
-//! let client = Algorithmia::client("111112222233333444445555566");
+//! let client = Algorithmia::client("111112222233333444445555566")?;
 //! let moving_avg = client.algo("timeseries/SimpleMovingAverage/0.1");
 //!
 //! // Run the algorithm using a type safe decoding of the output to Vec<f64>
 //! //   since this algorithm outputs results as a JSON array of numbers
 //! let input = (vec![0,1,2,3,15,4,5,6,7], 3);
-//! let result: Vec<f64> = moving_avg.pipe(&input).unwrap().decode().unwrap();
+//! let result: Vec<f64> = moving_avg.pipe(&input)?.decode()?;
 //! println!("Completed with result: {:?}", result);
+//! # Ok::<(), Box<std::error::Error>>(())
 //! ```
 
 #![doc(html_logo_url = "https://algorithmia.com/assets/images/logos/png/bintreePurple.png")]
 #![doc(test(attr(allow(unused_variables), allow(dead_code))))]
-
-#![cfg_attr(feature="nightly", feature(specialization))]
+#![allow(unknown_lints)]
 #![recursion_limit = "1024"]
 
-#![allow(unknown_lints)]
+use crate::algo::{AlgoUri, Algorithm};
+use crate::client::HttpClient;
+use crate::data::{DataDir, DataFile, DataObject, HasDataPath};
 
-#[cfg(feature="with-serde")]
 #[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate mime;
-#[macro_use]
-extern crate hyper;
-#[macro_use]
-extern crate error_chain;
-
-#[cfg(feature="with-serde")]
-extern crate serde;
-#[cfg(feature="with-serde")]
-extern crate serde_json;
-#[cfg(feature="with-rustc-serialize")]
-extern crate rustc_serialize;
-extern crate reqwest;
-extern crate base64;
-extern crate chrono;
-extern crate url;
-
-use algo::{Algorithm, AlgoUri};
-use data::{DataDir, DataFile, DataObject, HasDataPath};
-use client::HttpClient;
-
+pub mod error;
 pub mod algo;
 pub mod data;
-pub mod error;
-pub use reqwest::{Url, IntoUrl};
-pub use client::ApiAuth;
+
+#[cfg(feature = "handler")]
+pub mod handler;
+
+use crate::client::ApiAuth;
+use crate::error::Error;
 pub use reqwest::Body;
-
-#[cfg(feature="with-serde")]
-#[path = "json-serde.rs"]
-mod json;
-
-#[cfg(feature="with-rustc-serialize")]
-#[path = "json-rustc-serialize.rs"]
-mod json;
+pub use reqwest::{IntoUrl, Url};
 
 /// Reexports of the most common types and traits
 pub mod prelude {
-    pub use Algorithmia;
-    pub use algo::{EntryPoint, DecodedEntryPoint, AlgoInput, AlgoOutput, JsonValue};
-    pub use data::HasDataPath;
+    pub use crate::algo::AlgoIo;
+    pub use crate::data::HasDataPath;
+    pub use crate::Algorithmia;
+    pub use serde_json::Value;
+
+    #[cfg(feature = "handler")]
+    pub use crate::handler;
 }
 
 mod client;
 mod version;
 
-static DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
+const DEFAULT_API_BASE_URL: &'static str = "https://api.algorithmia.com";
 
 /// The top-level struct for instantiating Algorithmia client endpoints
 pub struct Algorithmia {
     http_client: HttpClient,
 }
 
-impl<'a, 'c> Algorithmia {
+impl Algorithmia {
+    /// Instantiate a new client
+    ///
+    /// The Algorithmia client uses environment variables
+    ///   `ALGORITHMIA_API` to override the default base URL of the API
+    ///   and `ALGORITHMIA_API_KEY` to optionally the API key.
+    pub fn new() -> Result<Algorithmia, Error> {
+        let api_address =
+            std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
+        let auth = std::env::var("ALGORITHMIA_API_KEY")
+            .map(ApiAuth::from)
+            .unwrap_or(ApiAuth::None);
+        Ok(Algorithmia {
+            http_client: HttpClient::new(auth, &api_address)?,
+        })
+    }
+
     /// Instantiate a new client
     ///
     /// Client should be instatiated with your API key, except
@@ -92,19 +87,23 @@ impl<'a, 'c> Algorithmia {
     /// use algorithmia::*;
     /// // Initialize a client
     /// let client = Algorithmia::client("simUseYourApiKey");
-    ///
-    /// // Initialize a client (for algorithms running on the Algorithmia platform)
-    /// let client = Algorithmia::client(ApiAuth::None);
     /// ```
-    pub fn client<A: Into<ApiAuth>>(api_key: A) -> Algorithmia {
-        let api_address = std::env::var("ALGORITHMIA_API")
-            .unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
-        Algorithmia { http_client: HttpClient::new(api_key.into(), &api_address) }
+    pub fn client<A: Into<String>>(api_key: A) -> Result<Algorithmia, Error> {
+        let api_address =
+            std::env::var("ALGORITHMIA_API").unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
+        Ok(Algorithmia {
+            http_client: HttpClient::new(ApiAuth::from(api_key.into()), &api_address)?,
+        })
     }
 
     /// Instantiate a new client against alternate API servers
-    pub fn client_with_url<A: Into<ApiAuth>, U: IntoUrl>(base_url: U, api_key: A) -> Algorithmia {
-        Algorithmia { http_client: HttpClient::new(api_key.into(), base_url) }
+    pub fn client_with_url<A: Into<String>, U: IntoUrl>(
+        api_key: A,
+        base_url: U,
+    ) -> Result<Algorithmia, Error> {
+        Ok(Algorithmia {
+            http_client: HttpClient::new(ApiAuth::from(api_key.into()), base_url)?,
+        })
     }
 
     /// Instantiate an [`Algorithm`](algo/algorithm.struct.html) from this client
@@ -114,8 +113,9 @@ impl<'a, 'c> Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let factor = client.algo("anowell/Dijkstra/0.1");
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
     pub fn algo<A: Into<AlgoUri>>(&self, algorithm: A) -> Algorithm {
         Algorithm::new(self.http_client.clone(), algorithm.into())
@@ -127,10 +127,11 @@ impl<'a, 'c> Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let rustfoo = client.dir("data://.my/rustfoo");
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
-    pub fn dir(&self, path: &'a str) -> DataDir {
+    pub fn dir(&self, path: &str) -> DataDir {
         DataDir::new(self.http_client.clone(), path)
     }
 
@@ -140,10 +141,11 @@ impl<'a, 'c> Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let rustfoo = client.file("data://.my/rustfoo");
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
-    pub fn file(&self, path: &'a str) -> DataFile {
+    pub fn file(&self, path: &str) -> DataFile {
         DataFile::new(self.http_client.clone(), path)
     }
 
@@ -155,31 +157,20 @@ impl<'a, 'c> Algorithmia {
     ///
     /// ```
     /// use algorithmia::Algorithmia;
-    /// let client = Algorithmia::client("111112222233333444445555566");
+    /// let client = Algorithmia::client("111112222233333444445555566")?;
     /// let rustfoo = client.data("data://.my/rustfoo/what_am_i");
+    /// # Ok::<(), Box<std::error::Error>>(())
     /// ```
-    pub fn data(&self, path: &'a str) -> DataObject {
+    pub fn data(&self, path: &str) -> DataObject {
         DataObject::new(self.http_client.clone(), path)
     }
 }
 
-
 /// Allow cloning in order to reuse http client (and API key) for multiple connections
 impl Clone for Algorithmia {
     fn clone(&self) -> Algorithmia {
-        Algorithmia { http_client: self.http_client.clone() }
-    }
-}
-
-/// The default Algorithmia client uses environment variables
-///   `ALGORITHMIA_API` to override the default base URL of the API
-///   and `ALGORITHMIA_API_KEY` to optionally the API key.
-impl Default for Algorithmia {
-    fn default() -> Algorithmia {
-        let api_address = std::env::var("ALGORITHMIA_API")
-            .unwrap_or_else(|_| DEFAULT_API_BASE_URL.into());
-        let api_key =
-            std::env::var("ALGORITHMIA_API_KEY").map(ApiAuth::from).unwrap_or(ApiAuth::None);
-        Algorithmia { http_client: HttpClient::new(api_key, &api_address) }
+        Algorithmia {
+            http_client: self.http_client.clone(),
+        }
     }
 }

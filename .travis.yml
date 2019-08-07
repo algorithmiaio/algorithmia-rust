@@ -3,6 +3,7 @@ sudo: false
 cache: cargo
 
 rust:
+  - 1.34.0
   - stable
   - beta
   - nightly
@@ -20,5 +21,4 @@ script:
   # also avoid doc-testing multiple times---it takes more time and rarely helps
   - cargo build -v
   - cargo test -v
-  - cargo build -v --no-default-features --features with-rustc-serialize
-  - cargo test -v --no-default-features --features with-rustc-serialize --lib
+  - cargo build -v --features "handler"
