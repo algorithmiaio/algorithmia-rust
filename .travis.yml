@@ -19,6 +19,6 @@ matrix:
 script:
   # interleave building and testing in hope that it saves time
   # also avoid doc-testing multiple times---it takes more time and rarely helps
-  - cd algorithmia
   - cargo build -v
   - cargo test -v
+  - cargo build -v --features "handler"
