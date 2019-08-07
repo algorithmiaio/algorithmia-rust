@@ -14,5 +14,6 @@ install:
 build: false
 
 test_script:
-- cd algorithmia
-- cargo test --verbose
+  - cargo build -v
+  - cargo test -v
+  - cargo build -v --features "handler"
