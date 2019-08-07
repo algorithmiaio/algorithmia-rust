@@ -28,10 +28,6 @@
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
-extern crate mime;
-#[macro_use]
-extern crate hyper;
-#[macro_use]
 extern crate error_chain;
 
 #[cfg(feature="with-serde")]

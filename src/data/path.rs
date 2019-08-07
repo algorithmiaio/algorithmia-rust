@@ -1,9 +1,8 @@
 use crate::data::*;
-use super::header::XErrorMessage;
 use crate::error::{ErrorKind, Result, ResultExt, ApiError};
 
 use crate::client::HttpClient;
-use reqwest::{Url, StatusCode};
+use reqwest::{Url, StatusCode, Response};
 
 /// Trait used for types that can be represented with an Algorithmia Data URI
 pub trait HasDataPath {
@@ -95,17 +94,17 @@ pub trait HasDataPath {
         let client = self.client();
         let req = client.head(url);
 
-        let res =
+        let res: Response =
             req.send()
                 .chain_err(|| {
                     ErrorKind::Http(format!("checking existence of '{}'", self.to_data_uri()))
                 })?;
-        match *res.status() {
-            StatusCode::Ok => Ok(true),
-            StatusCode::NotFound => Ok(false),
+        match res.status() {
+            StatusCode::OK => Ok(true),
+            StatusCode::NOT_FOUND => Ok(false),
             status => {
-                let msg = match res.headers().get::<XErrorMessage>() {
-                    Some(err_header) => format!("{}: {}", status, err_header),
+                let msg = match res.headers().get("X-Error-Message") {
+                    Some(err_header) => format!("{}: {:?}", status, err_header),
                     None => format!("{}", status),
                 };
 

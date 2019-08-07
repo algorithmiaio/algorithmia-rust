@@ -2,7 +2,7 @@ use crate::data::*;
 use crate::error::{ApiError, Result, ResultExt, ErrorKind};
 use crate::client::HttpClient;
 use chrono::{UTC, TimeZone};
-use reqwest::StatusCode;
+use reqwest::{StatusCode, Response};
 use super::{parse_headers, parse_data_uri};
 
 
@@ -49,12 +49,12 @@ impl DataObject {
         let res = req.send()
             .chain_err(|| ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri())))?;
 
-        match *res.status() {
-            StatusCode::Ok => {
+        match res.status() {
+            StatusCode::OK => {
                 let metadata = parse_headers(res.headers())?;
                 Ok(metadata.data_type)
             }
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
                 Err(ErrorKind::Api(ApiError {
                         message: status.to_string(),
@@ -81,12 +81,12 @@ impl DataObject {
         let metadata = {
             let url = self.to_url()?;
             let req = self.client.head(url);
-            let res =
+            let res : Response =
                 req.send()
                     .chain_err(|| {
                         ErrorKind::Http(format!("getting type of '{}'", self.to_data_uri()))
                     })?;
-            if *res.status() == StatusCode::NotFound {
+            if res.status() == StatusCode::NOT_FOUND {
                 return Err(ErrorKind::NotFound(self.to_url().unwrap()).into());
             }
             parse_headers(res.headers())?

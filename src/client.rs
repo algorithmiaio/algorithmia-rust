@@ -1,11 +1,12 @@
 //! Internal client
 //!
 //! Do not use directly - use the [`Algorithmia`](../struct.Algorithmia.html) struct instead
-use reqwest::{Client, Method, RequestBuilder, Url, IntoUrl};
-use reqwest::header::{Authorization, UserAgent};
+use reqwest::{Client, Method, RequestBuilder, IntoUrl};
+use reqwest::hyper_011::header::{Authorization, UserAgent};
 
-use url::ParseError;
+use url::{Url, ParseError};
 use std::sync::Arc;
+use std::borrow::Cow;
 
 pub use reqwest::Body;
 
@@ -32,8 +33,8 @@ impl HttpClient {
     pub fn new<U: IntoUrl>(api_auth: ApiAuth, base_url: U) -> HttpClient {
         HttpClient {
             api_auth: api_auth,
-            base_url: base_url.into_url(),
-            inner_client: Arc::new(Client::new().expect("Failed to init client")),
+            base_url: Url::parse(base_url),
+            inner_client: Arc::new(Client::new()),
             user_agent: format!("algorithmia-rust/{} (Rust {}",
                                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
                                 crate::version::RUSTC_VERSION),
@@ -42,36 +43,36 @@ impl HttpClient {
 
     /// Helper to make Algorithmia GET requests with the API key
     pub fn get(&self, url: Url) -> RequestBuilder {
-        self.build_request(Method::Get, url)
+        self.build_request(Method::GET, url)
     }
 
     /// Helper to make Algorithmia GET requests with the API key
     pub fn head(&self, url: Url) -> RequestBuilder {
-        self.build_request(Method::Head, url)
+        self.build_request(Method::HEAD, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
     pub fn post(&self, url: Url) -> RequestBuilder {
-        self.build_request(Method::Post, url)
+        self.build_request(Method::POST, url)
     }
 
     /// Helper to make Algorithmia PUT requests with the API key
     pub fn put(&self, url: Url) -> RequestBuilder {
-        self.build_request(Method::Put, url)
+        self.build_request(Method::PUT, url)
     }
 
     /// Helper to make Algorithmia POST requests with the API key
     pub fn delete(&self, url: Url) -> RequestBuilder {
-        self.build_request(Method::Delete, url)
+        self.build_request(Method::DELETE, url)
     }
 
 
     fn build_request(&self, verb: Method, url: Url) -> RequestBuilder {
         let mut req = self.inner_client.request(verb, url.clone());
 
-        req = req.header(UserAgent(self.user_agent.clone()));
+        req = req.header_011(UserAgent::new(Cow::from(self.user_agent.clone())));
         if let ApiAuth::ApiKey(ref api_key) = self.api_auth {
-            req = req.header(Authorization(format!("Simple {}", api_key)))
+            req = req.header_011(Authorization(format!("Simple {}", api_key)))
         }
         req
     }

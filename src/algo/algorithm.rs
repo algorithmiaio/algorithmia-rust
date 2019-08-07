@@ -61,9 +61,9 @@ pub type JsonValue = Value;
 pub type JsonValue = Json;
 
 use base64;
-use reqwest::header::ContentType;
+use reqwest::hyper_011::header::ContentType;
+use reqwest::hyper_011::mime::Mime;
 use reqwest::Url;
-use mime::Mime;
 #[doc(hidden)]
 pub use reqwest::Response;
 
@@ -193,13 +193,13 @@ impl Algorithm {
         where I: Into<AlgoInput<'a>>
     {
         let mut res = match input_data.into() {
-            AlgoInput::Text(text) => self.pipe_as(&*text, mime!(Text / Plain))?,
+            AlgoInput::Text(text) => self.pipe_as(&*text, mime::TEXT_PLAIN)?,
             AlgoInput::Json(json) => {
                 let encoded =
                     json::encode(&json).chain_err(|| ErrorKind::EncodeJson("algorithm input"))?;
-                self.pipe_as(&*encoded, mime!(Application / Json))?
+                self.pipe_as(&*encoded, mime::APPLICATION_JSON)?
             }
-            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, mime!(Application / OctetStream))?,
+            AlgoInput::Binary(bytes) => self.pipe_as(&*bytes, mime::APPLICATION_OCTET_STREAM)?,
         };
 
         let mut res_json = String::new();
@@ -228,7 +228,7 @@ impl Algorithm {
     ///    Err(err) => panic!("{}", err),
     /// };
     pub fn pipe_json(&self, json_input: &str) -> Result<AlgoResponse> {
-        let mut res = self.pipe_as(json_input, mime!(Application / Json))?;
+        let mut res = self.pipe_as(json_input.to_owned(), mime::APPLICATION_JSON)?;
 
         let mut res_json = String::new();
         res.read_to_string(&mut res_json).chain_err(|| "failed to read algorithm response")?;
@@ -253,7 +253,7 @@ impl Algorithm {
         // We just need the path and query string
         let req = self.client
             .post(url)
-            .header(ContentType(content_type))
+            .header_011(ContentType(content_type))
             .body(input_data);
 
         req.send().chain_err(|| ErrorKind::Http(format!("calling algorithm '{}'", self.algo_uri)))

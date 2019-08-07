@@ -88,9 +88,9 @@ impl DataFile {
         res.read_to_string(&mut res_json)
             .chain_err(|| ErrorKind::Io(format!("writing file '{}'", self.to_data_uri())))?;
 
-        match *res.status() {
+        match res.status() {
             status if status.is_success() => Ok(()),
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
                 let api_error = ApiError {
                     message: status.to_string(),
@@ -128,8 +128,8 @@ impl DataFile {
         let res = req.send()
             .chain_err(|| ErrorKind::Http(format!("downloading file '{}'", self.to_data_uri())))?;
 
-        match *res.status() {
-            StatusCode::Ok => {
+        match res.status() {
+            StatusCode::OK => {
                 let metadata = parse_headers(res.headers())?;
                 match metadata.data_type {
                     DataType::File => (),
@@ -146,7 +146,7 @@ impl DataFile {
                     data: Box::new(res),
                 })
             }
-            StatusCode::NotFound => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
+            StatusCode::NOT_FOUND => Err(Error::from(ErrorKind::NotFound(self.to_url().unwrap()))),
             status => {
                 Err(ErrorKind::Api(ApiError {
                         message: status.to_string(),
@@ -180,9 +180,9 @@ impl DataFile {
         res.read_to_string(&mut res_json)
             .chain_err(|| ErrorKind::Io(format!("deleting file '{}'", self.to_data_uri())))?;
 
-        match *res.status() {
+        match res.status() {
             status if status.is_success() => Ok(()),
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
                 let api_error = ApiError {
                     message: status.to_string(),

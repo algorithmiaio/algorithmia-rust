@@ -17,7 +17,6 @@ use crate::client::HttpClient;
 use crate::error::{self, ApiError, Error, ErrorKind, Result, ResultExt};
 use crate::data::{DataItem, DataDirItem, DataFileItem, HasDataPath, DataFile};
 use super::parse_data_uri;
-use super::header::XDataType;
 use crate::json;
 
 use std::io::Read;
@@ -26,8 +25,8 @@ use std::path::Path;
 use std::vec::IntoIter;
 
 use chrono::{DateTime, UTC};
-use reqwest::header::ContentType;
-use reqwest::StatusCode;
+use reqwest::hyper_011::header::ContentType;
+use reqwest::{StatusCode, Response};
 
 #[cfg(feature="with-rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder};
@@ -237,13 +236,13 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
     }
 
     let req = dir.client.get(url);
-    let mut res = req.send()
+    let mut res: Response = req.send()
         .chain_err(|| ErrorKind::Http(format!("listing directory '{}'", dir.to_data_uri())))?;
 
     if res.status().is_success() {
-        if let Some(data_type) = res.headers().get::<XDataType>() {
-            if "directory" != data_type.as_str() {
-                return Err(ErrorKind::UnexpectedDataType("directory", data_type.to_string())
+        if let Some(data_type) = res.headers().get("X-Data-Type") {
+            if "directory" != &*data_type.to_str().unwrap() {
+                return Err(ErrorKind::UnexpectedDataType("directory", data_type.to_str().unwrap().to_string())
                     .into());
             }
         }
@@ -253,11 +252,11 @@ fn get_directory(dir: &DataDir, marker: Option<String>) -> Result<DirectoryShow>
     res.read_to_string(&mut res_json)
         .chain_err(|| ErrorKind::Io(format!("listing directory '{}'", dir.to_data_uri())))?;
 
-    match *res.status() {
+    match res.status() {
         status if status.is_success() => {
             json::decode_str(&res_json).chain_err(|| ErrorKind::DecodeJson("directory listing"))
         }
-        StatusCode::NotFound => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
+        StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(dir.to_url().unwrap()).into()),
         status => {
             let api_error = ApiError {
                 message: status.to_string(),
@@ -338,7 +337,7 @@ impl DataDir {
         // POST request
         let req = self.client
             .post(parent_url)
-            .header(ContentType(mime!(Application / Json)))
+            .header_011(ContentType(mime::APPLICATION_JSON))
             .body(raw_input);
 
         // Parse response
@@ -392,13 +391,13 @@ impl DataDir {
             .chain_err(|| ErrorKind::Io(format!("deleting directory '{}'", self.to_data_uri())))?;
 
 
-        match *res.status() {
+        match res.status() {
             status if status.is_success() => {
                 json::decode_str::<DeletedResponse>(&res_json)
                     .map(|res| res.result)
                     .chain_err(|| ErrorKind::DecodeJson("directory deletion response"))
             }
-            StatusCode::NotFound => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
+            StatusCode::NOT_FOUND => Err(ErrorKind::NotFound(self.to_url().unwrap()).into()),
             status => {
                 let api_error = ApiError {
                     message: status.to_string(),
