@@ -60,7 +60,7 @@ impl HttpClient {
         Ok(HttpClient {
             api_auth: api_auth,
             base_url: base_url.into_url().context("Invalid base URL")?,
-            inner_client: Arc::new(Client::new()),
+            inner_client: Arc::new(Client::builder().use_rustls_tls().build().unwrap()),
             user_agent: format!(
                 "algorithmia-rust/{} (Rust {}",
                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
