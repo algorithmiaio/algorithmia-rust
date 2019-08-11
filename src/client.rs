@@ -1,15 +1,16 @@
 //! Internal client
 //!
 //! Do not use directly - use the [`Algorithmia`](../struct.Algorithmia.html) struct instead
-use headers_ext::{authorization::Credentials, Authorization, HeaderMapExt, UserAgent};
-use http::header::HeaderMap;
-use http::header::HeaderValue;
-use reqwest::{Client, IntoUrl, Method, RequestBuilder, Url};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::error::{Error, ResultExt};
+use headers_ext::{Authorization, authorization::Credentials, HeaderMapExt, UserAgent};
+use http::header::HeaderMap;
+use http::header::HeaderValue;
+use reqwest::{Client, IntoUrl, Method, RequestBuilder, Url};
 pub use reqwest::Body;
+
+use crate::error::{Error, ResultExt};
 
 struct Simple(HeaderValue);
 impl Credentials for Simple {
@@ -60,7 +61,7 @@ impl HttpClient {
         Ok(HttpClient {
             api_auth: api_auth,
             base_url: base_url.into_url().context("Invalid base URL")?,
-            inner_client: Arc::new(Client::builder().use_rustls_tls().build().unwrap()),
+            inner_client: Self::inner_client(),
             user_agent: format!(
                 "algorithmia-rust/{} (Rust {}",
                 option_env!("CARGO_PKG_VERSION").unwrap_or("unknown"),
@@ -68,7 +69,6 @@ impl HttpClient {
             ),
         })
     }
-
     /// Helper to make Algorithmia GET requests with the API key
     pub fn get(&self, url: Url) -> RequestBuilder {
         self.build_request(Method::GET, url)
@@ -109,6 +109,16 @@ impl HttpClient {
             .request(verb, url.clone())
             .headers(headers)
     }
+
+    #[cfg(not(feature = "rust-tls"))]
+    fn inner_client() -> Arc<Client> {
+        Arc::new(Client::new())
+    }
+
+    #[cfg(feature = "rust-tls")]
+    fn inner_client() -> Arc<Client> {
+        Arc::new(Client::builder().use_rustls_tls().build().unwrap())
+    }
 }
 
 impl<'a> From<&'a str> for ApiAuth {
@@ -137,6 +147,7 @@ impl From<()> for ApiAuth {
 
 pub(crate) mod header {
     use http::header::HeaderValue;
+
     pub const X_DATA_TYPE: &'static str = "x-data-type";
     pub const X_ERROR_MESSAGE: &'static str = "x-error-message";
     pub(crate) fn lossy_header(val: &HeaderValue) -> String {
